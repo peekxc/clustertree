@@ -1,0 +1,3 @@
+useDynLib(clustertree)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
