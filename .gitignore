@@ -8,6 +8,10 @@
 # Example code in package build process
 *-Ex.R
 
+# Source files
+*.o
+*.so
+
 # Output files from R CMD build
 /*.tar.gz
 
@@ -18,7 +22,6 @@
 .Rproj.user/
 *.Rbuildignore
 *.Rproj*
-
 
 # produced vignettes
 vignettes/*.html
