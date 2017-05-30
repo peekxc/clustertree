@@ -1,6 +1,6 @@
 #' clusterTreeR
-#' @export
-clustertree_ex <- function(x, k = 5L){
+#' @description Naive approach used to find critical radii of RSL via brute-force
+clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
   suppressMessages({ require("igraph"); require("FNN") })
 
   ## Initialize variables
@@ -23,10 +23,10 @@ clustertree_ex <- function(x, k = 5L){
 
   ## Vector of sorted radii to iterate through and a counter
   lambda <- sort(dist_x)
-  alpha <- 1
   i <- 1
 
   ## expand eps-Ball from 0 -> Inf
+  pb <- txtProgressBar(max = n - 1L, style = 3)
   for (r in lambda){
 
     ## Wisharts scheme: Only connect points that have at least
@@ -46,7 +46,10 @@ clustertree_ex <- function(x, k = 5L){
       clustertree[[i]] <- list(cluster=CC, radius=r * alpha)
       i <- i + 1
     }
+    setTxtProgressBar(pb, value = i)
     if (length(clustertree) == n - 1) break
   }
+  close(pb)
+  attr(clustertree, "call") <- match.call()
   return(clustertree)
 }

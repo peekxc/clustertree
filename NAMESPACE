@@ -2,4 +2,4 @@
 
 export(clustertree)
 export(clustertree_ex)
-
+useDynLib(clustertree)

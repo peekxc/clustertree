@@ -7,6 +7,7 @@
 #' @note The default 'k' parameter will differ between if a 'dist' object is given vs. the original data set, as with
 #' the dist object the original dimensionality of the data is unknown (to which the default setting of k depends on).
 #' @references See KC and SD.
+#' @useDynLib clustertree
 #' @export
 clustertree <- function(x, k = ncol(x) * log(nrow(x)), alpha = sqrt(2)){
   if (is(x, "dist")){
