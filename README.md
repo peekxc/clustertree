@@ -1,7 +1,7 @@
 # clustertree
 `clustertree` is a standalone, scalable, and extensible [R](https://www.r-project.org/package) package for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 
-$$\{ x : f(x) \geq \lambda \} \text{ for some } \lambda > 0$$
+<div style = "text-align:center" > <img src="clustertree.pdf" width = "278"/> </div>
 
 ## Installation 
 The package currently only exists on github. 
@@ -14,7 +14,7 @@ install.packages("devtools")
 devtools::install_github("peekxc/clustertree")
 ```
 ### Development note 
-The package as it stands is in very early stage of development, and should be regarded as such. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around September 5$^{\mathrm{th}}$ 2017. 
+The package as it stands is in very early stage of development, and should be regarded as such. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017. 
 
 ## Usage 
 Usage section to be continued.... 
@@ -35,8 +35,6 @@ for an overview of what Hartigan refers to as the *density-contour tree,* and br
 Established notions of the consistency of estimators of the cluster tree can be found in: 
 > Hartigan, John A. "Consistency of single linkage for high-density clusters." Journal of the American Statistical Association 76.374 (1981): 388-394.
 
-## License 
-The package and its associated software 
 
 ## Acknowledgements 
 This package is being developed as part of the [Google Summer of Code 2017](https://summerofcode.withgoogle.com/dashboard/project/5111030546956288/overview/) under the [R Project](https://www.r-project.org/). 
