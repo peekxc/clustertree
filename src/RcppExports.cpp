@@ -5,6 +5,20 @@
 
 using namespace Rcpp;
 
+// checkKruskals
+List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, const double alpha);
+RcppExport SEXP clustertree_checkKruskals(SEXP xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type r_k(r_kSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(checkKruskals(x, r_k, k, alpha));
+    return rcpp_result_gen;
+END_RCPP
+}
 // clusterTree
 List clusterTree(const NumericVector x, const NumericVector r_k, const int k, const double alpha);
 RcppExport SEXP clustertree_clusterTree(SEXP xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP) {

@@ -1,4 +1,8 @@
 # clustertree
+[![CRAN](http://www.r-pkg.org/badges/version/clustertree)](#)
+[![CircleCI](https://circleci.com/gh/peekxc/clustertree.svg?style=shield&)](https://circleci.com/gh/peekxc/clustertree)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/peekxc/clustertree?branch=master&svg=true)](https://ci.appveyor.com/project/peekxc/clustertree)
+
 `clustertree` is a standalone, scalable, and extensible [R](https://www.r-project.org/package) package for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 
 <div style = "text-align:center" > <img src="clustertree.png" width = "278"/> </div>
@@ -19,7 +23,7 @@ The package as it stands is in very early stage of development, and should be re
 ## Usage 
 Usage section to be continued.... 
 
-### Estimators implemented
+### Estimators implemented (in development)
 There are multiple algorithms for approximating the empirical cluster tree. Below is a (growing) list of estimators provided by this package:
 
 1. The **Robust Single Linkage (RSL)** algorithm, which can be found in: 
