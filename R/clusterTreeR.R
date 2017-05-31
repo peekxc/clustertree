@@ -6,9 +6,6 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
   ## Initialize variables
   { n <- nrow(x); dist_x <- dist(x); }
 
-  ## Get the smallest radius as a starting point for r
-  r <- min(dist_x)
-
   ## Start off with empty adjacency graph
   G_r <- igraph::graph_from_adjacency_matrix(diag(n))
 

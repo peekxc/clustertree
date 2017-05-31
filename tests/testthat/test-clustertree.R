@@ -10,7 +10,7 @@ n <- nrow(X_n)
 k <- 5L
 
 ## Brute-force R solution can be computed using igraph and FNN packages
-# cl_tree_r <- clustertree_ex(X_n, k = 5L, alpha = sqrt(2))
+# Created with: cl_tree_r <- clustertree_ex(X_n, k = 5L, alpha = sqrt(2))
 load(system.file("test_data/iris_cl_tree_r.rdata", package = "clustertree"))
 
 ## Rcpp solution using MST

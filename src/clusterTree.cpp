@@ -52,7 +52,7 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
   const int n = as<int>(x.attr("Size"));
 
   // Get sorted radii
-  NumericVector radii = Rcpp::clone(x).sort(false);// * alpha;
+  NumericVector radii = Rcpp::clone(x).sort(false) * alpha;
 
   // Get order of original; use R order function to get consistent ordering
   Function order = Function("order");
@@ -67,18 +67,16 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
   // Set up vector representing inclusion and admittance criteria
   std::vector<bool> admitted = std::vector<bool>(n, false);
   std::vector<bool> included = std::vector<bool>(n, false);
-  //IntegerVector included = Rcpp::seq(0, n - 1);
 
   // Admission tracker
+  int c_rk = 0;
   NumericVector sorted_r_k = clone(r_k).sort(false);
   IntegerVector order_r_k = as<IntegerVector>(order(r_k)) - 1;
-  int c_rk = 0;
+
 
   // Iterate r from 0 \to \infty
-  IntegerMatrix order_ft = IntegerMatrix(radii.length(), 2);
   int i = 0, c = 0;
   IntegerMatrix merge = IntegerMatrix(n - 1, 2);
-  IntegerMatrix merge_original = IntegerMatrix(n - 1, 2);
   NumericVector height = NumericVector(n - 1);
   for(NumericVector::iterator r = radii.begin(); r != radii.end(); ++r, ++i){
     int to = INDEX_TO(r_order.at(i), n), from = INDEX_FROM(r_order.at(i), n, to);
@@ -89,45 +87,35 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
 
     // Construct a graph G_r with nodes \{ x_i : r_k(x_i) \leq r \}.
     if (admitted.at(from) && admitted.at(to)){
+
       // Include edge (x_i, x_j) if \lVert x_i - x_j \rVert \leq \alpha r.
+      // If the edge inclusion results in a component change, record the change
       if (components.Find(from) != components.Find(to)){
         components.Union(from, to);
-        height.at(c) = (*r) * alpha;
-        merge_original(c, _) = IntegerVector::create(from, to);
+        height.at(c) = *r;
 
         // Hclust class requirements: when building the merge matrix, positive merge indices represent agglomerations,
         // and negative indicate singletons. This requires more indexing vectors to enable tracking component
         // membership changes
-        if (!included.at(from) && !included.at(to)){
-          Rcout << "Merging 0: " << -from << " and " << -to << std::endl;
+        if (!included.at(from) && !included.at(to)) {
           merge(c++, _) = IntegerVector::create(-(from + 1), -(to + 1));
           included.at(from) = included.at(to) = true;
-          //component_index.at(components.Find(from)) = c;
         } else if (!included.at(from) || !included.at(to)){
           int leaf = (!included.at(from)) ? from : to;
           int comp = (!included.at(from)) ? to_comp : from_comp;
-          Rcout << "Merging 1: " << -leaf << " and " << comp << std::endl;
           merge(c++, _) = IntegerVector::create(-(leaf + 1), component_index.at(comp));
           included.at(leaf) = true;
-          //component_index.at(components.Find(leaf)) = c;
         } else {
-          Rcout << "Merging 2: " << from_comp << " and " << to_comp << std::endl;
           merge(c++, _) = IntegerVector::create(component_index.at(from_comp), component_index.at(to_comp));
-          //component_index.at(components.Find(from)) = c;
         }
-        Rcout << "updating component index: " << from_comp << ", " << to_comp << std::endl;
         component_index.at(from_comp) = component_index.at(to_comp) = c;
-        // if (c == 2) break;
-        //merge(c++, _) = IntegerVector::create(from, to);
       }
     }
-    order_ft(i, _) = IntegerVector::create(from, to);
   }
-  Rcout << "here" << std::endl;
-  IntegerVector final_component = IntegerVector(n, 0);
-  for (int i = 0; i < n; ++i){
-    final_component.at(i) = components.Find(i);
-  }
+  // IntegerVector final_component = IntegerVector(n, 0);
+  // for (int i = 0; i < n; ++i){
+  //   final_component.at(i) = components.Find(i);
+  // }
 
 
   // Extractor merge order and return
@@ -139,8 +127,7 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
   );
   res.attr("class") = "hclust";
 
-  return(List::create(_["merge"] = merge, _["merge_original"] = merge_original, _["height"] = height, _["ind"] = order_ft, _["fc"] = final_component,
-                      _["admitted"] = wrap(admitted), _["comp_index"] = component_index, _["hc"] = res));
+  return(res);
 }
 
 // [[Rcpp::export]]
@@ -204,7 +191,7 @@ List clusterTree(const NumericVector x, const NumericVector r_k, const int k, co
     v_selected[c_i] = 1;
     c_i = min_id;
   }
-  return(List::create(mst, v_selected));
+  //return(List::create(mst, v_selected));
 
   /* PHASE 2
    * Sort MST and use disjoint-set to track components
