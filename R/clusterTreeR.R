@@ -20,8 +20,12 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
 
   ## Vector of sorted radii to iterate through and a counter
   lambda <- sort(dist_x)
-  i <- 1
 
+  ## Initialize with every point as a singleton
+  clustertree[[1]] <- list(cluster=1:n, radius=0, iter = 0)
+  i <- 2
+
+  iter <- 0
   ## expand eps-Ball from 0 -> Inf
   pb <- txtProgressBar(max = n - 1L, style = 3)
   for (r in lambda){
@@ -37,14 +41,17 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
     adj_matrix <- matrix(as.integer(eps), nrow = n, ncol = n)
     G_r <- igraph::graph_from_adjacency_matrix(adj_matrix)
     CC <- igraph::components(G_r)$membership
+    CC_admitted <- CC
+    CC_admitted[which(r_k > r)] <- 0
 
     ## Record distinct level sets
-    if (i == 1 || any(CC != clustertree[[i-1]]$cluster)){
-      clustertree[[i]] <- list(cluster=CC, radius=r * alpha)
+    if (any(CC_admitted != clustertree[[i-1]]$cluster)){
+      clustertree[[i]] <- list(cluster=CC, radius=r * alpha, iter = iter, CC = CC_admitted)
       i <- i + 1
     }
     setTxtProgressBar(pb, value = i)
-    if (length(clustertree) == n - 1) break
+    if (length(clustertree) == n) break
+    iter <- iter + 1
   }
   close(pb)
   attr(clustertree, "call") <- match.call()

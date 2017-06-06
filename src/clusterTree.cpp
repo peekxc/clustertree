@@ -45,6 +45,52 @@ struct compare_edge
   { return e1.weight > e2.weight; }
 };
 
+// Retrieve the full integer vector representing component membership (by reference)
+void CC(UnionFind& uf, IntegerVector& cc, std::vector<bool>& admitted){
+  for (int i = 0; i < uf.size; ++i){
+    cc[i] = admitted[i] ? uf.Find(i) : 0;
+  }
+}
+
+// Retrieve the full integer vector representing component membership (by reference)
+void CC(UnionFind& uf, IntegerVector& cc, std::vector<int>& admitted){
+  for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
+    cc[*it] = uf.Find(*it);
+  }
+}
+
+// Retrieve the full integer vector representing component membership
+IntegerVector CC(UnionFind& uf){
+  IntegerVector cc = Rcpp::no_init(uf.size);
+  for (int i = 0; i < uf.size; ++i){ cc[i] = uf.Find(i); }
+  return(cc);
+}
+
+void printCC(UnionFind& uf, std::vector<bool>& admitted){
+  // for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
+  //   cc[*it] = uf.Find(*it);
+  // }
+  for (int i = 0; i < uf.size; ++i){
+    Rcout << (admitted[i] ? uf.Find(i) : 0) << " ";
+  }
+}
+
+/* -- CC_changed --
+ * This function controls for the detection of a change between two sets of connected
+ * components, restricted to only look for changes between points that have been admitted into
+ * G_r.
+ */
+bool CC_changed(IntegerVector current_CC, IntegerVector previous_CC, std::vector<int>& admitted){
+  if (admitted.size() < 2) return(false);
+  for (std::vector<int>::iterator it = admitted.begin(); it != admitted.end(); ++it){
+    if (current_CC[*it] != previous_CC[*it]) {// && contains(admitted, current_CC[*it])){
+      return(true);
+    }
+  }
+  return(false);
+}
+
+
 // [[Rcpp::export]]
 List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095){
 
@@ -53,6 +99,7 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
 
   // Get sorted radii
   NumericVector radii = Rcpp::clone(x).sort(false) * alpha;
+  NumericVector l2 = Rcpp::clone(x).sort(false) ;
 
   // Get order of original; use R order function to get consistent ordering
   Function order = Function("order");
@@ -61,38 +108,97 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
   // Set up connected components (initialized as singletons)
   UnionFind components = UnionFind(n);
 
-  // Set up vector whose values, indexed by component, represent last merge step the component was a part of
-  IntegerVector component_index = IntegerVector(n);
-
   // Set up vector representing inclusion and admittance criteria
+  // admittance := only consider x_i s.t. \{ x_i : r_k(x_i) \leq r \}
+  // included := 0 if x_i is a singleton, 1 if x_i is connected to some component
   std::vector<bool> admitted = std::vector<bool>(n, false);
+  std::vector<int> admitted2 = std::vector<int>();
   std::vector<bool> included = std::vector<bool>(n, false);
 
-  // Admission tracker
+  // Admission tracker; rather than check admissability of every point at every radii,
+  // sort by increasing radius and make one comparison each loop
   int c_rk = 0;
   NumericVector sorted_r_k = clone(r_k).sort(false);
   IntegerVector order_r_k = as<IntegerVector>(order(r_k)) - 1;
 
 
-  // Iterate r from 0 \to \infty
+  IntegerVector index_conjoined = IntegerVector(n, 0);
+
   int i = 0, c = 0;
+  // Data structures needed to build the 'hclust' object
+  IntegerVector component_index = IntegerVector(n);
+
+  // Set up vector whose values, indexed by component, represent last merge step the component was a part of
   IntegerMatrix merge = IntegerMatrix(n - 1, 2);
   NumericVector height = NumericVector(n - 1);
-  for(NumericVector::iterator r = radii.begin(); r != radii.end(); ++r, ++i){
+  IntegerMatrix merge_order = IntegerMatrix(radii.length(), 2);
+
+  List cc_list = List(n, IntegerVector());
+
+  IntegerVector previous_CC = seq(0, n - 1);
+  IntegerVector current_CC = clone(previous_CC);
+
+  NumericVector R = NumericVector(n);
+
+  // Iterate r from 0 \to \infty
+  for(NumericVector::iterator r = radii.begin(), dist_ij = l2.begin(); r != radii.end(); ++r, ++i, ++dist_ij){
     int to = INDEX_TO(r_order.at(i), n), from = INDEX_FROM(r_order.at(i), n, to);
     int from_comp = components.Find(from), to_comp = components.Find(to);
+    merge_order(i, _) = IntegerVector::create(from, to);
 
-    // Counter to current lowest neighborhood radius; progressively sets admission of points
-    while(c_rk < n && *r > sorted_r_k.at(c_rk)) admitted.at(int(order_r_k.at(c_rk++))) = true;
+    // Sets admission status of points
+    while(c_rk < n && sorted_r_k.at(c_rk) <= (*dist_ij)) {
+      admitted.at(int(order_r_k.at(c_rk))) = true;
+      admitted2.push_back(int(order_r_k.at(c_rk)));
+      //Rcout << i << ": Set " << int(order_r_k.at(c_rk)) << " admitted == TRUE (@radius == " << *dist_ij << ")" << std::endl;
+      //Rcout << "HEAD: " << sorted_r_k.at(c_rk) << ", " << sorted_r_k.at(c_rk+1) << ", " << sorted_r_k.at(c_rk+2) << std::endl;
+      c_rk++;
+      if (i == 33 || i == 34 || i == 35){
+        Rcout << "N admitted: " << admitted2.size() << std::endl;
+      }
+    }
+
+    // Union the points, (potentially) mutating the current set of connected components
+    //if (admitted.at(from) && admitted.at(to)){
+      components.Union(from, to);
+    //}
+
+
+
+    // Update current connected components
+    //CC(components, current_CC, admitted);
+    CC(components, current_CC, admitted2);
+
+    if (i == 28 || i == 29 || i == 30){
+      Rcout << i << ": ";
+      printCC(components, admitted);
+      Rcout << std::endl;
+      // Rcout << "from: " << from << ", to: " << to << std::endl;
+      // Rcout << "Admitted: ";
+      // for (int ii = 0; ii < n; ++ii){
+      //   Rcout << admitted.at(ii);
+      // }
+      // Rcout << std::endl << "radius: " << *r << std::endl;
+      // Rcout << "From comp: " << from_comp << ", To comp: " << to_comp << std::endl;
+      // Rcout << "Admitted? " << admitted.at(from) << " and " << admitted.at(to) << std::endl;
+      Rcout << "Component change? " << CC_changed(current_CC, previous_CC, admitted2) << std::endl;
+    }
 
     // Construct a graph G_r with nodes \{ x_i : r_k(x_i) \leq r \}.
-    if (admitted.at(from) && admitted.at(to)){
+    // if (admitted.at(from) && admitted.at(to)){
 
       // Include edge (x_i, x_j) if \lVert x_i - x_j \rVert \leq \alpha r.
       // If the edge inclusion results in a component change, record the change
-      if (components.Find(from) != components.Find(to)){
-        components.Union(from, to);
-        height.at(c) = *r;
+      if (CC_changed(current_CC, previous_CC, admitted2)){
+        Rcout << i << ": Including edge: " << from << " -- " << to << " | ";
+        printCC(components, admitted);
+        Rcout << std::endl;
+        index_conjoined.at(c) = i;
+        height.at(c) = (*r);
+        R.at(c) = (*dist_ij);
+
+        // Save current connected components
+        cc_list.at(c) = clone(current_CC);
 
         // Hclust class requirements: when building the merge matrix, positive merge indices represent agglomerations,
         // and negative indicate singletons. This requires more indexing vectors to enable tracking component
@@ -110,8 +216,10 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
         }
         component_index.at(from_comp) = component_index.at(to_comp) = c;
       }
+      previous_CC = clone(current_CC);
+      // components.Union(from, to);
     }
-  }
+  //}
   // IntegerVector final_component = IntegerVector(n, 0);
   // for (int i = 0; i < n; ++i){
   //   final_component.at(i) = components.Find(i);
@@ -120,10 +228,14 @@ List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, 
 
   // Extractor merge order and return
   List res = List::create(
-    _["merge"] = merge,
-    _["height"] = height,
-    _["order"] = extractOrder(merge),
-    _["labels"] = R_NilValue
+    //_["merge"] = merge,
+    //_["height"] = height,
+    //_["order"] = extractOrder(merge),
+    _["labels"] = R_NilValue,
+    _["i"] = index_conjoined,
+    _["mo"] = merge_order,
+    _["cc"] = cc_list,
+    _["dist_ij"] = R
   );
   res.attr("class") = "hclust";
 
