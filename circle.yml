@@ -1,8 +1,11 @@
+language: r
+
 dependencies:
   override:
     - sudo R -q -e "install.packages(\"devtools\", repos = \"https://cran.rstudio.com/\")"
     - sudo R -q -e "install.packages(\"roxygen2\", repos = \"https://cran.rstudio.com/\")"
     - sudo R -q -e "devtools::install(\"~/clustertree\", dependencies=TRUE)"
+
 test:
   override:
     - sudo R -q -e "devtools::test(\"~/clustertree\")"

@@ -5,7 +5,7 @@
 
 `clustertree` is a standalone, scalable, and extensible [R](https://www.r-project.org/package) package for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 
-<div style = "text-align:center" align="center"> <img src="clustertree.png" width = "278"/> </div>
+<div style = "text-align:center" align="center"> <img src="clustertree.pdf" width = "278"/> </div>
 
 ## Installation 
 The package currently only exists on github. The installation options are as follows: 
