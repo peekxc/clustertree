@@ -13,7 +13,7 @@ using namespace Rcpp;
 // Retrieve the full integer vector representing component membership
 IntegerVector getCC(UnionFind& uf){
   IntegerVector cc = Rcpp::no_init(uf.size);
-  for (int i = 0; i < uf.size; ++i){ cc[i] = uf.Find(i); }
+  for (unsigned int i = 0; i < uf.size; ++i){ cc[i] = uf.Find(i); }
   return(cc);
 }
 
@@ -40,7 +40,7 @@ List naive_clustertree(const NumericVector x, const NumericVector r_k, const dou
 
   // If n will create upwards of billions of iterations, make a progress bar
   const bool use_progress_bar = n > 1000;
-  Progress* p = nullptr;
+  Progress* p = NULL;
   if (use_progress_bar) p = new Progress(n, true);
 
   // Grow r from 0 \to \infty

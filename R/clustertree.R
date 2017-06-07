@@ -8,6 +8,7 @@
 #' the dist object the original dimensionality of the data is unknown (to which the default setting of k depends on).
 #' @references See KC and SD.
 #' @import dbscan
+#' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
 clustertree <- function(x, k = "suggest", alpha = "suggest", algorithm = "RSL"){
