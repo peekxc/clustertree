@@ -1,12 +1,17 @@
 Package: clustertree
 Type: Package
-Title: What the Package Does in One 'Title Case' Line
-Version: 1.0
+Title: Estimates The Empirical Cluster Tree
+Version: 0.1
 Date: 2017-05-09
-Author: Your Name
+Author: Matt Piekenbrock
 Maintainer: Matt Piekenbrock <matt.piekenbrock@gmail.com>
-Description: One paragraph description of what the package does as one or more full sentences.
-License: GPL (>= 2)
-Imports: Rcpp (>= 0.12.9)
+Description: Contains a set of functions and extensions for estimating and visualizing the empirical cluster tree.
+License: MIT + file LICENSE
+Imports: 
+  Rcpp (>= 0.12.9),
+  dbscan, 
+  igraph
+Suggests: 
+  testthat
 LinkingTo: Rcpp
 RoxygenNote: 6.0.1

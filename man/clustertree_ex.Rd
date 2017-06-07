@@ -4,8 +4,8 @@
 \alias{clustertree_ex}
 \title{clusterTreeR}
 \usage{
-clustertree_ex(x, k = 5L)
+clustertree_ex(x, k = 5L, alpha = sqrt(2))
 }
 \description{
-clusterTreeR
+Naive approach used to find critical radii of RSL via brute-force
 }

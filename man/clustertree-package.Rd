@@ -1,6 +1,5 @@
 \name{clustertree-package}
 \alias{clustertree-package}
-\alias{clustertree}
 \docType{package}
 \title{
   A short title line describing what the package does
@@ -14,9 +13,7 @@
   package, including the most important functions.
 }
 \author{
-Your Name, email optional.
-
-Maintainer: Your Name <your@email.com>
+Matt Piekenbrock <matt.piekenbrock@gmail.com>
 }
 \references{
   This optional section can contain literature or other references for

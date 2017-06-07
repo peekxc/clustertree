@@ -1,11 +1,11 @@
 # clustertree
 [![CRAN](http://www.r-pkg.org/badges/version/clustertree)](#)
-[![CircleCI](https://circleci.com/gh/peekxc/clustertree.svg?style=shield&)](https://circleci.com/gh/peekxc/clustertree)
+[![Travis-CI Build Status](https://travis-ci.org/peekxc/clustertree.svg?branch=master)](https://travis-ci.org/peekxc/clustertree)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/peekxc/clustertree?branch=master&svg=true)](https://ci.appveyor.com/project/peekxc/clustertree)
 
 `clustertree` is a standalone, scalable, and extensible [R](https://www.r-project.org/package) package for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 
-<div style = "text-align:center" align="center"> <img src="clustertree.pdf" width = "278"/> </div>
+<div style = "text-align:center" align="center"> <img src="clustertree.png" width = "278"/> </div>
 
 ## Installation 
 The package currently only exists on github. The installation options are as follows: 

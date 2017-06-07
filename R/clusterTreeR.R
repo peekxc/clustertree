@@ -1,5 +1,8 @@
 #' clusterTreeR
 #' @description Naive approach used to find critical radii of RSL via brute-force
+#' @import igraph
+#' @importFrom stats dist
+#' @importFrom utils setTxtProgressBar txtProgressBar
 clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
   suppressMessages({ require("igraph"); require("FNN") })
 
@@ -11,7 +14,7 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
 
   ## Get balls centered at each x of radius r_k
   ## (containing k points inclusive of x_i itself)
-  r_k <- apply(FNN::knn.dist(x, k = k - 1, algorithm = "kd_tree"), 1, max)
+  r_k <- apply(dbscan::kNNdist(x, k = k - 1), 1, max)
 
   ## Initiate cluster tree and distance matrix to simplify indexing
   clustertree <- list()
