@@ -1,6 +1,12 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+// Allows indexing lower triangular (dist objects)
+#include <math.h>
+#define INDEX_TF(N,to,from) (N)*(to) - (to)*(to+1)/2 + (from) - (to) - (1)
+#define INDEX_TO(k, n) n - 2 - floor(sqrt(-8*k + 4*n*(n-1)-7)/2.0 - 0.5)
+#define INDEX_FROM(k, n, i) k + i + 1 - n*(n-1)/2 + (n-i)*((n-i)-1)/2
+
 // std::to_string is apparently a c++11 only thing that crashes appveyor, so using ostringstream it is!
 namespace patch
 {
@@ -103,3 +109,25 @@ IntegerVector order_(NumericVector x) {
   NumericVector sorted = clone(x).sort();
   return match(sorted, x);
 }
+
+
+// Structures to do priority queue
+struct edge
+{
+  unsigned int to;
+  double weight;
+  edge(int to_id, double cost) : to(to_id), weight(cost) { }
+};
+struct compare_edge
+{
+  bool operator()(const edge& e1, const edge& e2) const
+  { return e1.weight > e2.weight; }
+};
+
+struct double_edge
+{
+  unsigned int from, to;
+  double weight;
+  double_edge(int from_id, int to_id, double cost) : from(from_id), to(to_id), weight(cost) { }
+};
+

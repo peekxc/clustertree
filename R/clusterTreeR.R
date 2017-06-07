@@ -28,6 +28,12 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
   iter <- 0
   ## expand eps-Ball from 0 -> Inf
   pb <- txtProgressBar(max = n - 1L, style = 3)
+
+  ## Get the from <--> to indices
+  from <- row(l2_dist)[lower.tri(l2_dist)]
+  to <- col(l2_dist)[lower.tri(l2_dist)]
+  mo <- cbind(from, to)
+  mo <- mo[order(dist_x),]
   for (r in lambda){
 
     ## Wisharts scheme: Only connect points that have at least
@@ -44,9 +50,11 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
     CC_admitted <- CC
     CC_admitted[which(r_k > r)] <- 0
 
+    # get.edgelist(G_r)[unique(c(which(get.edgelist(G_r)[, 1] %in% c(67, 78)), which(get.edgelist(G_r)[, 2] %in% c(67,78)))),]
     ## Record distinct level sets
-    if (any(CC_admitted != clustertree[[i-1]]$cluster)){
-      clustertree[[i]] <- list(cluster=CC, radius=r * alpha, iter = iter, CC = CC_admitted)
+    if (any(CC != clustertree[[i-1]]$cluster)){
+      clustertree[[i]] <- list(cluster=CC, radius=r * alpha, dist_ij = r, iter = iter, CC = CC_admitted,
+                               n_admitted = sum(r_k <= r))
       i <- i + 1
     }
     setTxtProgressBar(pb, value = i)
