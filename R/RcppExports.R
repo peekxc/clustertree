@@ -5,19 +5,7 @@ clusterTree <- function(x, r_k, k, alpha = 1.414213562373095) {
     .Call('clustertree_clusterTree', PACKAGE = 'clustertree', x, r_k, k, alpha)
 }
 
-lowerTri <- function(m) {
-    .Call('clustertree_lowerTri', PACKAGE = 'clustertree', m)
-}
-
-combine <- function(t1, t2) {
-    .Call('clustertree_combine', PACKAGE = 'clustertree', t1, t2)
-}
-
-concat_int <- function(container) {
-    .Call('clustertree_concat_int', PACKAGE = 'clustertree', container)
-}
-
-order_ <- function(x) {
-    .Call('clustertree_order_', PACKAGE = 'clustertree', x)
+naive_clustertree <- function(x, r_k, alpha = 1.414213562373095) {
+    .Call('clustertree_naive_clustertree', PACKAGE = 'clustertree', x, r_k, alpha)
 }
 

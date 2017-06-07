@@ -5,18 +5,28 @@ data("iris")
 context("clustertree")
 
 ## Sample from iris data set
-X_n <- iris[1:100, 1:4]
-n <- nrow(X_n)
-k <- 5L
-r_k <- apply(dbscan::kNNdist(X_n, k = k - 1), 1, max)
+X_n <- iris[, 1:4]
 
-## Brute-force R solution can be computed using igraph and FNN packages
-# Created with: cl_tree_r <- clustertree_ex(X_n, k = 5L, alpha = sqrt(2))
-load(system.file("test_data/iris_cl_tree_r.rdata", package = "clustertree"))
+## Supply Variables/parameters
+{ n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
 
-## Rcpp solution using MST
-cl_tree_cpp <- clustertree(X_n, k = 5L, alpha = sqrt(2))
+## clustertree solution using MST
+cl_tree_mst <- clustertree::clustertree(X_n)
 
-## Verify brute-force type solution matches C++ RSL solution
-expect_true(all(sapply(cl_tree_r[-1], function(cltree_cut) all(cutree(cl_tree_cpp, h = cltree_cut$dist_ij) == cltree_cut$cluster))))
+## clustertree solution using brute-force/naive version
+r_k <- apply(dbscan::kNNdist(X_n, k = cl_tree_mst$k - 1), 1, max)
+cl_tree_naive <- clustertree:::naive_clustertree(dist_x, r_k, cl_tree_mst$alpha)
 
+## Do the run time lengths of each symbol match?
+expect_true(all(sapply(cl_tree_naive, function(cl) {
+  mst_rle <- rle(cutree(cl_tree_mst, h = cl$r))$lengths
+  bf_rle <- rle(cl$cluster)$lengths
+  all(mst_rle == bf_rle)
+})))
+
+## Do the individual symbols all map to the same value, an in the correct order?
+expect_true(all(sapply(cl_tree_naive, function(cl) {
+  mst_vals <- rle(cutree(cl_tree_mst, h = cl$r))$values
+  bf_vals <- rle(cl$cluster)$values
+  all(match(mst_vals, unique(mst_vals)) == match(bf_vals, unique(bf_vals)))
+})))

@@ -1,3 +1,6 @@
+#ifndef CT_UTIL_H
+#define CT_UTIL_H
+
 #include <Rcpp.h>
 using namespace Rcpp;
 
@@ -27,8 +30,7 @@ template <typename T, typename C> bool contains (const T& container, const C& ke
   }
 }
 
-// [[Rcpp::export]]
-IntegerVector lowerTri(IntegerMatrix m){
+inline IntegerVector lowerTri(IntegerMatrix m){
   int n = m.nrow();
   IntegerVector lower_tri = IntegerVector(n * (n - 1) / 2);
   for (int i = 0, c = 0; i < n; ++i){
@@ -39,7 +41,7 @@ IntegerVector lowerTri(IntegerMatrix m){
   return(lower_tri);
 }
 
-IntegerVector which_cpp( NumericVector x, double value) {
+inline IntegerVector which_cpp( NumericVector x, double value) {
   int nx = x.size();
   std::vector<int> y;
   y.reserve(nx);
@@ -47,7 +49,7 @@ IntegerVector which_cpp( NumericVector x, double value) {
   return wrap(y);
 }
 
-IntegerVector which_cpp( IntegerVector x, int value) {
+inline IntegerVector which_cpp( IntegerVector x, int value) {
   int nx = x.size();
   std::vector<int> y;
   y.reserve(nx);
@@ -55,7 +57,7 @@ IntegerVector which_cpp( IntegerVector x, int value) {
   return wrap(y);
 }
 
-IntegerVector which_geq( IntegerVector x, int value) {
+inline IntegerVector which_geq( IntegerVector x, int value) {
   int nx = x.size();
   std::vector<int> y;
   y.reserve(nx);
@@ -63,9 +65,7 @@ IntegerVector which_geq( IntegerVector x, int value) {
   return wrap(y);
 }
 
-
-// [[Rcpp::export]]
-NumericVector combine(const NumericVector& t1, const NumericVector& t2){
+inline NumericVector combine(const NumericVector& t1, const NumericVector& t2){
   std::size_t n = t1.size() + t2.size();
   NumericVector output = Rcpp::no_init(n);
   std::copy(t1.begin(), t1.end(), output.begin());
@@ -73,7 +73,7 @@ NumericVector combine(const NumericVector& t1, const NumericVector& t2){
   return output;
 }
 
-IntegerVector combine(const IntegerVector& t1, const IntegerVector& t2){
+inline IntegerVector combine(const IntegerVector& t1, const IntegerVector& t2){
   std::size_t n = t1.size() + t2.size();
   IntegerVector output = Rcpp::no_init(n);
   std::copy(t1.begin(), t1.end(), output.begin());
@@ -83,8 +83,7 @@ IntegerVector combine(const IntegerVector& t1, const IntegerVector& t2){
 
 // Faster version of above combine function, assuming you can precompute and store
 // the containers needing to be concatenated
-// [[Rcpp::export]]
-IntegerVector concat_int (List const& container){
+inline IntegerVector concat_int (List const& container){
   int total_length = 0;
   for (List::const_iterator it = container.begin(); it != container.end(); ++it){
       total_length += as<IntegerVector>(*it).size();
@@ -100,8 +99,7 @@ IntegerVector concat_int (List const& container){
 }
 
 // Based on (but extended) http://stackoverflow.com/questions/21609934/ordering-permutation-in-rcpp-i-e-baseorder
-// [[Rcpp::export]]
-IntegerVector order_(NumericVector x) {
+inline IntegerVector order_(NumericVector x) {
   if (is_true(any(duplicated(x)))) {
     Function order("order");
     return(as<IntegerVector>(order(x)));
@@ -131,3 +129,4 @@ struct double_edge
   double_edge(int from_id, int to_id, double cost) : from(from_id), to(to_id), weight(cost) { }
 };
 
+#endif

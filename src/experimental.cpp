@@ -1,103 +1,168 @@
 #include <Rcpp.h>
+
+// Namespace Declarations
 using namespace Rcpp;
 
-// // Includes
-// #include "union_find.h"
-// #include "utilities.h"
+// Header includes
+#include "union_find.h"
+#include "utilities.h"
+
+// [[Rcpp::depends(RcppProgress)]]
+#include <progress.hpp>
+
+// Retrieve the full integer vector representing component membership
+IntegerVector getCC(UnionFind& uf){
+  IntegerVector cc = Rcpp::no_init(uf.size);
+  for (int i = 0; i < uf.size; ++i){ cc[i] = uf.Find(i); }
+  return(cc);
+}
+
+// Naive brute-force approach
+// [[Rcpp::export]]
+List naive_clustertree(const NumericVector x, const NumericVector r_k, const double alpha = 1.414213562373095){
+
+  // Number of data points
+  const int n = as<int>(x.attr("Size"));
+
+  // Get sorted radii
+  NumericVector lambda = Rcpp::clone(x).sort(false);
+
+  // Get order of original; use R order function to get consistent ordering
+  // Function order = Function("order");
+  // IntegerVector r_order = as<IntegerVector>(order(x)) - 1;
+
+  // Initialize with every point as a singleton
+  List clustertree = List();
+  clustertree.push_back(List::create(_["cluster"] = seq_len(n), _["R"] = 0.0, _["r"] = 0.0));
+
+  // Create disjoint-set data structure to track components
+  UnionFind components = UnionFind(n);
+
+  // If n will create upwards of billions of iterations, make a progress bar
+  const bool use_progress_bar = n > 1000;
+  Progress* p = nullptr;
+  if (use_progress_bar) p = new Progress(n, true);
+
+  // Grow r from 0 \to \infty
+  int c_i = 0;
+  for (NumericVector::const_iterator r = lambda.begin(); r != lambda.end(); ++r) {
+    if (use_progress_bar) { Progress::check_abort(); }
+    if (c_i % 20 == 0){ Rcpp::checkUserInterrupt(); }
+
+    // Update components
+    // TODO: optimize/vectorize this with Rcpp sugar somehow
+    int i = 0;
+    for (NumericVector::const_iterator dist_ij = x.begin(); dist_ij != x.end(); ++dist_ij, ++i){
+
+      // Retrieve index of x_i and x_j
+      int x_i = INDEX_TO(i, n), x_j = INDEX_FROM(i, n, x_i);
+
+      // Get neighborhood radii of x_i and x_j
+      double rk_i = r_k.at(x_i), rk_j = r_k.at(x_j);
+
+      // Evaluate the linkage conditions
+      bool include = (rk_i <= (*r)) && (rk_j <= (*r)) && (*dist_ij) <= alpha * (*r);
+
+      // Based on the evaluation, choose to create a link or not
+      if (include){ components.Union(x_i, x_j); }
+    }
+    // Retrieve the old and new connected components
+    List prev_cl = clustertree.at(c_i);
+    IntegerVector prevCCs = as<IntegerVector>(prev_cl["cluster"]), CCs = getCC(components) + 1;
+
+    // If the CCs differ than the previous iteration, save this as the earliest change, otherwise continue
+    if (any(prevCCs != CCs).is_true()){
+      clustertree.push_back(List::create(_["cluster"] = CCs, _["R"] = alpha * (*r), _["r"] = *r));
+      c_i++;
+      if (use_progress_bar) p->increment();
+    } else { continue; }
+
+    // No reason to continue further
+    if (clustertree.length() == n - 1) break;
+  }
+  // Remove singleton case
+  // clustertree.erase(0);
+  return clustertree;
+}
+
+
+  //
+  // // Retrieve the full integer vector representing component membership (by reference)
+  // void CC(UnionFind& uf, IntegerVector& cc, std::vector<int>& admitted){
+  //   for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
+  //     cc[*it] = uf.Find(*it);
+  //   }
+  // }
+  //
+  //
+  // void CC_noise(UnionFind& uf, std::vector<bool>& admitted){
+  //   // for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
+  //   //   cc[*it] = uf.Find(*it);
+  //   // }
+  //   for (int i = 0; i < uf.size; ++i){
+  //     Rcout << (admitted[i] ? uf.Find(i) : 0) << " ";
+  //   }
+  // }
+  //
+  // void printCC(UnionFind& uf, std::vector<bool>& admitted){
+  //   // for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
+  //   //   cc[*it] = uf.Find(*it);
+  //   // }
+  //   for (int i = 0; i < uf.size; ++i){
+  //     Rcout << (admitted[i] ? uf.Find(i) : 0) << " ";
+  //   }
+  // }
+  //
+  // // Retrieve the full integer vector representing component membership (by reference)
+  // void CC(UnionFind& uf, IntegerVector& cc, std::vector<bool>& admitted){
+  //   for (int i = 0; i < uf.size; ++i){
+  //     cc[i] = admitted[i] ? uf.Find(i) : 0;
+  //   }
+  // }
+  //
+  //
+  // /* -- CC_changed --
+  // * This function controls for the detection of a change between two sets of connected
+  // * components, restricted to only look for changes between points that have been admitted into
+  // * G_r.
+  // */
+  // bool CC_changed(IntegerVector current_CC, IntegerVector previous_CC, std::vector<int>& admitted){
+  //   if (admitted.size() < 2) return(false);
+  //   for (std::vector<int>::iterator it = admitted.begin(); it != admitted.end(); ++it){
+  //     if (current_CC[*it] != previous_CC[*it]) {// && contains(admitted, current_CC[*it])){
+  //       return(true);
+  //     }
+  //   }
+  //   return(false);
+  // }
+  //
+  // // Returns the indices of admitted points that were newly included
+  // IntegerVector which_added(IntegerVector current_CC, IntegerVector previous_CC,
+  //                           std::vector<int>& admitted,
+  //                           std::vector<bool>& included){
+  //   IntegerVector changed = IntegerVector();
+  //   for (std::vector<int>::iterator it = admitted.begin(); it != admitted.end(); ++it){
+  //     if (current_CC[*it] != previous_CC[*it] && included[*it] == 0) {// && contains(admitted, current_CC[*it])){
+  //       changed.push_back(*it);
+  //     }
+  //   }
+  //   return(changed);
+  // }
+  //
+  // IntegerMatrix mergeOrder(const NumericVector x){
+  //   const int n = as<int>(x.attr("Size"));
+  //   Function order = Function("order");
+  //   IntegerVector r_order = as<IntegerVector>(order(x)) - 1;
+  //   IntegerMatrix merge_order = IntegerMatrix(x.length(), 2);
+  //   int i = 0;
+  //   for(NumericVector::const_iterator r = x.begin(); r != x.end(); ++r, ++i){
+  //     int to = INDEX_TO(r_order.at(i), n), from = INDEX_FROM(r_order.at(i), n, to);
+  //     merge_order(i, _) = IntegerVector::create(from, to);
+  //   }
+  //   return(merge_order);
+  // }
+  //
 //
-// // Retrieve the full integer vector representing component membership (by reference)
-// void CC(UnionFind& uf, IntegerVector& cc, std::vector<int>& admitted){
-//   for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
-//     cc[*it] = uf.Find(*it);
-//   }
-// }
-//
-// // Retrieve the full integer vector representing component membership
-// IntegerVector getCC(UnionFind& uf, std::vector<bool>& admitted){
-//   IntegerVector cc = Rcpp::no_init(uf.size);
-//   for (int i = 0; i < uf.size; ++i){ cc[i] = admitted[i] ? uf.Find(i) : 0; }
-//   return(cc);
-// }
-//
-// void CC_noise(UnionFind& uf, std::vector<bool>& admitted){
-//   // for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
-//   //   cc[*it] = uf.Find(*it);
-//   // }
-//   for (int i = 0; i < uf.size; ++i){
-//     Rcout << (admitted[i] ? uf.Find(i) : 0) << " ";
-//   }
-// }
-//
-// void printCC(UnionFind& uf, std::vector<bool>& admitted){
-//   // for (std::vector<int>::iterator it = admitted.begin(); it < admitted.end(); ++it){
-//   //   cc[*it] = uf.Find(*it);
-//   // }
-//   for (int i = 0; i < uf.size; ++i){
-//     Rcout << (admitted[i] ? uf.Find(i) : 0) << " ";
-//   }
-// }
-//
-// // Retrieve the full integer vector representing component membership (by reference)
-// void CC(UnionFind& uf, IntegerVector& cc, std::vector<bool>& admitted){
-//   for (int i = 0; i < uf.size; ++i){
-//     cc[i] = admitted[i] ? uf.Find(i) : 0;
-//   }
-// }
-//
-//
-// /* -- CC_changed --
-// * This function controls for the detection of a change between two sets of connected
-// * components, restricted to only look for changes between points that have been admitted into
-// * G_r.
-// */
-// bool CC_changed(IntegerVector current_CC, IntegerVector previous_CC, std::vector<int>& admitted){
-//   if (admitted.size() < 2) return(false);
-//   for (std::vector<int>::iterator it = admitted.begin(); it != admitted.end(); ++it){
-//     if (current_CC[*it] != previous_CC[*it]) {// && contains(admitted, current_CC[*it])){
-//       return(true);
-//     }
-//   }
-//   return(false);
-// }
-//
-// // Returns the indices of admitted points that were newly included
-// IntegerVector which_added(IntegerVector current_CC, IntegerVector previous_CC,
-//                           std::vector<int>& admitted,
-//                           std::vector<bool>& included){
-//   IntegerVector changed = IntegerVector();
-//   for (std::vector<int>::iterator it = admitted.begin(); it != admitted.end(); ++it){
-//     if (current_CC[*it] != previous_CC[*it] && included[*it] == 0) {// && contains(admitted, current_CC[*it])){
-//       changed.push_back(*it);
-//     }
-//   }
-//   return(changed);
-// }
-//
-// IntegerMatrix mergeOrder(const NumericVector x){
-//   const int n = as<int>(x.attr("Size"));
-//   Function order = Function("order");
-//   IntegerVector r_order = as<IntegerVector>(order(x)) - 1;
-//   IntegerMatrix merge_order = IntegerMatrix(x.length(), 2);
-//   int i = 0;
-//   for(NumericVector::const_iterator r = x.begin(); r != x.end(); ++r, ++i){
-//     int to = INDEX_TO(r_order.at(i), n), from = INDEX_FROM(r_order.at(i), n, to);
-//     merge_order(i, _) = IntegerVector::create(from, to);
-//   }
-//   return(merge_order);
-// }
-//
-// List checkKruskals(const NumericVector x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095){
-//
-//   // Number of data points
-//   const int n = as<int>(x.attr("Size"));
-//
-//   // Get sorted radii
-//   NumericVector radii = Rcpp::clone(x).sort(false) * alpha;
-//   NumericVector l2 = Rcpp::clone(x).sort(false) ;
-//
-//   // Get order of original; use R order function to get consistent ordering
-//   Function order = Function("order");
-//   IntegerVector r_order = as<IntegerVector>(order(x)) - 1;
 //
 //   // Set up connected components (initialized as singletons)
 //   UnionFind components = UnionFind(n);
@@ -168,25 +233,25 @@ using namespace Rcpp;
 //       }
 //
 //     }
-//
-//     // if (i == 81){
-//     //   Rcout << "from: " << from << " to: " << to << std::endl;
-//     //   Rcout << "admitted from: " << admitted[from] << " to: " << admitted[to] << std::endl;
-//     // }
-//
-//     // Union points which have been admitted, (potentially) mutating the current set of connected components
-//     if (admitted.at(from) && admitted.at(to)){
-//       //Rcout << "Unioning: " << from << ", " << to << std::endl;
-//       components.Union(from, to);
-//     } else
-//       // If one or more of the points is not current in G_r, need to save it to a list to check for admissability
-//       // later as the growing radius approaches varying neighorhood sizes
-//     {
-//       if (i == 81){
-//         Rcout << "Pushing back " << from << ", " << to << std::endl;
-//       }
-//       to_connect.push_back(double_edge(from, to, *r));
-//     }
+
+    // if (i == 81){
+    //   Rcout << "from: " << from << " to: " << to << std::endl;
+    //   Rcout << "admitted from: " << admitted[from] << " to: " << admitted[to] << std::endl;
+    // }
+
+    // // Union points which have been admitted, (potentially) mutating the current set of connected components
+    // if (admitted.at(from) && admitted.at(to)){
+    //   //Rcout << "Unioning: " << from << ", " << to << std::endl;
+    //   components.Union(from, to);
+    // } else
+    //   // If one or more of the points is not current in G_r, need to save it to a list to check for admissability
+    //   // later as the growing radius approaches varying neighorhood sizes
+    // {
+    //   if (i == 81){
+    //     Rcout << "Pushing back " << from << ", " << to << std::endl;
+    //   }
+    //   to_connect.push_back(double_edge(from, to, *r));
+    // }
 //
 //
 //

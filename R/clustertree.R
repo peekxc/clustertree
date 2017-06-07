@@ -10,22 +10,35 @@
 #' @import dbscan
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, k = ncol(x) * log(nrow(x)), alpha = sqrt(2)){
+clustertree <- function(x, k = "suggest", alpha = "suggest", algorithm = "RSL"){
   if (is(x, "dist")){
     if (attr(x, "method") != "euclidean")
       warning("Robust Single Linkage expects euclidean distances. See ?clustertree for more details.")
     dist_x <- x
-    x <- as.matrix(eval(attributes(dist_x)$call[["x"]], envir = parent.env(environment())))
-    # k <- ifelse(missing(k), log(attr(dist_x, "Size")), k)
+    original_symbol <- as.character(attr(dist_x, "call")[["x"]])
+
+    ## Attempt to retrieve original data set and thus dimensionality
+    if (original_symbol %in% ls(parent.frame(1))){
+      x <- as.matrix(eval(original_symbol, envir = parent.frame(1)))
+      k <- ifelse(missing(k),  ncol(x) * log(nrow(x)), k)
+    } else { k <- ifelse(missing(k), log(nrow(x)), k) }
   } else {
     x <- as.matrix(x)
     dist_x <- dist(x, method = "euclidean")
+    k <- ifelse(missing(k), ncol(x) * log(nrow(x)), k)
     if (!is.matrix(x)) stop("clustertree expects the data to be either matrix-convertible or a dist-object.")
   }
   k <- as.integer(k)
+  alpha <- ifelse(missing(alpha), sqrt(2), alpha)
+
+  ## Warn about parameter settings yielding unknown results
+  if (k < floor(ncol(x) * log(nrow(x))))
+    warning("Existing analysis on RSL rely on alpha being at least sqrt(2) and k being at least as large as d*logn.")
   r_k <- dbscan::kNNdist(x, k = k - 1)
   res <- clusterTree(x = dist_x, r_k = r_k[, k - 1], k = k, alpha = alpha)
   res$call <- match.call()
   res$method <- "robust single linkage"
+  res$k <- k
+  res$alpha <- alpha
   res
 }

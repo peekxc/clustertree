@@ -10,8 +10,9 @@ License: MIT + file LICENSE
 Imports: 
   Rcpp (>= 0.12.9),
   dbscan, 
-  igraph
+  igraph, 
+  RcppProgress
 Suggests: 
   testthat
-LinkingTo: Rcpp
+LinkingTo: Rcpp, RcppProgress
 RoxygenNote: 6.0.1

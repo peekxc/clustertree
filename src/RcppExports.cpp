@@ -19,48 +19,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// lowerTri
-IntegerVector lowerTri(IntegerMatrix m);
-RcppExport SEXP clustertree_lowerTri(SEXP mSEXP) {
+// naive_clustertree
+List naive_clustertree(const NumericVector x, const NumericVector r_k, const double alpha);
+RcppExport SEXP clustertree_naive_clustertree(SEXP xSEXP, SEXP r_kSEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerMatrix >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(lowerTri(m));
-    return rcpp_result_gen;
-END_RCPP
-}
-// combine
-NumericVector combine(const NumericVector& t1, const NumericVector& t2);
-RcppExport SEXP clustertree_combine(SEXP t1SEXP, SEXP t2SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type t1(t1SEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type t2(t2SEXP);
-    rcpp_result_gen = Rcpp::wrap(combine(t1, t2));
-    return rcpp_result_gen;
-END_RCPP
-}
-// concat_int
-IntegerVector concat_int(List const& container);
-RcppExport SEXP clustertree_concat_int(SEXP containerSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List const& >::type container(containerSEXP);
-    rcpp_result_gen = Rcpp::wrap(concat_int(container));
-    return rcpp_result_gen;
-END_RCPP
-}
-// order_
-IntegerVector order_(NumericVector x);
-RcppExport SEXP clustertree_order_(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(order_(x));
+    Rcpp::traits::input_parameter< const NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type r_k(r_kSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(naive_clustertree(x, r_k, alpha));
     return rcpp_result_gen;
 END_RCPP
 }
