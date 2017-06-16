@@ -17,9 +17,34 @@ IntegerVector getCC(UnionFind& uf){
   return(cc);
 }
 
+// Computes the connection radius, i.e. the linkage criterion
+// This allows validation of various RSL-type algorithms using naive implementations
+inline bool checkConnectionRadius(double r, double dist_ij, double radius_i, double radius_j, double alpha,
+                                const int type) {
+  switch(type){
+  // Robust Single Linkage from 2010 paper
+  case 0:
+    return (radius_i <= (r)) && (radius_j <= (r)) && (dist_ij) <= alpha * (r);
+    break;
+  // kNN graph from Algorithm 2 from Luxburgs 2014 paper
+  case 1:
+    return (radius_i <= (r)) && (radius_j <= (r)) && (dist_ij) <= alpha * std::max(radius_i, radius_j);
+    break;
+  // mutual kNN graph from Algorithm 2 from Luxburgs 2014 paper
+  case 2:
+    return (radius_i <= (r)) && (radius_j <= (r)) && (dist_ij) <= alpha * std::min(radius_i, radius_j);
+    break;
+  default:
+    Rcpp::stop("Not a valid neighborhood query type");
+  }
+  return false;
+}
+
+
 // Naive brute-force approach
 // [[Rcpp::export]]
-List naive_clustertree(const NumericVector x, const NumericVector r_k, const double alpha = 1.414213562373095){
+List naive_clustertree(const NumericVector x, const NumericVector r_k, const double alpha = 1.414213562373095,
+                       const int type = 0){
 
   // Number of data points
   const int n = as<int>(x.attr("Size"));
@@ -61,7 +86,8 @@ List naive_clustertree(const NumericVector x, const NumericVector r_k, const dou
       double rk_i = r_k.at(x_i), rk_j = r_k.at(x_j);
 
       // Evaluate the linkage conditions
-      bool include = (rk_i <= (*r)) && (rk_j <= (*r)) && (*dist_ij) <= alpha * (*r);
+      bool include = checkConnectionRadius(*r, *dist_ij, rk_i, rk_j, alpha, type);
+      //(rk_i <= (*r)) && (rk_j <= (*r)) && (*dist_ij) <= alpha * (*r);
 
       // Based on the evaluation, choose to create a link or not
       if (include){ components.Union(x_i, x_j); }
@@ -71,8 +97,10 @@ List naive_clustertree(const NumericVector x, const NumericVector r_k, const dou
     IntegerVector prevCCs = as<IntegerVector>(prev_cl["cluster"]), CCs = getCC(components) + 1;
 
     // If the CCs differ than the previous iteration, save this as the earliest change, otherwise continue
-    if (any(prevCCs != CCs).is_true()){
+    LogicalVector changes = (prevCCs != CCs);
+    if (any(changes).is_true()){
       clustertree.push_back(List::create(_["cluster"] = CCs, _["R"] = alpha * (*r), _["r"] = *r));
+                                         // _["which"] = which_cpp(changes, true)));
       c_i++;
       if (use_progress_bar) p->increment();
     } else { continue; }

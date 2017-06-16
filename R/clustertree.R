@@ -11,18 +11,19 @@
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, k = "suggest", alpha = "suggest", algorithm = "RSL"){
+clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mKnn")){
   if (is(x, "dist")){
     if (attr(x, "method") != "euclidean")
       warning("Robust Single Linkage expects euclidean distances. See ?clustertree for more details.")
     dist_x <- x
-    original_symbol <- as.character(attr(dist_x, "call")[["x"]])
+    k <- ifelse(missing(k), log(nrow(dist_x)), k)
 
+    # original_symbol <- as.character(attr(dist_x, "call")[["x"]])
     ## Attempt to retrieve original data set and thus dimensionality
-    if (original_symbol %in% ls(parent.frame(1))){
-      x <- as.matrix(eval(original_symbol, envir = parent.frame(1)))
-      k <- ifelse(missing(k),  ncol(x) * log(nrow(x)), k)
-    } else { k <- ifelse(missing(k), log(nrow(x)), k) }
+    # if (original_symbol %in% ls(parent.frame(1))){
+    #   x <- as.matrix(eval(original_symbol, envir = parent.frame(1)))
+    #   k <- ifelse(missing(k),  ncol(x) * log(nrow(x)), k)
+    # } else { k <- ifelse(missing(k), log(nrow(x)), k) }
   } else {
     x <- as.matrix(x)
     dist_x <- dist(x, method = "euclidean")
@@ -32,11 +33,18 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", algorithm = "RSL"){
   k <- as.integer(k)
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
+  ## Choose estimator
+  type <- ifelse(missing(estimator), 0, pmatch(estimator, c("RSL", "knn", "mKnn")))
+  if (is.na(type)){
+    stop(paste0("Unknown estimator supplied. Please use one of: [", paste0(c("RSL", "knn", "mKnn"), collapse = ", "), "]"))
+  }
+
   ## Warn about parameter settings yielding unknown results
   if (k < floor(ncol(x) * log(nrow(x))))
     warning("Existing analysis on RSL rely on alpha being at least sqrt(2) and k being at least as large as d*logn.")
+
   r_k <- dbscan::kNNdist(x, k = k - 1)
-  res <- clusterTree(x = dist_x, r_k = r_k[, k - 1], k = k, alpha = alpha)
+  res <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
   res$call <- match.call()
   res$method <- "robust single linkage"
   res$k <- k

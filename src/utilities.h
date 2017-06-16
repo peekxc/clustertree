@@ -9,6 +9,8 @@ using namespace Rcpp;
 #define INDEX_TF(N,to,from) (N)*(to) - (to)*(to+1)/2 + (from) - (to) - (1)
 #define INDEX_TO(k, n) n - 2 - floor(sqrt(-8*k + 4*n*(n-1)-7)/2.0 - 0.5)
 #define INDEX_FROM(k, n, i) k + i + 1 - n*(n-1)/2 + (n-i)*((n-i)-1)/2
+#define INDEX_FROM_KNN(i, k) i % k == 0 ? (i / k) - 1 : int(i / k);
+
 
 // std::to_string is apparently a c++11 only thing that crashes appveyor, so using ostringstream it is!
 namespace patch
@@ -40,6 +42,15 @@ inline IntegerVector lowerTri(IntegerMatrix m){
   }
   return(lower_tri);
 }
+
+inline IntegerVector which_cpp(LogicalVector x, bool value) {
+  int nx = x.size();
+  std::vector<int> y;
+  y.reserve(nx);
+  for(int i = 0; i < nx; ++i) { if (x[i] == value) y.push_back(i); }
+  return wrap(y);
+}
+
 
 inline IntegerVector which_cpp( NumericVector x, double value) {
   int nx = x.size();

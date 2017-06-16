@@ -41,7 +41,7 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
 
     ## Wisharts scheme: Only connect points that have at least
     ## k neighbors within distance r
-    eps <- mapply(function(i, j) ( l2_dist[i, j] <= r * alpha &&
+    eps <- mapply(function(i, j) ( l2_dist[i, j] <=  alpha * max(c(r_k[i], r_k[j])) &&
                                      r_k[i] <= r && # radius of x_i
                                      r_k[j] <= r ), # radius of x_j
                   row(l2_dist), col(l2_dist))
