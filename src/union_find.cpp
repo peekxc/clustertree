@@ -45,3 +45,30 @@ const int UnionFind::Find(const int x)
     parent[x] = Find(parent[x]);
   return(parent[x]);
 }
+
+IntegerVector UnionFind::getCC(){
+  IntegerVector cc = Rcpp::no_init(size);
+  for (unsigned int i = 0; i < size; ++i){ cc[i] = Find(i); }
+  return(cc);
+}
+
+// Comparison operators. Note that due to path compression, can't use const references
+bool UnionFind::operator==(UnionFind& other_cc){
+  bool matches = true;
+  for (unsigned int i = 0; matches && i < size; ++i){
+    matches = this->Find(i) == other_cc.Find(i);
+  }
+  return(matches);
+};
+bool UnionFind::operator!=(UnionFind& other_cc){
+  return(!(*this == other_cc));
+};
+
+// Merge operator merges the current CCs with another disjoint set,
+// subject to admittance
+void UnionFind::merge(UnionFind &other_cc, LogicalVector& admitted){
+  for (int i = 0; i < size; ++i){
+    //if (admitted.at(i)){ this->Un other_cc.Find(i); }
+  }
+}
+

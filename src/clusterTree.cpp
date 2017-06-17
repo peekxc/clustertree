@@ -6,31 +6,31 @@ using namespace Rcpp;
 #include "utilities.h"
 
 // Computes the connection radius, i.e. the linkage criterion
-inline double getConnectionRadius(double r, double radius_i, double radius_j, double alpha, const int type) {
+inline double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type) {
 
-  // Only admit edges with finite weight if allowed
-  // double min_radius = std::min(radius_i, radius_j);
-  // if (r > min_radius){ return std::numeric_limits<double>::infinity(); }
-
+  // Only admit edges with finite weight if the neighborhood radii allow
+  // Note that RSL will always form a complete hierarchy, so returning the numerical
+  // limits maximum isn't necessary.
+  double R;
   switch(type){
-  // Robust Single Linkage from 2010 paper
-  case 0:
-    return std::max(r / alpha, std::max(radius_i, radius_j));
-    break;
+    // Robust Single Linkage from 2010 paper
+    case 0:
+      return std::max(dist_ij / alpha, std::max(radius_i, radius_j));
+      break;
     // kNN graph from Algorithm 2 from Luxburgs 2014 paper
-  case 1:
-    // return (radius_i <= (r)) && (radius_j <= (r)) && (dist_ij) <= alpha * std::max(radius_i, radius_j);
-    // double max_radius = std::max(radius_i, radius_j);
-    return std::max(radius_i, radius_j);
-    break;
+    case 1:
+      R = alpha * std::max(radius_i, radius_j);
+      return dist_ij <= R ? R : std::numeric_limits<double>::max();
+      break;
     // mutual kNN graph from Algorithm 2 from Luxburgs 2014 paper
-  case 2:
-    return std::min(r / alpha, std::max(radius_i, radius_j));
-    break;
-  default:
-    Rcpp::stop("Not a valid neighborhood query type");
-  }
-  return false;
+    case 2:
+      R = alpha * std::min(radius_i, radius_j);
+      return dist_ij <= R ? R : std::numeric_limits<double>::max();
+      break;
+    default:
+      Rcpp::stop("Not a valid neighborhood query type");
+    }
+  return std::numeric_limits<double>::max();
 }
 
 // Recursively visit the merge matrix to extract an hclust sufficient ordering
@@ -91,7 +91,8 @@ NumericMatrix kruskalsMST(const NumericVector dist_x){
 // Algorithm 2: kNN Graph
 // r_k := vector of k - 1 nearest neighbors
 // knn_indices := id's of knn correspond to r_k
-NumericMatrix kruskalsKNN(const NumericVector r_k,
+List kruskalsKNN(const NumericVector dist_x,
+                          const NumericVector r_k,
                           const IntegerVector knn_indices,
                           const int n, const int k, const double alpha){
 
@@ -104,28 +105,76 @@ NumericMatrix kruskalsKNN(const NumericVector r_k,
 
   // Get order of original; use R order function to get consistent ordering
   Function order = Function("order"), duplicated = Function("duplicated");
-  IntegerVector r_order = as<IntegerVector>(order(r_k)) - 1;
+  IntegerVector rk_order = as<IntegerVector>(order(r_k)) - 1;
+  LogicalVector admitted = LogicalVector(n, false);
+
+  IntegerVector x_order = as<IntegerVector>(order(dist_x)) - 1;
+  NumericVector inc_dist = Rcpp::clone(dist_x).sort(false);
 
   // Create disjoint-set data structure to track components
   UnionFind components = UnionFind(n);
-  int i = 0, crow = 0;
-  for (NumericVector::const_iterator r = lambda.begin(); r != lambda.end(); ++r, ++i) {
+  UnionFind prev_components = UnionFind(n);
+  UnionFind dist_components = UnionFind(n);
 
-    // Retrieve index of x_i and x_j
-    int x_i = r_order.at(i); //(int) INDEX_FROM_KNN(i+1, k);
-    int x_j = int(knn_indices.at(x_i) - 1);
-    if (i < 10 || i % 100 == 0) Rcout << "i: " << i << ", " << x_i << " " << x_j << std::endl;
-    if (x_i < n && x_j < n){
-      if (components.Find(x_i) != components.Find(x_j)){
-        mst(crow, _) = NumericVector::create(x_i, x_j, *r);
-        crow++;
-        components.Union(x_i, x_j);
-        if (crow == n) break;
-      }
+  bool connect_next = false;
+  int i = 0, cr_k = 0, crow = 0, px_i = INDEX_TO(x_order.at(0), n), px_j = INDEX_FROM(x_order.at(0), n, px_i);
+  for(NumericVector::iterator dist_ij = inc_dist.begin(); dist_ij != inc_dist.end(); ++dist_ij, ++i){
+    int x_j = INDEX_TO(x_order.at(i), n), x_i = INDEX_FROM(x_order.at(i), n, x_j);
+    if (dist_components.Find(x_i) != dist_components.Find(x_j)) dist_components.Union(x_i, x_j);
+    while(cr_k < n - 1 && r_k.at(rk_order.at(cr_k)) <= (*dist_ij)) { admitted.at(int(rk_order.at(cr_k++))) = true; }
+    if (connect_next){
+      prev_components.Union(px_i, px_j);
+      connect_next = false;
+    }
+    if ((*dist_ij)/alpha <= lambda.at(cr_k) && admitted.at(x_i) && admitted.at(x_j)){
+        //IntegerVector CCs = components.getCC();
+        components.merge(dist_components, admitted);
+        if (components != prev_components)
+        {
+          mst(crow, _) = NumericVector::create(x_i, x_j, *dist_ij);
+          crow++;
+          components.Union(x_i, x_j);
+          px_i = x_i, px_j = x_j;
+          connect_next = true;
+          if (crow == n) break;
+        }
     }
   }
 
-  return(mst);
+  // // Create disjoint-set data structure to track components
+  // UnionFind components = UnionFind(n);
+  // i = 0;
+  // int crow = 0;
+  // for (NumericVector::const_iterator r = lambda.begin(); r != lambda.end(); ++r, ++i) {
+  //   if (i % 100 == 0) Rcpp::checkUserInterrupt();
+  //
+  //   // Point x_i becomes admitted into the graph G_r
+  //   admitted.at(r_order.at(i)) = true;
+  //
+  //   // Retrieve index of x_i and x_j
+  //   // if (i < 2){
+  //   //   int from = INDEX_FROM_KNN(i+1, k);
+  //   //   Rcout << "rorder_i: " << r_order.at(i) << std::endl;
+  //   //   Rcout << "index from: " << ((int) from) << std::endl;
+  //   //   Rcout << "to: " << knn_indices.at( r_order.at(i)) - 1 << std::endl;
+  //   //   Rcout << "to_i: " <<  r_order.at(knn_indices.at( r_order.at(i)) - 1) << std::endl;
+  //   // }
+  //   int x_i = r_order.at(i); //(int) INDEX_FROM_KNN(i+1, k);
+  //   int x_j = int(knn_indices.at(x_i) - 1);
+  //   // int to = INDEX_TO(r_order.at(i), n), from = INDEX_FROM(r_order.at(i), n, to);
+  //
+  //
+  //   if (admitted.at(x_i) && admitted.at(x_j)) {
+  //     if (components.Find(x_i) != components.Find(x_j)){
+  //       mst(crow, _) = NumericVector::create(x_i, x_j, *r);
+  //       crow++;
+  //       components.Union(x_i, x_j);
+  //       if (crow == n) break;
+  //     }
+  //   }
+  // }
+
+  return(List::create(_["mst"] = mst, _["admitted"] = admitted));
 }
 
 /* primsMST
@@ -191,6 +240,7 @@ NumericMatrix primsMST(const NumericVector dist_x){
 * t_i := index of node to test against (relative to r_k)
 * d_i := index of distance from current node to test node (relative to r)
 */
+// [[Rcpp::export]]
 NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int n, const double alpha, const int type){
   // Set up resulting MST
   NumericMatrix mst = NumericMatrix(n - 1, 3);
@@ -240,7 +290,7 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
  * using a disjoint-set structure to track components
  * Notes: expects 0-based mst indices, and that all edge indices are 0 <= i < n
  */
-// [[Rcpp::export(name = ".mstToHclust")]]
+// [[Rcpp::export(name = "mstToHclust")]]
 List mstToHclust(NumericMatrix mst, const int n){
 
   // Extract merge heights and associated order of such heights
@@ -322,7 +372,7 @@ List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int 
       res = mstToHclust(primsRSL(r, r_k, n, alpha, 0), n);
       break;
     case 1:
-      res = List::create(kruskalsKNN(r_k, knn_indices, n, k, alpha));
+      res = kruskalsKNN(r, r_k, knn_indices, n, k, alpha);
       break;
     case 2:
       break;

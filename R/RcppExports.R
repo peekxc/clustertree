@@ -9,7 +9,11 @@ primsMST <- function(dist_x) {
     .Call('clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
 }
 
-.mstToHclust <- function(mst, n) {
+primsRSL <- function(r, r_k, n, alpha, type) {
+    .Call('clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
+}
+
+mstToHclust <- function(mst, n) {
     .Call('clustertree_mstToHclust', PACKAGE = 'clustertree', mst, n)
 }
 

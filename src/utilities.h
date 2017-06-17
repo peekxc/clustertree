@@ -11,7 +11,6 @@ using namespace Rcpp;
 #define INDEX_FROM(k, n, i) k + i + 1 - n*(n-1)/2 + (n-i)*((n-i)-1)/2
 #define INDEX_FROM_KNN(i, k) i % k == 0 ? (i / k) - 1 : int(i / k);
 
-
 // std::to_string is apparently a c++11 only thing that crashes appveyor, so using ostringstream it is!
 namespace patch
 {

@@ -10,13 +10,6 @@ using namespace Rcpp;
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 
-// Retrieve the full integer vector representing component membership
-IntegerVector getCC(UnionFind& uf){
-  IntegerVector cc = Rcpp::no_init(uf.size);
-  for (unsigned int i = 0; i < uf.size; ++i){ cc[i] = uf.Find(i); }
-  return(cc);
-}
-
 // Computes the connection radius, i.e. the linkage criterion
 // This allows validation of various RSL-type algorithms using naive implementations
 inline bool checkConnectionRadius(double r, double dist_ij, double radius_i, double radius_j, double alpha,
@@ -94,7 +87,7 @@ List naive_clustertree(const NumericVector x, const NumericVector r_k, const dou
     }
     // Retrieve the old and new connected components
     List prev_cl = clustertree.at(c_i);
-    IntegerVector prevCCs = as<IntegerVector>(prev_cl["cluster"]), CCs = getCC(components) + 1;
+    IntegerVector prevCCs = as<IntegerVector>(prev_cl["cluster"]), CCs = components.getCC() + 1;
 
     // If the CCs differ than the previous iteration, save this as the earliest change, otherwise continue
     LogicalVector changes = (prevCCs != CCs);
