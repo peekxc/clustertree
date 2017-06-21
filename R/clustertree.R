@@ -11,7 +11,7 @@
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mKnn"),
+clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mutual knn"),
                         warn_parameter_settings = FALSE){
   if (is(x, "dist")){
     if (attr(x, "method") != "euclidean" && warn_parameter_settings)
@@ -28,9 +28,10 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   ## Choose estimator
-  type <- ifelse(missing(estimator), 0, pmatch(estimator, c("RSL", "knn", "mKnn")))
+  possible_estimators <- c("RSL", "knn", "mutual knn")
+  type <- ifelse(missing(estimator), 0, pmatch(estimator, possible_estimators) - 1L)
   if (is.na(type)){
-    stop(paste0("Unknown estimator supplied. Please use one of: [", paste0(c("RSL", "knn", "mKnn"), collapse = ", "), "]"))
+    stop(paste0("Unknown estimator supplied. Please use one of: [", paste(possible_estimators, collapse = ", "), "]"))
   }
 
   ## Warn about parameter settings yielding unknown results

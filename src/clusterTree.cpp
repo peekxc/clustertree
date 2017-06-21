@@ -267,6 +267,8 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
         // Generic RSL step
         priority = getConnectionRadius(r[d_i], r_k[c_i], r_k[t_i], alpha, type);
         if (priority < fringe[t_i].weight) { // using max above implicitly ensures c_i and t_i are connected
+          // Rcout << "Updating fringe " << t_i << "w/ radii (" << r_k[c_i] << ", " << r_k[t_i] << ")" << std::endl;
+          // Rcout << "current: " << c_i << ", to: " << t_i << std::endl;
           fringe[t_i].weight = priority;
           fringe[t_i].to = c_i; // t_i indexes the 'from' node
         }
@@ -277,7 +279,8 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
         }
       }
     }
-    mst(n_edges, _) = NumericVector::create(min_id, c_i, min);
+    // Rcout << "Adding edge: (" << min_id << ", " << c_i << ") [" << min << "]" << std::endl;
+    mst(n_edges, _) = NumericVector::create(min_id, c_i, type == 0 ? min * alpha : min);
     v_selected[c_i] = 1;
     c_i = min_id;
   }
@@ -346,7 +349,6 @@ List mstToHclust(NumericMatrix mst, const int n){
 // [[Rcpp::export]]
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095,
                  const int type = 0, IntegerVector knn_indices = IntegerVector()) {
-  Rcout << "starting cluster tree" << std::endl;
   std::string message = "clusterTree expects a 'dist' object.";
   if (!dist_x.hasAttribute("class") || as<std::string>(dist_x.attr("class")) != "dist") { stop(message); }
   if (!dist_x.hasAttribute("method")) { stop(message); }
@@ -359,29 +361,10 @@ List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int 
   // Get ordered radii, use R order function to get consistent ordering
   NumericVector r = Rcpp::clone(dist_x);
 
-  //Rcout << "converting to linear" << std::endl;
-  //NumericVector r_k_linear = as<NumericVector>(r_k);
   // Run the MST with set parameters
+  NumericMatrix mst = primsRSL(r, r_k, n, alpha, type);
 
-
-  // Rcout << "converting to linear" << std::endl;
-  List res;
-  //NumericMatrix mst;
-  switch(type){
-    case 0:
-      res = mstToHclust(primsRSL(r, r_k, n, alpha, 0), n);
-      break;
-    case 1:
-      res = kruskalsKNN(r, r_k, knn_indices, n, k, alpha);
-      break;
-    case 2:
-      break;
-    default:
-      Rcpp::stop("Invalid type supplied.");
-      break;
-  }
-
-  // Use MST to create condensed hclust hierarchy
-  //List res = mstToHclust(mst, n);
+  // Convert to HCLUST object
+  List res = mstToHclust(mst, n);
   return (res);
 }
