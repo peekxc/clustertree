@@ -4,15 +4,17 @@
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/peekxc/clustertree?branch=master&svg=true)](https://ci.appveyor.com/project/peekxc/clustertree)
 
 `clustertree` is a fast and extensible [R package](https://www.r-project.org/package) for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
-<div style = "text-align:center" align="center"> <img src="clustertree.svg" width = "278"/> </div>
+<div style = "text-align:center" align="center"> <img src="https://cdn.rawgit.com/peekxc/clustertree/mst_estimators/clustertree.svg" width = "278"/> </div>
 From a high-level perspective, the cluster tree provides a highly interpretable, multi-resolution, and statistically sound summary of the underlying density of a [finite] sample. The package includes both tools and complete implementations of the following (growing) list of estimators: 
 
---
+---
 1. The **Robust Single Linkage (RSL)** algorithm from: 
+> Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
+
+2. The **KNN** and **Mutual KNN** variants from Algorithm 2 analyzed in:
+> Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
 	
-	> Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
-	
---
+---
 
 For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.  
 <!--The applications are many—density-based clustering is one such application. The benefits of density-based clustering are numerous, including the ability to capture clusters of arbitrary or non-convex shapes, they do not require *a priori* knowledge concerning number of clusters to find, and they are more often than not robust to varying amounts noise. Akin to some density-based clustering approaches, the cluster tree shares another benefit relatively absent in other clustering approaches: the definition of what constitutes a cluster and its overall object of inference, the hierarchical tree of high-density clusters, is clearly and formally stated. -->
