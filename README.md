@@ -4,7 +4,7 @@
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/peekxc/clustertree?branch=master&svg=true)](https://ci.appveyor.com/project/peekxc/clustertree)
 
 `clustertree` is a fast and extensible [R package](https://www.r-project.org/package) for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
-<div style = "text-align:center" align="center"> <img src="https://cdn.rawgit.com/peekxc/clustertree/mst_estimators/clustertree.svg" width = "278"/> </div>
+<div style = "text-align:center" align="center"> <img src="https://cdn.rawgit.com/peekxc/70e7d5981eae299ba47b3783e30ccb94/raw/f079d38964664e9f85fe13a6bc34758f0967875f/clustertree.svg%2520" width = "278"/> </div>
 From a high-level perspective, the cluster tree provides a highly interpretable, multi-resolution, and statistically sound summary of the underlying density of a [finite] sample. The package includes both tools and complete implementations of the following (growing) list of estimators: 
 
 ---
