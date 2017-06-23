@@ -21,7 +21,23 @@ clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L, kn
     .Call('clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type, knn_indices)
 }
 
+DTB <- function(x, k = 5L) {
+    .Call('clustertree_DTB', PACKAGE = 'clustertree', x, k)
+}
+
 naive_clustertree <- function(x, r_k, alpha = 1.414213562373095, type = 0L) {
     .Call('clustertree_naive_clustertree', PACKAGE = 'clustertree', x, r_k, alpha, type)
+}
+
+kd_knn <- function(query_x, tree_ptr, k) {
+    .Call('clustertree_kd_knn', PACKAGE = 'clustertree', query_x, tree_ptr, k)
+}
+
+kdtree <- function(x) {
+    .Call('clustertree_kdtree', PACKAGE = 'clustertree', x)
+}
+
+kNN_int <- function(data, k, type, bucketSize, splitRule, approx) {
+    .Call('clustertree_kNN_int', PACKAGE = 'clustertree', data, k, type, bucketSize, splitRule, approx)
 }
 

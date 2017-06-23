@@ -46,3 +46,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   res$alpha <- alpha
   res
 }
+
+.onUnload <- function (libpath) {
+  library.dynam.unload("clustertree", libpath)
+}

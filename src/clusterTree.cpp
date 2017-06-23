@@ -231,7 +231,6 @@ NumericMatrix primsMST(const NumericVector dist_x){
   return(mst);
 }
 
-
 /*
 * Compute MST using variant of Prim's, constrained by the radius of the Balls around each x_i.
 * Requires several array-type or indicator variables, namely:
