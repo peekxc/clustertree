@@ -27,7 +27,7 @@ void ANNkd_tree::ann_dt_kSearch(
     int				    k,				    // number of near neighbors to return
     ANNidxArray	  nn_idx,			  // nearest neighbor array (modified)
     ANNdistArray  dd,				    // dist to near neighbors (modified)
-    // ANNkd_tree* query_tree,  // query tree for dual tree traversal
+    ANNkd_tree* query_tree,  // query tree for dual tree traversal
     double			  eps           // error bound
 ){
   kd_dim = dim;						// copy arguments to static equivs
@@ -45,6 +45,8 @@ void ANNkd_tree::ann_dt_kSearch(
   k_min_pts = new ANNmin_k(k);		// create set for closest k points
 
   // search starting at the root
+  //query_tree->root->getStats()
+  // pidx[0];
   root->ann_dt_search(annBoxDistance(q, bnd_box_lo, bnd_box_hi, dim));
 
   for (int i = 0; i < k; i++) {		// extract the k-th closest points
@@ -157,20 +159,38 @@ void ANNkd_leaf::ann_dt_search(ANNdist box_dist)
   ANNptsVisited += n_pts;		// increment number of points visited
 }
 
+
+class DT_Abstract : ANNkd_tree {
+public:
+  DT_Abstract(ANNkd_tree* ref_tree) {
+    this->root;
+  }
+  ANNidxArray getIDXArray(){
+    return this->pidx;
+  }
+
+  IntegerVector child_nodes(int pos){
+    IntegerVector child_ids = IntegerVector();
+    for (int i = 0; i < this->nPoints(); i++){
+    }
+
+  }
+};
 // double knnBaseCase(ANNkd_split N_q, ANNkd_split N_r){
 //   N_q.
 // }
 //
-// double knnScore(ANNkd_ptr N_q, ANNkd_ptr N_r){
-//   ANN_POW()
-// }
-//
+
+double Score(ANNcoord* N_q, ANNcoord* N_r){
+  N_q
+}
+
 // // Base Depth-First Search framework for the Dual Tree traversals
-// void DFS(ANNkd_ptr N_q, ANNkd_ptr N_r){
-//   if (){
-//
-//   }
-// }
+void DFS(DT_Abstract* qtree, DT_Abstract* rtree){
+  if (Score){
+
+  }
+}
 
 // Unimplemented
 void ANNbd_shrink::ann_dt_search(ANNdist box_dist){
@@ -213,7 +233,7 @@ List DTB(NumericMatrix x, int k = 5) {
     ANNpoint queryPt = &query_pt.at(0);
 
     // Search the kd tree
-    kdTree->ann_dt_kSearch(queryPt, k+1, nnIdx, dists, 0);
+    kdTree->ann_dt_kSearch(queryPt, k+1, nnIdx, dists, kdTree,  0);
 
     // Remove self matches
     IntegerVector ids = IntegerVector(nnIdx, nnIdx+k+1);

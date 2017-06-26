@@ -784,7 +784,7 @@ class DLL_API ANNkd_tree: public ANNpointSet {
 	    int				k,				// number of near neighbors to return
 	    ANNidxArray		nn_idx,			// nearest neighbor array (modified)
 	    ANNdistArray	dd,				// dist to near neighbors (modified)
-	    // ANNkd_tree* query_tree, // query tree for dual tree traversal
+	    ANNkd_tree* query_tree, // query tree for dual tree traversal
 	    double			eps=0.0 // error bound
 	    );
 
