@@ -228,10 +228,10 @@ List DTB(NumericMatrix x, int k = 5) {
   List res = List::create(_["dist"] = d, _["id"] = id);
 
   DT_Abstract abstract_dt = DT_Abstract(kdTree);
-  IntegerVector child_ids = abstract_dt.child_nodes();
+  IntegerVector child_ids = abstract_dt.child_ids();
   res["child_ids"] = child_ids;
   res["ids"] = abstract_dt.getIDXArray();
-  res["box_dists"] = abstract_dt.convex_subset();
+  res["c_subsets"] = abstract_dt.convex_subset();
   // std::filebuf fb;
   // fb.open ("test_kdtree.txt",std::ios::out);
   // std::ostream os(&fb);

@@ -103,6 +103,7 @@ public:
 	virtual void held_in_node(std::vector<int>& ids){ return; }
   virtual ANNdist max_child_dist(){ return 0; }
 	virtual ANNdist max_desc_dist(){ return 0; }
+	virtual ANNcoord* convex_subset() { return NULL; }
 
 };
 
