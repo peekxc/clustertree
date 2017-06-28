@@ -714,8 +714,11 @@ class ANNkdStats;				// stats on kd-tree
 class ANNkd_node;				// generic node in a kd-tree
 typedef ANNkd_node*	ANNkd_ptr;	// pointer to a kd-tree node
 
+// class DT_Abstract; // Forward declaration
+
 class DLL_API ANNkd_tree: public ANNpointSet {
-    protected:
+  friend class DT_Abstract;
+protected:
 	int				dim;				// dimension of space
 	int				n_pts;				// number of points in tree
 	int				bkt_size;			// bucket size

@@ -1,6 +1,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+#include <iostream>     // std::cout, std::ostream, std::ios
+#include <fstream>      // std::filebuf
+
 // ANN library
 #include "ANN/ANN.h"
 #include "kd_search.h" // kd-search declarations
@@ -9,9 +12,8 @@ using namespace Rcpp;
 // KD tree R-accessible functions
 #include "R_kdtree.h"
 
-#include <iostream>     // std::cout, std::ostream, std::ios
-#include <fstream>      // std::filebuf
-
+// ANN extensions
+#include "DT_Abstract.h"
 
 // Static globals to simplify recursion
 int				    kd_dim;				    // dimension of space
@@ -158,44 +160,22 @@ void ANNkd_leaf::ann_dt_search(ANNdist box_dist)
   ANN_PTS(n_pts)						// increment points visited
   ANNptsVisited += n_pts;		// increment number of points visited
 }
-
-
-class DT_Abstract : ANNkd_tree {
-public:
-  DT_Abstract(ANNkd_tree* ref_tree) {
-    this->root;
-  }
-  ANNidxArray getIDXArray(){
-    return this->pidx;
-  }
-
-  IntegerVector child_nodes(int pos){
-    IntegerVector child_ids = IntegerVector();
-    for (int i = 0; i < this->nPoints(); i++){
-    }
-
-  }
-};
 // double knnBaseCase(ANNkd_split N_q, ANNkd_split N_r){
 //   N_q.
 // }
 //
 
-double Score(ANNcoord* N_q, ANNcoord* N_r){
-  N_q
-}
+// double Score(ANNcoord* N_q, ANNcoord* N_r){
+//   N_q
+// }
 
 // // Base Depth-First Search framework for the Dual Tree traversals
-void DFS(DT_Abstract* qtree, DT_Abstract* rtree){
-  if (Score){
+// void DFS(DT_Abstract* qtree, DT_Abstract* rtree){
+//   // if (Score){
+//   //
+//   // }
+// }
 
-  }
-}
-
-// Unimplemented
-void ANNbd_shrink::ann_dt_search(ANNdist box_dist){
-
-}
 
 // [[Rcpp::export]]
 List DTB(NumericMatrix x, int k = 5) {
@@ -247,6 +227,11 @@ List DTB(NumericMatrix x, int k = 5) {
   }
   List res = List::create(_["dist"] = d, _["id"] = id);
 
+  DT_Abstract abstract_dt = DT_Abstract(kdTree);
+  IntegerVector child_ids = abstract_dt.child_nodes();
+  res["child_ids"] = child_ids;
+  res["ids"] = abstract_dt.getIDXArray();
+  res["box_dists"] = abstract_dt.convex_subset();
   // std::filebuf fb;
   // fb.open ("test_kdtree.txt",std::ios::out);
   // std::ostream os(&fb);

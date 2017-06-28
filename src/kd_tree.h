@@ -53,6 +53,12 @@ public:
 
 	virtual void ann_dt_search(ANNdist) = 0; // dual-tree search
 
+	// --- Node-specific extensions ---
+	virtual void child_ids(std::vector<int>& ids) = 0; // get all child ids, recursively
+	virtual void held_in_node(std::vector<int>& ids) = 0; // get ids of points held within a node
+	virtual ANNdist max_child_dist() = 0; // max distance between points held in node and centroid of convex subset
+	virtual ANNdist max_desc_dist() = 0; // max distance between all descendent points and centroid of convex subset
+
 	virtual void getStats(						// get tree statistics
 				int dim,						// dimension of space
 				ANNkdStats &st,					// statistics
@@ -62,6 +68,7 @@ public:
 	virtual void dump(ostream &out) = 0;		// dump node
 
 	friend class ANNkd_tree;					// allow kd-tree to access us
+	friend class DT_abstract;         // allow dt_abstract to access us
 };
 
 //----------------------------------------------------------------------
@@ -92,9 +99,10 @@ typedef void (*ANNkd_splitter)(			// splitting routine for kd-trees
 
 class ANNkd_leaf: public ANNkd_node		// leaf node for kd-tree
 {
+public:
 	int					n_pts;			// no. points in bucket
 	ANNidxArray			bkt;			// bucket of points
-public:
+
 	ANNkd_leaf(							// constructor
 		int				n,				// number of points
 		ANNidxArray		b)				// bucket
@@ -117,6 +125,12 @@ public:
 	virtual void ann_FR_search(ANNdist);		// fixed-radius search
 
 	virtual void ann_dt_search(ANNdist);			// dual tree  search
+
+	// --- Node-specific extensions ---
+	virtual void child_ids(std::vector<int>& ids); // get all child ids, recursively
+  virtual void held_in_node(std::vector<int>& ids); // get all nodes held within this node
+  virtual ANNdist max_child_dist(); // max distance between points held in node and centroid of convex subset
+  virtual ANNdist max_desc_dist(); // max distance between all descendent points and centroid of convex subset
 };
 
 //----------------------------------------------------------------------
@@ -145,12 +159,13 @@ extern ANNkd_leaf *KD_TRIVIAL;					// trivial (empty) leaf node
 
 class ANNkd_split : public ANNkd_node	// splitting node of a kd-tree
 {
+public:
 	int					cut_dim;		// dim orthogonal to cutting plane
 	ANNcoord			cut_val;		// location of cutting plane
 	ANNcoord			cd_bnds[2];		// lower and upper bounds of
 										// rectangle along cut_dim
 	ANNkd_ptr			child[2];		// left and right children
-public:
+
 	ANNkd_split(						// constructor
 		int cd,							// cutting dimension
 		ANNcoord cv,					// cutting value
@@ -185,6 +200,12 @@ public:
 	virtual void ann_FR_search(ANNdist);		// fixed-radius search
 
 	virtual void ann_dt_search(ANNdist);		// dual tree search
+
+	// --- Node-specific extensions ---
+	virtual void child_ids(std::vector<int>& ids); // get all child ids, recursively
+	virtual void held_in_node(std::vector<int>& ids); // get all nodes held within this node
+	virtual ANNdist max_child_dist(); // max distance between points held in node and centroid of convex subset
+	virtual ANNdist max_desc_dist(); // max distance between all descendent points and centroid of convex subset
 };
 
 //----------------------------------------------------------------------

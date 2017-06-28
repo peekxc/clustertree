@@ -95,7 +95,15 @@ public:
 	virtual void ann_search(ANNdist);			// standard search
 	virtual void ann_pri_search(ANNdist);		// priority search
 	virtual void ann_FR_search(ANNdist); 		// fixed-radius search
-	virtual void ann_dt_search(ANNdist); 		// fixed-radius search
+
+
+	// Unimplemented virtuals
+	virtual void ann_dt_search(ANNdist) {};
+	virtual void child_ids(std::vector<int>& ids){ return; }
+	virtual void held_in_node(std::vector<int>& ids){ return; }
+  virtual ANNdist max_child_dist(){ return 0; }
+	virtual ANNdist max_desc_dist(){ return 0; }
+
 };
 
 #endif
