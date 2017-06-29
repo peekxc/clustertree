@@ -54,12 +54,13 @@ public:
 	virtual void ann_dt_search(ANNdist) = 0; // dual-tree search
 
 	// --- Node-specific extensions ---
+	virtual void child_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all child **nodes**
 	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all desc **nodes**, recursively
 	virtual void child_ids(std::vector<int>& ids) = 0; // get all child ids, recursively
 	virtual void held_in_node(std::vector<int>& ids) = 0; // get ids of points held within a node
 	virtual ANNdist max_child_dist() = 0; // max distance between points held in node and centroid of convex subset
 	virtual ANNdist max_desc_dist() = 0; // max distance between all descendent points and centroid of convex subset
-	virtual ANNcoord* convex_subset() = 0; // points representing the convex subset bounding all descendent nodes
+	// virtual ANNcoord* convex_subset() = 0; // points representing the convex subset bounding all descendent nodes
 	// --- End Node-specific extensions ---
 
 	virtual void getStats(						// get tree statistics
@@ -71,7 +72,7 @@ public:
 	virtual void dump(ostream &out) = 0;		// dump node
 
 	friend class ANNkd_tree;					// allow kd-tree to access us
-	friend class DT_abstract;         // allow dt_abstract to access us
+	//friend class DualTree;         // allow dual tree class to access us
 };
 
 //----------------------------------------------------------------------
@@ -130,11 +131,13 @@ public:
 	virtual void ann_dt_search(ANNdist);			// dual tree  search
 
 	// --- Node-specific extensions ---
+	virtual void child_nodes(std::vector<ANNkd_node*>& nodes); // get all child **nodes**
+	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
 	virtual void child_ids(std::vector<int>& ids); // get all child ids, recursively
   virtual void held_in_node(std::vector<int>& ids); // get all nodes held within this node
   virtual ANNdist max_child_dist(); // max distance between points held in node and centroid of convex subset
   virtual ANNdist max_desc_dist(); // max distance between all descendent points and centroid of convex subset
-  virtual ANNcoord* convex_subset(); // points representing the convex subset bounding all descendent nodes
+  //virtual ANNcoord* convex_subset(); // points representing the convex subset bounding all descendent nodes
 };
 
 //----------------------------------------------------------------------
@@ -206,11 +209,13 @@ public:
 	virtual void ann_dt_search(ANNdist);		// dual tree search
 
 	// --- Node-specific extensions ---
+	virtual void child_nodes(std::vector<ANNkd_node*>& nodes); // get all child **nodes**
+	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
 	virtual void child_ids(std::vector<int>& ids); // get all child ids, recursively
 	virtual void held_in_node(std::vector<int>& ids); // get all nodes held within this node
 	virtual ANNdist max_child_dist(); // max distance between points held in node and centroid of convex subset
 	virtual ANNdist max_desc_dist(); // max distance between all descendent points and centroid of convex subset
-	virtual ANNcoord* convex_subset(); // points representing the convex subset bounding all descendent nodes
+	//virtual ANNcoord* convex_subset(); // points representing the convex subset bounding all descendent nodes
 };
 
 //----------------------------------------------------------------------

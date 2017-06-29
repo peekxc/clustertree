@@ -99,6 +99,8 @@ public:
 
 	// Unimplemented virtuals
 	virtual void ann_dt_search(ANNdist) {};
+	virtual void child_nodes(std::vector<ANNkd_node*>& nodes) { return; };
+	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes) { return; };
 	virtual void child_ids(std::vector<int>& ids){ return; }
 	virtual void held_in_node(std::vector<int>& ids){ return; }
   virtual ANNdist max_child_dist(){ return 0; }

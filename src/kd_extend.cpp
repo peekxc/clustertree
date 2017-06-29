@@ -5,6 +5,23 @@ using namespace Rcpp;
 #include "kd_tree.h"
 
 // --- Splitting node extensions ---
+void ANNkd_split::child_nodes(std::vector<ANNkd_node*>& nodes){
+  ANNkd_ptr left_child = child[0], right_child = child[1];
+  nodes.push_back(left_child);
+  nodes.push_back(right_child);
+  return;
+}
+void ANNkd_split::desc_nodes(std::vector<ANNkd_node*>& nodes){
+  ANNkd_ptr left_child = child[0], right_child = child[1];
+
+  // Store left child, descend left branch
+  nodes.push_back(left_child);
+  left_child->desc_nodes(nodes);
+
+  // Store right child, descend right branch
+  nodes.push_back(right_child);
+  right_child->desc_nodes(nodes);
+}
 void ANNkd_split::child_ids(std::vector<int>& ids){
   ANNkd_ptr left_child = child[0], right_child = child[1];
   left_child->child_ids(ids);
@@ -18,11 +35,17 @@ ANNdist ANNkd_split::max_child_dist(){
 ANNdist ANNkd_split::max_desc_dist(){
   return 0;
 }
-ANNcoord* ANNkd_split::convex_subset(){
-  return(cd_bnds);
-}
+// ANNcoord* ANNkd_split::convex_subset(){
+//   return(cd_bnds);
+// }
 
 // --- Leaf node extensions ---
+void ANNkd_leaf::child_nodes(std::vector<ANNkd_node*>& nodes){
+  return;
+}
+void ANNkd_leaf::desc_nodes(std::vector<ANNkd_node*>& nodes){
+  return;
+}
 void ANNkd_leaf::child_ids(std::vector<int>& ids){
   for (int i = 0; i < this->n_pts; ++i){
     ids.push_back(this->bkt[i]);
