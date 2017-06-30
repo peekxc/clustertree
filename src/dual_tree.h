@@ -40,6 +40,7 @@ public:
   DualTree(ANNkd_tree* ref_tree, ANNkd_tree* query_tree, int k);
   void KNN(int k);
   double B1(ANNkd_node* N_q);
+  double B2(ANNkd_node* N_q);
   void DFS(ANNkd_node* N_q, ANNkd_node* N_r);
   IntegerVector getIDXArray();
   IntegerVector child_ids(bool ref_tree = true);

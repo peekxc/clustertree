@@ -53,6 +53,23 @@ double DualTree::B1(ANNkd_node* N_q){
   return(bound);
 }
 
+double DualTree::B2(ANNkd_node* N_q){
+  std::vector<int> child_idx = std::vector<int>();
+  N_q->child_ids(child_idx);
+  double bound = std::numeric_limits<ANNdist>::infinity(), min_k;
+  for (std::vector<int>::iterator idx = child_idx.begin(); idx != child_idx.end(); ++idx){
+    min_k = knn->at(*idx)->ith_smallest_key(0);
+    bound = min_k < bound ? min_k : bound;
+  }
+  bound +=  2 * N_q->max_desc_dist();
+  // Use infinity instead of max double
+  bound = bound == ANN_DIST_INF ? std::numeric_limits<ANNdist>::infinity() : bound;
+
+  return(bound);
+}
+
+
+
 // KNN score function
 // struct ScoreKNN : ScoreFunction {
 //     ScoreKNN(){};

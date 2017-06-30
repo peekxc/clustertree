@@ -32,9 +32,6 @@ void ANNkd_split::held_in_node(std::vector<int>& ids){ return; }
 ANNdist ANNkd_split::max_child_dist(){
   return 0;
 }
-ANNdist ANNkd_split::max_desc_dist(){
-  return 0;
-}
 // ANNcoord* ANNkd_split::convex_subset(){
 //   return(cd_bnds);
 // }
