@@ -781,16 +781,6 @@ protected:
 		ANNdist			sqRad,			// squared radius of query ball
 		double			eps=0.0);		// error bound
 
-	//MJP 6/22/2017
-	void ann_dt_kSearch(					// approx k near neighbor search
-	    ANNpoint		q,				// query point
-	    int				k,				// number of near neighbors to return
-	    ANNidxArray		nn_idx,			// nearest neighbor array (modified)
-	    ANNdistArray	dd,				// dist to near neighbors (modified)
-	    ANNkd_tree* query_tree, // query tree for dual tree traversal
-	    double			eps=0.0 // error bound
-	    );
-
 	int theDim()						// return dimension of space
 	{ return dim; }
 

@@ -98,14 +98,10 @@ public:
 
 
 	// Unimplemented virtuals
-	virtual void ann_dt_search(ANNdist) {};
-	virtual void child_nodes(std::vector<ANNkd_node*>& nodes) { return; };
-	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes) { return; };
-	virtual void child_ids(std::vector<int>& ids){ return; }
-	virtual void held_in_node(std::vector<int>& ids){ return; }
-  virtual ANNdist max_child_dist(){ return 0; }
-	virtual ANNdist max_desc_dist(){ return 0; }
-	virtual ANNcoord* convex_subset() { return NULL; }
+	virtual void child_nodes(std::vector<ANNkd_node*>& nodes){ }; // get all child **nodes**
+	virtual void node_ids(std::vector<int>& ids){ }; // get all point ids in this node
+	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes){ } // get all desc **nodes**, recursively
+	virtual void desc_ids(std::vector<int>& ids){ };
 
 };
 

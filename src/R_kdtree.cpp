@@ -63,12 +63,12 @@ List kdtree(NumericMatrix x) {
   // Create kd tree
   ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, 30, ANN_KD_SUGGEST);
 
-  // cleanup
+  // Cleanup
   // delete kdTree;
   // delete [] dists;
   // delete [] nnIdx;
   // annDeallocPts(dataPts);
-  // annClose();
+  annClose();
 
   // prepare results
   Rcpp::XPtr<ANNkd_tree> p(kdTree, true);

@@ -21,8 +21,8 @@ clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L, kn
     .Call('clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type, knn_indices)
 }
 
-DTB <- function(x, k = 5L) {
-    .Call('clustertree_DTB', PACKAGE = 'clustertree', x, k)
+DT_knn <- function(x, k) {
+    .Call('clustertree_DT_knn', PACKAGE = 'clustertree', x, k)
 }
 
 naive_clustertree <- function(x, r_k, alpha = 1.414213562373095, type = 0L) {

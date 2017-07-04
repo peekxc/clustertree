@@ -24,6 +24,7 @@ struct Bounds {
 struct Bound { ANNdist rho, lambda, d_min, d_max; };
 
 class DualTree {
+  const int d;
   ANNkd_tree* qtree, *rtree;
   ANNkd_node* N_q_par, *N_r_par;
 
@@ -35,20 +36,23 @@ class DualTree {
 
   // Score and BaseCase functions
   double Score(ANNkd_node* N_q, ANNkd_node* N_r);
-  double BaseCase(ANNpoint p_q, ANNpoint p_r, const int r_idx);
+  double BaseCase(ANNpoint p_q, ANNpoint p_r, const int q_idx, const int r_idx);
 public:
   DualTree(ANNkd_tree* ref_tree, ANNkd_tree* query_tree, int k);
-  void KNN(int k);
+  List test_cases();
+  void KNN(int k, NumericMatrix& dists, IntegerMatrix& ids);
+  ANNdist B(ANNkd_node* N_q);
   double B1(ANNkd_node* N_q);
   double B2(ANNkd_node* N_q);
   void DFS(ANNkd_node* N_q, ANNkd_node* N_r);
   IntegerVector getIDXArray();
   IntegerVector child_ids(bool ref_tree = true);
   double min_dist(ANNkd_node* N_i, ANNkd_node* N_j);
-  double max_dist(ANNkd_node* N_i, ANNkd_node* N_j);
-  double max_child_dist(ANNkd_node* N_i);
-  double max_desc_dist(ANNkd_node* N_i, bool ref_tree = true);
-  NumericVector convex_subset(ANNkd_node* N_i, bool ref_tree = true);
+  ANNdist max_dist(ANNkd_node* N_i, ANNkd_node* N_j);
+  ANNdist max_child_dist(ANNkd_node* N_i, bool ref_tree = true);
+  ANNdist max_desc_dist(ANNkd_node* N_i, bool ref_tree = true);
+  ANNorthRect convex_subset(ANNkd_node* N_i, bool ref_tree = true);
+  ANNpoint centroid(ANNkd_node* N_i, bool ref_tree = true);
 };
 
 

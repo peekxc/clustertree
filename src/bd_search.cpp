@@ -60,8 +60,3 @@ void ANNbd_shrink::ann_search(ANNdist box_dist)
 	ANN_SHR(1)									// one more shrinking node
 }
 
-// Unimplemented
-// void ANNbd_shrink::ann_dt_search(ANNdist box_dist){
-//
-// }
-
