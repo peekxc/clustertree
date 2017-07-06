@@ -41,3 +41,7 @@ kNN_int <- function(data, k, type, bucketSize, splitRule, approx) {
     .Call('clustertree_kNN_int', PACKAGE = 'clustertree', data, k, type, bucketSize, splitRule, approx)
 }
 
+test_ptr <- function() {
+    .Call('clustertree_test_ptr', PACKAGE = 'clustertree')
+}
+

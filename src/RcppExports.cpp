@@ -136,6 +136,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_ptr
+IntegerVector test_ptr();
+RcppExport SEXP clustertree_test_ptr() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(test_ptr());
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"clustertree_kruskalsMST", (DL_FUNC) &clustertree_kruskalsMST, 1},
@@ -148,6 +158,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"clustertree_kd_knn", (DL_FUNC) &clustertree_kd_knn, 3},
     {"clustertree_kdtree", (DL_FUNC) &clustertree_kdtree, 1},
     {"clustertree_kNN_int", (DL_FUNC) &clustertree_kNN_int, 6},
+    {"clustertree_test_ptr", (DL_FUNC) &clustertree_test_ptr, 0},
     {NULL, NULL, 0}
 };
 

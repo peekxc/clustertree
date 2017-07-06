@@ -11,18 +11,14 @@ using namespace Rcpp;
 // C++11 includes
 #include <unordered_map>
 
-// Forward Declaration
-//class DualTree;
-
-
-
 // Every node has a set number of bounds related to it that allow pruning of branch queries,
 // each of which should only need to be computed once. The Bound struct stores these bounds,
 // allowing the recursion to be memoized.
 struct Bound {
   ANNdist B, rho, lambda;
   ANNpoint centroid;
-  Bound() : B(-1.0), rho(-1.0), lambda(-1.0), centroid(NULL) { }
+  ANNorthRect* bnd_box; // TODO: Have this point to the box computed in the tree construction
+  Bound() : B(-1.0), rho(-1.0), lambda(-1.0), centroid(NULL) , bnd_box(NULL) { }
 };
 
 class DualTree {
@@ -47,9 +43,7 @@ public:
   void test_cases(List&, ANNkd_node*, int, bool);
   double basicDFS(ANNkd_node* node);
   void KNN(int k, NumericMatrix& dists, IntegerMatrix& ids);
-  ANNdist B(ANNkd_node* N_q);
-  double B1(ANNkd_node* N_q);
-  double B2(ANNkd_node* N_q);
+  ANNdist B(ANNkd_node* N_q, int limit = 0);
   void DFS(ANNkd_node* N_q, ANNkd_node* N_r);
   IntegerVector getIDXArray();
   IntegerVector child_ids(bool ref_tree = true);
@@ -58,7 +52,7 @@ public:
   ANNdist max_child_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
   ANNdist max_desc_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
   ANNpoint centroid(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
-  ANNorthRect convex_subset(ANNkd_node* N_i, bool ref_tree = true);
+  ANNorthRect& convex_subset(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true); // Keep return by reference
 };
 
 
