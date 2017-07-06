@@ -50,9 +50,7 @@ void ANNkd_leaf::child_nodes(std::vector<ANNkd_node*>& nodes){ return; }
 
 // Push back all of the point ids in the bucket
 void ANNkd_leaf::node_ids(std::vector<int>& ids){
-  for (int i = 0; i < this->n_pts; ++i){
-    ids.push_back(this->bkt[i]);
-  }
+  ids.insert(ids.end(), &bkt[0], &bkt[n_pts]); // 1 past the end should ok
 }
 
 // Leaves don't contain descendent nodes, so return
@@ -60,9 +58,7 @@ void ANNkd_leaf::desc_nodes(std::vector<ANNkd_node*>& nodes){ return; }
 
 // Push back all of the point ids in the bucket
 void ANNkd_leaf::desc_ids(std::vector<int>& ids){
-  for (int i = 0; i < this->n_pts; ++i){
-    ids.push_back(this->bkt[i]);
-  }
+  ids.insert(ids.end(), &bkt[0], &bkt[n_pts]); // 1 past the end should ok
 }
 
 // --- BD tree extensions ---

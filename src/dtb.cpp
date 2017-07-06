@@ -29,7 +29,7 @@ List DT_knn(NumericMatrix x, const int k) {
   }
 
   // Create kd tree
-  ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, 30, ANN_KD_SUGGEST);
+  ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, 1, ANN_KD_SUGGEST);
 
   // Note: the search also returns the point itself (as the first hit)!
   // So we have to look for k+1 points.
@@ -43,10 +43,11 @@ List DT_knn(NumericMatrix x, const int k) {
   IntegerMatrix id(x.nrow(), k);
 
   // Create dual tree using both trees
-  DualTree dt = DualTree(kdTree, kdTree, k);
-  List test_status = dt.test_cases();
-  // dt.KNN(k, dists, id);
-  List res = List::create(_["dist"] = dists, _["id"] = id, _["info"] = test_status);
+  DualTree dt = DualTree(kdTree, kdTree);
+  List test_res = List();
+  // dt.test_cases(test_res);
+  dt.KNN(k, dists, id);
+  List res = List::create(_["dist"] = dists, _["id"] = id, _["info"] = test_res);
 
   return(res);
 }
