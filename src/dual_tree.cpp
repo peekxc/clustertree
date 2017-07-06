@@ -4,6 +4,12 @@ using namespace Rcpp;
 #include "dual_tree.h"
 #include "kd_tree.h"
 
+#define NDEBUG // <-- for 'debug' mode
+//#undef NDEBUG // <-- for 'production' mode
+#ifdef NDEBUG
+#include <cassert>
+#endif
+
 static int left_count = 0, right_count = 0;
 // // static variables to update in the recursion
 // #include "pr_queue_k.h"
@@ -11,15 +17,16 @@ static int left_count = 0, right_count = 0;
 
 // DualTree enables the dual-traversal of two kd-tree's at the same time, and
 // for computing the associated bounds that come with them
-DualTree::DualTree(ANNkd_tree* ref_tree, ANNkd_tree* query_tree) : d(ref_tree->theDim()) {
+DualTree::DualTree(ANNkd_tree* ref_tree, ANNkd_tree* query_tree) : d(ref_tree->theDim()), knn_identity(ref_tree == query_tree) {
   if (ref_tree->theDim() != query_tree->theDim()){
     stop("Dimensionality of the query set does not match the reference set.");
   }
   //Rcout << "RTree: " <<  ref_tree << "QTree: " << query_tree << std::endl;
   rtree = ref_tree, qtree = query_tree;
-  rtree->Print((ANNbool) true, std::cout);
+  // rtree->Print((ANNbool) true, std::cout);
   //Rcout << "RTree: " <<  rtree << "QTree: " << qtree << std::endl;
   N_q_par = N_r_par = NULL;
+  BC_check = new std::map< std::pair<int,int>, bool>();
 }
 
 // If the DT's are for KNN, first initialize the appropriate data structures for knn
@@ -148,8 +155,7 @@ void DualTree::test_cases(List& res, ANNkd_node* N, int depth, bool ref_tree) {
 }
 
 // Recursive bound on a given query node
-ANNdist DualTree::B(ANNkd_node* N_q, int limit){
-  traversed++;
+ANNdist DualTree::B(ANNkd_node* N_q){
   // If doesn't exist, create a bound object
   if (bounds->find(N_q) == bounds->end()){
     // Rcout << "Inserting Bound object for: " << N_q << std::endl;
@@ -158,63 +164,62 @@ ANNdist DualTree::B(ANNkd_node* N_q, int limit){
 
   // If B has been computed before, return it, otherwise look at what needs computed
   Bound& nq_bound = (*bounds)[N_q];
-  if (nq_bound.B != -1.0){
-    // Rcout << "Key value found: " << bounds->find(N_q)->first << std::endl;
-    // Rcout << "Using precomputed bound: (" << nq_bound.B << ")" << std::endl;
-    return(nq_bound.B);
-  } else {
+  if (nq_bound.B != -1.0 && nq_bound.B != ANN_DIST_INF){ return(nq_bound.B); }
+  else {
+    // These bounds need to be computed anyways, so compute them from the start
+    max_child_dist(N_q, nq_bound, false);
+    max_desc_dist(N_q, nq_bound, false);
+
     // Rcout << "Computing the bound of a query node (B = " << nq_bound.B << ") " << std::endl;
-    ANNdist inf_const = std::numeric_limits<ANNdist>::infinity();
-    ANNdist b1 = 0, b2 = inf_const, b3 = inf_const, b4 = inf_const;
+    ANNdist b1 = 0, b2 = ANN_DIST_INF, b3 = ANN_DIST_INF, b4 = ANN_DIST_INF;
 
-    // ----- First bound (upper) -----
-    std::vector<int> query_ids = std::vector<int>();
-    N_q->node_ids(query_ids);
-    for (std::vector<int>::iterator idx = query_ids.begin(); idx != query_ids.end(); ++idx){
-      if (knn->find(*idx) != knn->end()){
-        ANNdist max_k = knn->at(*idx)->max_key();
-        b1 = max_k > b1 ? max_k : b1;
-      }
-    }
+    // Loop through child point ids for bounds 1 and 2
+    // std::vector<int> query_ids = std::vector<int>();
+    // N_q->node_ids(query_ids);
 
+    ANNdist max_k = bounds->at(N_q).min_knn;
+    // Rcout << "Minimax KNN for " << N_q << " : " << max_k << std::endl;
+    ANNdist child_bound = max_k + nq_bound.rho + nq_bound.lambda;
+    b1 = max_k > b1 ? max_k : b1;
+    b2 = child_bound < b2 ? child_bound : b2;
+
+    // for (std::vector<int>::iterator idx = query_ids.begin(); idx != query_ids.end(); ++idx){
+    //   assert(nq_bound.rho != 1 && nq_bound.lambda != -1); // rho and lambda should exist at this point
+    //   if (knn->find(*idx) != knn->end()){
+    //     ANNdist max_k = knn->at(*idx)->max_key();
+    //     ANNdist child_bound = max_k + nq_bound.rho + nq_bound.lambda;
+    //     b1 = max_k > b1 ? max_k : b1;
+    //     b2 = child_bound < b2 ? child_bound : b2;
+    //   }
+    // }
+
+    // Loop through child kd nodes for bounds 1 and 3
     std::vector<ANNkd_node*> child_nodes = std::vector<ANNkd_node*>();
     N_q->child_nodes(child_nodes);
+
     if (child_nodes.size() > 0){
-      for (std::vector<ANNkd_node*>::iterator idx = child_nodes.begin(); idx != child_nodes.end(); ++idx){
-        ANNdist child_bound = B(*idx, limit + 1);
-        b1 = child_bound > b1 ? child_bound : b1;
+      for (std::vector<ANNkd_node*>::iterator N_c = child_nodes.begin(); N_c != child_nodes.end(); ++N_c){
+        ANNdist nc_bound = B(*N_c); // Compute child node bound
+        assert(bounds->find(*N_c) != bounds->end()); // Child bound should now exist
+        ANNdist child_bound = nc_bound + 2 * (nq_bound.lambda - max_desc_dist(*N_c, (*bounds)[*N_c], false));
+        b1 = nc_bound > b1 ? nc_bound : b1;
+        b3 = child_bound < b3 ? child_bound : b3;
       }
-    }
-
-    // ----- Second bound (lower) -----
-    for (std::vector<int>::iterator idx = query_ids.begin(); idx != query_ids.end(); ++idx){
-      if (knn->find(*idx) != knn->end()){
-        ANNdist child_bound = knn->at(*idx)->max_key();
-        ANNdist nq_max_cd = nq_bound.rho == -1.0 ? max_child_dist(N_q, nq_bound, false) : nq_bound.rho;
-        ANNdist nq_max_dd = nq_bound.lambda == -1.0 ? max_desc_dist(N_q, nq_bound, false) : nq_bound.lambda;
-        child_bound += (nq_max_cd + nq_max_dd);
-        b2 = child_bound < b2 ? child_bound : b2;
-      }
-    }
-
-    // ----- Third bound (lower) -----
-    for (std::vector<ANNkd_node*>::iterator N_c = child_nodes.begin(); N_c != child_nodes.end(); ++N_c){
-      if (bounds->find(*N_c) != bounds->end()){ bounds->insert(std::pair<ANNkd_node*, Bound>(*N_c, Bound())); }
-      Bound child_bnd = bounds->find(*N_c)->second;
-      ANNdist child_bound = 2 * (max_desc_dist(N_q, nq_bound, false) - max_desc_dist(*N_c, child_bnd, false)) + B(*N_c, limit + 1);
-      b3 = child_bound < b3 ? child_bound : b3;
     }
 
     // ----- Fourth bound -----
-    b4 = N_q_par == NULL ? inf_const : bounds->find(N_q_par) == bounds->end() ? inf_const : bounds->find(N_q_par)->second.B; // B(N_q_par, limit + 1);
+    assert(bounds->find(N_q_par) == bounds->end()); // parent should exist at this point
+    b4 = N_q_par == NULL ? ANN_DIST_INF : (*bounds)[N_q_par].B;
 
     // Final bound (lower)
-    ANNdist final_bound = std::min(std::min(b1, b2), std::min(b3, b4));
+    ANNdist final_bound = std::min((ANNdist) std::min(b1, b2), (ANNdist) std::min(b3, b4));
     nq_bound.B = final_bound;
 
     // Return final bound
-    Rcout << N_q << ": final Bound == " << final_bound;
-    Rprintf(" {%d, %d, %d, %d, max_cd = %d, max_dd = %d}\n", b1, b2, b3, b4, nq_bound.rho, nq_bound.lambda);
+    #ifdef NDEBUG
+      // Rcout << N_q << ": final Bound == " << final_bound;
+      // Rprintf(" {%.2f, %.2f, %.2f, %.2f, max_cd = %.2f, max_dd = %.2f}\n", b1, b2, b3, b4, nq_bound.rho, nq_bound.lambda);
+    #endif
     return final_bound;
   }
 }
@@ -229,11 +234,12 @@ void DualTree::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids){
   knn_initialize(k);
 
   // Start the search!
-  Rcout << "Starting DFS search!" << std::endl;
+  // Rcout << "Starting DFS search!" << std::endl;
   DFS(rtree->root, qtree->root);
+  // Rcout << " Total Recursion Calls: " << traversed << std::endl;
 
   // Copy over the distances and ids
-  Rcout << "Copying distance and ids over to R memory" << std::endl;
+  // Rcout << "Copying distance and ids over to R memory" << std::endl;
   for (int i = 0; i < qtree->n_pts; ++i){
     for (int j = 0; j < k; j++) {		// extract the k-th closest points
       dists(i, j) = knn->at(i)->ith_smallest_key(j);
@@ -250,114 +256,91 @@ void DualTree::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids){
   return;
 }
 
-// double DualTree::B1(ANNkd_node* N_q){
-//   std::vector<int> child_idx = std::vector<int>();
-//   N_q->node_ids(child_idx);
-//   double bound = 0, max_k;
-//   for (std::vector<int>::iterator idx = child_idx.begin(); idx != child_idx.end(); ++idx){
-//     max_k = knn->at(*idx)->max_key();
-//     bound = max_k > bound ? max_k : bound;
-//   }
-//
-//   // Get child nodes
-//   std::vector<ANNkd_node*> child_nodes = std::vector<ANNkd_node*>();
-//   N_q->child_nodes(child_nodes);
-//   for (std::vector<ANNkd_node*>::iterator node = child_nodes.begin(); node != child_nodes.end(); ++node){
-//     bound = std::max(bound, B1(*node));
-//   }
-//
-//   // Use infinity instead of max double
-//   bound = bound == ANN_DIST_INF ? std::numeric_limits<ANNdist>::infinity() : bound;
-//
-//   return(bound);
-// }
-
-// double DualTree::B2(ANNkd_node* N_q){
-//   std::vector<int> child_idx = std::vector<int>();
-//   N_q->node_ids(child_idx);
-//   double bound = std::numeric_limits<ANNdist>::infinity(), min_k;
-//   for (std::vector<int>::iterator idx = child_idx.begin(); idx != child_idx.end(); ++idx){
-//     min_k = knn->at(*idx)->ith_smallest_key(0);
-//     bound = min_k < bound ? min_k : bound;
-//   }
-//   bound += 2 * max_desc_dist(N_q, false);
-//   // Use infinity instead of max double
-//   bound = bound == ANN_DIST_INF ? std::numeric_limits<ANNdist>::infinity() : bound;
-//
-//   return(bound);
-// }
-
-
-
-// KNN score function
-// struct ScoreKNN : ScoreFunction {
-//     ScoreKNN(){};
-//     double operator()(ANNkd_node* N_q, ANNkd_node* N_r){
-//       N_q->max_child_dist()
-//     }
-// };
-
-
 // KNN Score function
 ANNdist DualTree::Score(ANNkd_node* N_q, ANNkd_node* N_r){
   ANNdist min_dist_qr = min_dist(N_q, N_r);
-  Rcout << "Scoring: Q = " << N_q << ", " <<  "R = " << N_r << std::endl;
+  // Rcout << "Scoring: Q = " << N_q << ", " <<  "R = " << N_r << std::endl;
   ANNdist bound_nq = B(N_q);
   if (min_dist_qr < bound_nq){
-    Rcout << "Min dist. Q <--> R: " << min_dist_qr << std::endl;
+    // Rcout << "Min dist. Q <--> R: " << min_dist_qr << std::endl;
     return (min_dist_qr);
   }
-  Rcout << "Pruning! Q <--> R: " << min_dist_qr << "(> " << bound_nq << ")" << std::endl;
-  return std::numeric_limits<ANNdist>::infinity();
+  // Rcout << "Pruning! Q <--> R: " << min_dist_qr << "(> " << bound_nq << ")" << std::endl;
+  return ANN_DIST_INF;
 }
 
 // key field is distance
 // info field is integer (idx)
-ANNdist DualTree::BaseCase(ANNpoint p_q, ANNpoint p_r, const int q_idx, const int r_idx){
-  ANNdist dist = annDist(d, p_q, p_r);
-  Rprintf("dist(%d, %d): %f \n", q_idx, r_idx, dist);
-  // Rcout << "Calling base case for " << q_idx << std::endl;
-  if (dist < knn->at(q_idx)->max_key())// TODO: make dynamic programming table for BASECASE pairs
-  {
-    Rcout << "Storing better neighbor for: " << q_idx << "( id=" << r_idx << ", dist=" << dist << ")" << std::endl;
-    knn->at(q_idx)->insert(dist, r_idx);
+void DualTree::BaseCase(ANNpoint p_q, ANNpoint p_r, const int q_idx, const int r_idx, ANNkd_node* N_q, ANNkd_node* N_r){
+  // Rprintf("dist(%d, %d): ", q_idx, r_idx);
+  if (!((bool) ((*BC_check)[std::minmax(q_idx, r_idx)]))){
+    ANNdist dist = annDist(d, p_q, p_r);
+    // Rprintf("%f \n", dist);
+    if (dist < knn->at(q_idx)->max_key()){ knn->at(q_idx)->insert(dist, r_idx); }
+    // Rcout << "Storing better neighbor for: " << q_idx << "( id=" << r_idx << ", dist=" << dist << ")" << std::endl;
+
+    // If the query == reference sets, set the other nearest neighbor as well!
+    if (knn_identity && q_idx != r_idx && dist < knn->at(r_idx)->max_key()){
+      // Rcout << "Storing better neighbor for: " << r_idx << "( id=" << q_idx << ", dist=" << dist << ")" << std::endl;
+      knn->at(r_idx)->insert(dist, q_idx);
+    }
+
+    // If at any comparison the k-nearest neighbor of any given point is less than the
+    // tracked minimax knn of the current query node, update it.
+    assert(bounds->find(N_q) != bounds->end());
+    if (knn->at(q_idx)->max_key() < bounds->at(N_q).min_knn){
+      bounds->at(N_q).min_knn = knn->at(q_idx)->max_key();
+      // Rcout << "Updating: Par_q(" << q_idx << ") kNN dist: " << bounds->at(N_q).min_knn << std::endl;
+    }
+    // If identity, reverse and update other nodes as well
+    if (knn_identity && N_q == N_r){
+      if (knn->at(r_idx)->max_key() < bounds->at(N_q).min_knn){
+        bounds->at(N_q).min_knn = knn->at(r_idx)->max_key();
+        // Rcout << "Updating: Par_q(" << r_idx << ") kNN dist: " << bounds->at(N_q).min_knn << std::endl;
+      }
+    }
   }
-  return d;
+  #ifdef NDEBUG
+    // else {
+    //   Rprintf("<Not Computed>\n");
+    // }
+  #endif
+  (*BC_check)[std::minmax(q_idx, r_idx)] = true; // Make it so other equivalent pairs won't be visited
+  // return d;
 }
 
 void DualTree::DFS(ANNkd_node* N_q, ANNkd_node* N_r){
-  // ANNkd_split* split_query = dynamic_cast<ANNkd_split*>(N_q);
-  // ANNkd_split* split_ref = dynamic_cast<ANNkd_split*>(N_r);
-
+  traversed++;
   // Get the points held in both the query and reference nodes
   // Rcout << "Traversing Base cases" << std::endl;
-  std::vector<int>* query_pts = new std::vector<int>();
-  std::vector<int>* ref_pts = new std::vector<int>();
+  std::vector<int>* query_pts = new std::vector<int>(), *ref_pts = new std::vector<int>();
   N_q->node_ids(*query_pts), N_r->node_ids(*ref_pts);
 
-  if (query_pts->size() > 0){
-    Rcout << "Query: ";
-    for (std::vector<int>::iterator q_idx = query_pts->begin(); q_idx != query_pts->end(); ++q_idx){
-      Rcout << *q_idx << ", ";
-    }
-    Rcout << std::endl;
-  }
+  #ifdef NDEBUG
+    // if (query_pts->size() > 0){
+    //   Rcout << "Query: ";
+    //   for (std::vector<int>::iterator q_idx = query_pts->begin(); q_idx != query_pts->end(); ++q_idx){
+    //     Rcout << *q_idx << ", ";
+    //   }
+    //   Rcout << std::endl;
+    // }
+    //
+    // if (ref_pts->size() > 0){
+    //   Rcout << "Reference: ";
+    //   for (std::vector<int>::iterator r_idx = ref_pts->begin(); r_idx != ref_pts->end(); ++r_idx){
+    //     Rcout << *r_idx << ", ";
+    //   }
+    //   Rcout << std::endl;
+    // }
+  #endif
 
-  if (ref_pts->size() > 0){
-    Rcout << "Reference: ";
-    for (std::vector<int>::iterator r_idx = ref_pts->begin(); r_idx != ref_pts->end(); ++r_idx){
-      Rcout << *r_idx << ", ";
-    }
-    Rcout << std::endl;
-  }
-
-  if (Score(N_q, N_r) == std::numeric_limits<ANNdist>::infinity()){
+  if (Score(N_q, N_r) == ANN_DIST_INF){
     return;
   }
 
   for (std::vector<int>::iterator q_idx = query_pts->begin(); q_idx != query_pts->end(); ++q_idx){
     for (std::vector<int>::iterator r_idx = ref_pts->begin(); r_idx != ref_pts->end(); ++r_idx){
-      BaseCase(qtree->pts[*q_idx], rtree->pts[*r_idx], *q_idx, *r_idx);
+      BaseCase(qtree->pts[*q_idx], rtree->pts[*r_idx], *q_idx, *r_idx, N_q, N_r); // Pass nodes as well to keep track of min_knn
     }
   }
 
@@ -368,23 +351,25 @@ void DualTree::DFS(ANNkd_node* N_q, ANNkd_node* N_r){
 
   // Set parents before recursion
   // Rcout << "Setting parents: " << N_q << std::endl;
-  N_q_par = N_q, N_r_par = N_r;
 
   // There are at minimum 0, and at maximum 2 nodes per node vector
   int n_query = query_nodes->size(), n_ref = ref_nodes->size();
   if (n_query == 0 && n_ref == 0){ return; }
   else if(n_query == 0 && n_ref > 0) {
-  // Traverse through all reference children with the current query node
+    // Traverse through all reference children with the current query node
+    N_r_par = N_r; // set current reference node as parent, keep same query parent
     for (std::vector<ANNkd_node*>::iterator n_rc = ref_nodes->begin(); n_rc != ref_nodes->end(); ++n_rc){
       DFS((ANNkd_node*) N_q, (ANNkd_node*) *n_rc);
     }
   } else if (n_query > 0 && n_ref == 0){
-  // Traverse through all children
+    // Traverse through all children
+    N_q_par = N_q; // set current query node as parent, keep same reference parent
     for (std::vector<ANNkd_node*>::iterator n_qc = query_nodes->begin(); n_qc != query_nodes->end(); ++n_qc){
       DFS((ANNkd_node*) *n_qc, (ANNkd_node*) N_r);
     }
   } else {
-  // Traverse through all children
+    // Traverse through all children
+    N_q_par = N_q, N_r_par = N_r; // set parents as the current nodes
     for (std::vector<ANNkd_node*>::iterator n_qc = query_nodes->begin(); n_qc != query_nodes->end(); ++n_qc){
       for (std::vector<ANNkd_node*>::iterator n_rc = ref_nodes->begin(); n_rc != ref_nodes->end(); ++n_rc){
         DFS((ANNkd_node*) *n_qc, (ANNkd_node*) *n_rc);
@@ -410,7 +395,7 @@ ANNdist DualTree::min_dist(ANNkd_node* N_i, ANNkd_node* N_j){
   N_i->desc_ids(*i_desc_ids);
   N_j->desc_ids(*j_desc_ids);
 
-  ANNdist min_dist = std::numeric_limits<ANNdist>::infinity(), dist;
+  ANNdist min_dist = ANN_DIST_INF, dist;
   for (std::vector<int>::iterator i = i_desc_ids->begin(); i != i_desc_ids->end(); ++i){
     for (std::vector<int>::iterator j = j_desc_ids->begin(); j != j_desc_ids->end(); ++j){
       ANNpoint p_i = this->rtree->pts[*i];
@@ -436,7 +421,7 @@ ANNdist DualTree::max_dist(ANNkd_node* N_i, ANNkd_node* N_j){
     for (std::vector<int>::iterator j = j_desc_ids->begin(); j != j_desc_ids->end(); ++j){
       ANNpoint p_i = this->rtree->pts[*i];
       ANNpoint p_j = this->qtree->pts[*j];
-      if ((dist = annDist(rtree->theDim(), p_i, p_j)) > max_dist){
+      if ((dist = annDist(d, p_i, p_j)) > max_dist){
         max_dist = dist;
       }
     }
@@ -464,14 +449,16 @@ ANNdist DualTree::max_child_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree){
   // and the bounding rectangle orthogonal to the cutting dimension
   if (point_ids.size() == 0){
     ni_bnd.rho = annDist(d, ni_centroid, ni_bnd.bnd_box->hi); // <-- Looser upper bound
+    // Rcout << "== Computed child distance: " << ni_bnd.rho << std::endl;
     // ni_bnd.rho = max_desc_dist(N_i, ni_bnd, ref_tree); // <-- Tighter but slower to compute bound
     return ni_bnd.rho;
   } else {
-  // If it's a leaf node and it contains no points, find the one farthest from the centroid
+    // If it's a leaf node and it contains no points, find the one farthest from the centroid
     ANNdist max_dist = 0;
     for (std::vector<int>::iterator pt_idx = point_ids.begin(); pt_idx != point_ids.end(); ++pt_idx){
       ANNpoint cpt = ref_tree ? rtree->pts[*pt_idx] : qtree->pts[*pt_idx];
       ANNdist dist = annDist(d, cpt, ni_centroid);
+      // Rcout << "Testing child distance: " << dist << std::endl;
       if (dist > max_dist){ max_dist = dist; }
     }
     ni_bnd.rho = max_dist; // store the bound
@@ -493,10 +480,15 @@ ANNdist DualTree::max_desc_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree){
   std::vector<int> desc_ids = std::vector<int>();
   N_i->desc_ids(desc_ids);
   ANNdist max_dist = 0;
+  bool check_point_knn = false;
   for (std::vector<int>::iterator pt_idx = desc_ids.begin(); pt_idx != desc_ids.end(); ++pt_idx){
     ANNpoint cpt = ref_tree ? rtree->pts[*pt_idx] : qtree->pts[*pt_idx];
     ANNdist dist = annDist(d, cpt, ni_centroid);
     if (dist > max_dist){ max_dist = dist; }
+    // if (knn->at(*pt_idx)->max_key() != ANN_DIST_INF){
+    //   check_point_knn = true;
+    //   Rcout << "*** " << N_i << " has finite knn points filled!" << std::endl;
+    // }
   }
   ni_bnd.lambda = max_dist; // Store the maximum distance by reference for later
   return max_dist;
@@ -540,7 +532,7 @@ ANNpoint DualTree::centroid(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree){
 
 
 // [[Rcpp::export]]
-List DT_knn(NumericMatrix x, const int k) {
+List DT_knn(NumericMatrix x, const int k, const int bkt_size = 30) {
 
   // Copy data over to ANN point array
   int nrow = x.nrow(), ncol = x.ncol();
@@ -553,7 +545,7 @@ List DT_knn(NumericMatrix x, const int k) {
   }
 
   // Create kd tree
-  ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, 1, ANN_KD_SUGGEST);
+  ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, bkt_size, ANN_KD_SUGGEST);
 
   // Note: the search also returns the point itself (as the first hit)!
   // So we have to look for k+1 points.
@@ -592,8 +584,17 @@ test_set <- matrix(c(13, 291,
   plot(test_set, xlim = range(test_set[, 1]) + c(-50, 50), ylim = range(test_set[, 2]) + c(-50, 50),
        asp = 1)
   text(test_set, labels = 1:10, pos = 3)
-  clustertree:::DT_knn(test_set, k = 3L)$id[, -1] ==   unname(dbscan::kNN(test_set, k = 3L)$id)
-  clustertree:::DT_knn(test_set, k = 3L)$dist[, -1] ==   unname(dbscan::kNN(test_set, k = 3L)$dist)
+  clustertree:::DT_knn(test_set, k = 4L, bkt_size = 2L)$id[, -1] == unname(dbscan::kNN(test_set, k = 4L)$id)
+
+
+  clustertree:::DT_knn(test_set, k = 3L)$dist[, -1] == unname(dbscan::kNN(test_set, k = 3L)$dist)
+
+
+  size <- 1500
+  xyz <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size), z = rnorm(size)))
+  microbenchmark::microbenchmark(invisible(clustertree:::DT_knn(xyz, k = 30L, bkt_size = 15L)), times = 30)
+  microbenchmark::microbenchmark(invisible(dbscan::kNN(xyz, k = 30L)), times = 30)
+
   */
 
 

@@ -197,7 +197,7 @@ const ANNidx	ANN_NULL_IDX = -1;		// a NULL point index
 //		short	SHRT_MAX		0x7fff
 //----------------------------------------------------------------------
 
-const ANNdist	ANN_DIST_INF = ANN_DBL_MAX;
+const ANNdist	ANN_DIST_INF = std::numeric_limits<ANNdist>::infinity(); // ANN_DBL_MAX;
 
 //----------------------------------------------------------------------
 //	Significant digits for tree dumps:
