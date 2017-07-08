@@ -11,6 +11,3 @@ using namespace Rcpp;
 
 // KD tree R-accessible functions
 #include "R_kdtree.h"
-
-// ANN extensions
-#include "dual_tree.h"

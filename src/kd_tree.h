@@ -67,7 +67,6 @@ public:
 	virtual void dump(ostream &out) = 0;		// dump node
 
 	friend class ANNkd_tree;					// allow kd-tree to access us
-	//friend class DualTree;         // allow dual tree class to access us
 };
 
 //----------------------------------------------------------------------
@@ -215,5 +214,16 @@ ANNkd_ptr rkd_tree(				// recursive construction of kd-tree
 	int					bsp,			// bucket space
 	ANNorthRect			&bnd_box,		// bounding box for current node
 	ANNkd_splitter		splitter);		// splitting routine
+
+
+// MJP
+ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
+    ANNpointArray		pa,				// point array (unaltered)
+    ANNidxArray			pidx,			// point indices to store in subtree
+    int					n,				// number of points
+    int					dim,			// dimension of space
+    int					bsp,			// bucket space
+    ANNorthRect			&bnd_box,		// bounding box for current node
+    ANNkd_splitter		splitter);		// splitting routine
 
 #endif

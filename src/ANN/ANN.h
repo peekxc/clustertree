@@ -718,6 +718,7 @@ typedef ANNkd_node*	ANNkd_ptr;	// pointer to a kd-tree node
 
 class DLL_API ANNkd_tree: public ANNpointSet {
   friend class DualTree;
+  friend class DualTreeKNN;
 protected:
 	int				dim;				// dimension of space
 	int				n_pts;				// number of points in tree
