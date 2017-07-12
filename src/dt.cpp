@@ -4,11 +4,21 @@ using namespace Rcpp;
 // Local header includes
 #include "dt.h"
 
-// DualTree enables the dual-traversal of two kd-tree's at the same time, and
-// for computing the associated bounds that come with them
-DualTree::DualTree(ANNkd_tree* ref_tree, ANNkd_tree* query_tree) : d(ref_tree->theDim()) {
-  if (ref_tree->theDim() != query_tree->theDim()){ stop("Dimensionality of the query set does not match the reference set."); }
-  rtree = ref_tree, qtree = query_tree;  // Store pointers to both trees
+
+// Constructor initializes the bounds map (if pruning is enabled), and base case map
+DualTree::DualTree(const bool prune) : use_pruning(prune) {
+  R_INFO("Instantiating dual tree objects\n")
+  if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
+  BC_check = new std::map< std::pair<int, int>, bool>();
+}
+
+// Derivable setup function
+void DualTree::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
+  // Check dimensionality, then assign trees if the same
+  if (kd_treeR->theDim() != kd_treeQ->theDim()){ stop("Dimensionality of the query set does not match the reference set."); }
+  d = kd_treeR->theDim();
+  rtree = kd_treeR;
+  qtree = kd_treeQ;
 }
 
 // TODO: Export better to R, figure out how to extract R output buffer instead of cout for windows users
@@ -25,6 +35,19 @@ IntegerVector DualTree::getIDXArray(){
   }
   return ids;
 }
+
+ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int ncol, const int bkt_sz, ANNsplitRule split_rule){
+  // Create kd tree, either a dual tree version with bounds or a regular ANN kd tree
+  ANNkd_tree* kdTree;
+  if (use_pruning){
+    kdTree = new ANNkd_tree_dt(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
+    R_INFO("Bounds computed at tree construction: " << bounds->size() << "\n")
+  } else {
+    kdTree = new ANNkd_tree(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST);
+  }
+  return kdTree;
+}
+
 
 // The minimum distance between any two points descendent of N_i and N_j
 ANNdist DualTree::min_dist(ANNkd_node* N_i, ANNkd_node* N_j){

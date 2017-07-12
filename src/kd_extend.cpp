@@ -41,6 +41,10 @@ void ANNkd_split::desc_ids(std::vector<int>& ids){
   right_child->desc_ids(ids);
 }
 
+ANNdist ANNkd_split::max_child_dist(int d, ANNpoint centroid){ // compute the max child distance
+  return ANN_DIST_INF;
+};
+
 // ---------------------------------------------------------
 // --------------- Leaf node extensions --------------------
 // ---------------------------------------------------------
@@ -59,6 +63,12 @@ void ANNkd_leaf::desc_nodes(std::vector<ANNkd_node*>& nodes){ return; }
 // Push back all of the point ids in the bucket
 void ANNkd_leaf::desc_ids(std::vector<int>& ids){
   ids.insert(ids.end(), &bkt[0], &bkt[n_pts]); // 1 past the end should ok
+}
+
+ANNdist ANNkd_leaf::max_child_dist(int d, ANNpoint centroid){
+  for (int i = 0; i < n_pts; ++i){
+    annDist(d, (ANNpoint) centroid, (ANNpoint) this->bkt[i]); // <-- Looser upper bound
+  };
 }
 
 // --- BD tree extensions ---

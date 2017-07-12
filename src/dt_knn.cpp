@@ -16,11 +16,30 @@ ANNkd_node* N_q_par, *N_r_par;
   #define RESET_TRAVERSAL()
 #endif
 
-// Constructor creates dual tree, detects if reference and query trees are identical
-DualTreeKNN::DualTreeKNN(ANNkd_tree* ref_tree, ANNkd_tree* query_tree)
-  : DualTree(ref_tree, query_tree), knn_identity(ref_tree == query_tree) {
+// Instantiate parent dual tree class along with KNN-specific things, including parent
+// node pointers and KNN-bound mapping
+DualTreeKNN::DualTreeKNN(const bool prune) : DualTree(prune) {
   N_q_par = N_r_par = NULL;
+  if (prune){
+    R_INFO("Allocating KNN bound map\n")
+    bnd_knn = new std::unordered_map<ANNkd_node*, BoundKNN& >();
+  }
 }
+
+// Now that the tree(s) are made, the knn-specific bound obejcts can be instantiated
+void DualTreeKNN::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
+  // Call parent class setup to assign trees
+  (*this).DualTree::setup(kd_treeQ, kd_treeR);
+
+  R_INFO("Creating KNN bound objects\n")
+  // Create new knn bounds using the new kd_node pointers
+  if (use_pruning){
+    for (std::unordered_map<ANNkd_node*, const Bound& >::iterator bnd = bounds->begin(); bnd != bounds->end(); ++bnd){
+      bnd_knn->insert(std::pair<ANNkd_node*, BoundKNN& >(bnd->first, (BoundKNN&) *new BoundKNN()));
+    }
+  }
+}
+
 
 // TODO
 // DualTreeKNN::~DualTreeKNN(){
@@ -28,10 +47,10 @@ DualTreeKNN::DualTreeKNN(ANNkd_tree* ref_tree, ANNkd_tree* query_tree)
 // }
 
 // Entry function to start the KNN process. Stores results by reference in dists and ids
-void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids, const bool prune) {
+void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
 
   RESET_TRAVERSAL() // make sure traversal count is 0
-  use_pruning = prune; // Set pruning
+  knn_identity = (qtree == rtree); // Set whether the KNN search is done on identical trees
 
   // Create a map between point indices and their corresponding empty k-nearest neighbors
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
@@ -39,19 +58,13 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids, const boo
     knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
   }
 
-  // If pruning is used, create map of bounds to memoize the results of the recursion
-  if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, BoundKNN>(); }
-
-  // Base case check: given a pair of indices, check whether the base case has been satisfied
-  BC_check = new std::map< std::pair<int,int>, bool>();
-
   // Contains the indices of all of the points descendent of the current node
   // Should not exceed the number of query points. Updated several times recursively.
   qpts = new std::vector<ANNidx>();
   qpts->reserve(qtree->n_pts + 1);
 
   // If pruning is enabled, use that one. Otherwise use regular DFS w/o computing extra bounds.
-  if (prune){ pDFS(rtree->root, qtree->root); } else { DFS(rtree->root, qtree->root); }
+  if (use_pruning){ pDFS(rtree->root, qtree->root); } else { DFS(rtree->root, qtree->root); }
 
   // Copy over the distances and ids
   R_INFO("KNN took: " << n_traversals << " traversals\n. Copying to R memory\n")
@@ -72,9 +85,19 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids, const boo
 
 ANNdist DualTreeKNN::min_dist(ANNkd_node* N_q, ANNkd_node* N_r){ // assume query and reference
   if (N_q == N_r) return 0;
-  BoundKNN nq_bound = (*bounds)[N_q], nr_bound = (*bounds)[N_r];
-  ANNpoint mu_q = nq_bound.centroid == NULL ? centroid(N_q, nq_bound, false) : nq_bound.centroid;
-  ANNpoint mu_r = nr_bound.centroid == NULL ? centroid(N_r, nr_bound, true) : nr_bound.centroid;
+
+  // Assert they exist
+  assert(bounds->find(N_q) != bounds->end() && bounds->find(N_q) != bounds->end());
+
+  // Retrieve the bounds
+  const Bound& nq_bound = (*bounds)[N_q];
+  const Bound& nr_bound = (*bounds)[N_r];
+
+  // Assert the bounding boxes and centroids were computed
+  assert(nq_bound.bnx_box != NULL && nq_bound.centroid != NULL); // should have bnd_box and centroid precomputed
+  assert(nr_bound.bnx_box != NULL && nr_bound.centroid != NULL); // should have bnd_box and centroid precomputed
+  assert(nq_bound.bnd_box->hi != NULL && nq_bound.bnd_box->lo != NULL);
+  assert(nr_bound.bnd_box->hi != NULL && nr_bound.bnd_box->lo != NULL);
 
   // The lower bound between two nodes requires knowledge of the smallest sphere that will fit in the
   // box contained by a given node
@@ -85,7 +108,7 @@ ANNdist DualTreeKNN::min_dist(ANNkd_node* N_q, ANNkd_node* N_r){ // assume query
   }
 
   // Return bound
-  return(annDist(d, mu_q, mu_r) - lambda_i - lambda_j);
+  return(annDist(d, nq_bound.centroid, nr_bound.centroid) - lambda_i - lambda_j);
 }
 
 // ANNdist DualTreeKNN::max_knn(ANNkd_node* N_q){
@@ -107,7 +130,7 @@ ANNdist DualTreeKNN::min_dist(ANNkd_node* N_q, ANNkd_node* N_r){ // assume query
 
 ANNdist DualTreeKNN::max_knn_B(ANNkd_node* N_q){
   if (IS_LEAF(N_q)) {
-    return((*bounds)[N_q].knn_known == AS_LEAF(N_q)->n_pts ? (*bounds)[N_q].max_real_knn : ANN_DIST_INF);
+    return((*bnd_knn)[N_q].knn_known == AS_LEAF(N_q)->n_pts ? (*bnd_knn)[N_q].max_real_knn : ANN_DIST_INF);
   }
   else {
     ANNkd_split* split_node = AS_SPLIT(N_q);
@@ -118,49 +141,74 @@ ANNdist DualTreeKNN::max_knn_B(ANNkd_node* N_q){
 // Recursive bound on a given query node
 ANNdist DualTreeKNN::B(ANNkd_node* N_q){
   // If doesn't exist, create a bound object
-  if (bounds->find(N_q) == bounds->end()){
-    R_INFO("Inserting Bound object for: " << N_q << "\n")
-    bounds->insert(std::pair<ANNkd_node*, BoundKNN>(N_q, BoundKNN()));
-  }
+  // if (bounds->find(N_q) == bounds->end()){
+  //   R_INFO("Inserting Bound object for: " << N_q << "\n")
+  //   bounds->insert(std::pair<ANNkd_node*, Bound& >(N_q, (Bound&) *new Bound()));
+  // }
 
   // If B has been computed before, return it, otherwise look at what needs computed
-  BoundKNN& nq_bound = (*bounds)[N_q];
-  if (nq_bound.B != -1.0 && nq_bound.B != ANN_DIST_INF){ return(nq_bound.B); }
+  BoundKNN& nq_knn_bnd = (BoundKNN&) (*bnd_knn)[N_q];
+  if (nq_knn_bnd.B != -1.0 && nq_knn_bnd.B != ANN_DIST_INF){ return(nq_knn_bnd.B); }
   else {
-    // These bounds need to be computed anyways, so compute them from the start
-    max_child_dist(N_q, nq_bound, false); // rho (updated in nq_bound)
-    max_desc_dist(N_q, nq_bound, false); // lambda (updated in nq_bound)
 
-    // Get the minimax knn distance for the current query node
-    ANNdist max_k = bounds->at(N_q).min_knn;
-    // R_INFO("Minimax KNN for " << N_q << " : " << max_k << "\n")
+    // Retrieve regular bound object
+    const Bound& nq_bound = (const Bound&) (*bounds)[N_q];
 
-    // This is used in combination with rho and lambda
-    ANNdist child_bound = max_k + nq_bound.rho + nq_bound.lambda;
-
-    // Create the various bounds
-    ANNdist b1 = max_k, b2 = child_bound, b3 = ANN_DIST_INF, b4 = N_q_par == NULL ? ANN_DIST_INF : (*bounds)[N_q_par].B;
-
-    // Loop through child kd nodes for bounds 1 and 3
+    // There are 4 bounds
+    ANNdist b1, b2, b3, b4;
     if (IS_SPLIT(N_q)){
-      std::vector<ANNkd_node*> child_nodes = std::vector<ANNkd_node*>();
-      N_q->child_nodes(child_nodes);
-      for (VI(ANNkd_node*) N_c = child_nodes.begin(); N_c != child_nodes.end(); ++N_c){
-        ANNdist nc_bound = B(*N_c); // Compute child node bound
-        assert(bounds->find(*N_c) != bounds->end()); // Child bound should now exist
-        ANNdist child_bound = nc_bound + 2 * (nq_bound.lambda - max_desc_dist(*N_c, (*bounds)[*N_c], false));
-        b1 = nc_bound > max_k ? nc_bound : max_k;
-        b3 = child_bound < b3 ? child_bound : b3;
+      ANNkd_split* nq_split = AS_SPLIT(N_q); // get split node
+      b1 = b2 = ANN_DIST_INF; // Bounds 1 and 2 don't need to be computed if split node; doesn't hold any points!
+      ANNdist lchild_B = B(nq_split->child[ANN_LO]), rchild_B = B(nq_split->child[ANN_HI]);
+      b3 = std::min(lchild_B + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_LO]].lambda),
+                    rchild_B + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_HI]].lambda));
+      b4 = B(N_q_par);
+    } else {
+      ANNkd_leaf* nq_leaf = AS_LEAF(N_q); // get leaf node
+      ANNdist max_knn = (nq_knn_bnd.knn_known < nq_leaf->n_pts) ? ANN_DIST_INF : nq_knn_bnd.max_real_knn;
+      b1 = max_knn;
+      b2 = ANN_DIST_INF;
+      for (int i = 0; i < nq_leaf->n_pts; ++i){
+        ANNdist b2_tmp = knn->at(nq_leaf->bkt[i])->max_key() + nq_bound.rho + nq_bound.lambda;
+        b2 = b2_tmp < b2 ? b2_tmp : b2;
       }
+      b3 = ANN_DIST_INF; // Leaf has no children
+      b4 = B(N_q_par);
     }
 
+    // ANNdist max_k = IS_SPLIT(N_q) ? ANN_DIST_INF : (nq_knn_bnd.knn_known < AS_LEAF(N_q)->n_pts) ? ANN_DIST_INF : nq_knn_bnd.max_real_knn;
+    // ANNdist b2 = nq_knn_bnd.max_real_knn + nq_bound.rho + nq_bound.lambda;
+    // R_INFO("Minimax KNN for " << N_q << " : " << max_k << "\n")
+    //
+    // // Create the various bounds
+    // ANNdist b1 = max_k, b3 = ANN_DIST_INF, b4 = N_q_par == NULL ? ANN_DIST_INF : (*bnd_knn)[N_q_par].B;
+    //
+    // if (IS_SPLIT(N_q)){
+    //   ANNkd_split* nq_split = AS_SPLIT(N_q);
+    //   ANNdist lchild_B = B(nq_split->child[ANN_LO]), rchild_B = B(nq_split->child[ANN_HI]);
+    //   nc_bound + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_LO]].lambda);
+    // }
+
+    // Loop through child kd nodes for bounds 1 and 3
+    // if (IS_SPLIT(N_q)){
+    //   std::vector<ANNkd_node*> child_nodes = std::vector<ANNkd_node*>();
+    //   N_q->child_nodes(child_nodes);
+    //   for (VI(ANNkd_node*) N_c = child_nodes.begin(); N_c != child_nodes.end(); ++N_c){
+    //     ANNdist nc_bound = B(*N_c); // Compute child node bound
+    //     assert(bounds->find(*N_c) != bounds->end()); // Child bound should now exist
+    //     ANNdist child_bound = nc_bound + 2 * (nq_bound.lambda - max_desc_dist(*N_c, (*bounds)[*N_c], false));
+    //     b1 = nc_bound > max_k ? nc_bound : max_k;
+    //     b3 = child_bound < b3 ? child_bound : b3;
+    //   }
+    // }
+
     // Final bound (lower)
-    nq_bound.B = std::min((ANNdist) std::min(b1, b2), (ANNdist) std::min(b3, b4));
-    R_INFO(N_q << ": final Bound == " << nq_bound.B << (IS_LEAF(N_q) ? " (leaf)" : "(split)"))
+    nq_knn_bnd.B = std::min((ANNdist) std::min(b1, b2), (ANNdist) std::min(b3, b4));
+    R_INFO(N_q << ": final Bound == " << nq_knn_bnd.B << (IS_LEAF(N_q) ? " (leaf)" : "(split)"))
     R_PRINTF(" {%.2f, %.2f, %.2f, %.2f, max_cd = %.2f, max_dd = %.2f}\n", b1, b2, b3, b4, nq_bound.rho, nq_bound.lambda)
 
     // Return final bound
-    return nq_bound.B;
+    return nq_knn_bnd.B;
   }
 }
 
@@ -213,35 +261,32 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
 
   // KD Trees only store points in the leaves; Base case only needed if comparing two leaves
   if (IS_LEAF(N_q) && IS_LEAF(N_r)){
-    // Get the points held in both the query and reference nodes
-    std::vector<int> rpts = std::vector<int>();
-    N_r->node_ids(rpts);
-
-    N_q->node_ids(*qpts); // add points
-    for (VI(int) q_idx = qpts->begin(); q_idx != qpts->end(); ++q_idx){
-      for (VI(int) r_idx = rpts.begin(); r_idx != rpts.end(); ++r_idx){
-        R_INFO("Calling base case for: q = " << *q_idx << ", r = " << *r_idx << ")\n")
+    ANNkd_leaf* N_q_leaf = AS_LEAF(N_q), *N_r_leaf = AS_LEAF(N_r);
+    for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
+      for (int r_i = 0; r_i < N_r_leaf->n_pts; ++r_i){
+        R_INFO("Calling base case for: q = " << N_q_leaf->bkt[q_i] << ", r = " << N_r_leaf->bkt[r_i] << ")\n")
+        int q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
 
         // Compute Base case, saving knn ids and distances along the way
-        BaseCase(qtree->pts[*q_idx], rtree->pts[*r_idx], *q_idx, *r_idx, N_q); // Pass nodes as well to keep track of min_knn
+        BaseCase(qtree->pts[q_idx], rtree->pts[r_idx], q_idx, r_idx, N_q); // Pass nodes as well to keep track of min_knn
 
         // Update bounds where necessary to allow for more pruning in the future
-        ANNmin_k& query_knn = *(*knn)[*q_idx], &ref_knn = *(*knn)[*r_idx];
-
-        // If the current k-nearest neighbor distance is less than the current minimum knn
-        // distance of the query node, update it. Check also for identical nodes.
+        ANNmin_k& query_knn = *(*knn)[q_idx], &ref_knn = *(*knn)[r_idx];
         ANNdist min_knn = N_q == N_r ? std::min(ref_knn.max_key(), query_knn.max_key()) : query_knn.max_key();
-        if (min_knn < (*bounds)[N_q].min_knn){ (*bounds)[N_q].min_knn = min_knn; }
+        if (min_knn < (*bnd_knn)[N_q].min_knn){ (*bnd_knn)[N_q].min_knn = min_knn; }
       }
     }
+    // for (VI(int) q_idx = qpts->begin(); q_idx != qpts->end(); ++q_idx)
+    //   for (VI(int) r_idx = rpts.begin(); r_idx != rpts.end(); ++r_idx)
+    return; // If at the base case, don't recurse!
   }
 
   // If both are leaves, no need to further recurse
-  if (IS_LEAF(N_q) && IS_LEAF(N_r)){
-    // Done with this leaf, remove points
-    qpts->erase(qpts->end() - AS_LEAF(N_q)->n_pts, qpts->end());
-    return;
-  }
+  // if (IS_LEAF(N_q) && IS_LEAF(N_r)){
+  //   // Done with this leaf, remove points
+  //   qpts->erase(qpts->end() - AS_LEAF(N_q)->n_pts, qpts->end());
+  //   return;
+  // }
 
   // Admittedly an odd choice, multimap should work for prioritizing the recursion
   // since apparently pr_queues don't natively support insertion with priority
@@ -249,27 +294,42 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
 
   // Get immediate children kd_nodes of the current query and references nodes
   std::vector<ANNkd_node*> qn = std::vector<ANNkd_node*>(), rn = std::vector<ANNkd_node*>();
-  N_q->child_nodes(qn), N_r->child_nodes(rn);
 
   // Reference branches still need to be checked
   // ANNdist c_score; // TODO: benchmark inserting all w/ break vs. checking score per insertion
   if (IS_LEAF(N_q) && !IS_LEAF(N_r)){
     N_r_par = N_r; // set current reference node as parent, keep same query parent
-    for (VI(ANNkd_node*) n_rc = rn.begin(); n_rc != rn.end(); ++n_rc){
-      score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q, *n_rc), NODE_PAIR(N_q, *n_rc)));
-    }
+
+    // Insert The two children into the multimap, sorted by score
+    ANNkd_split* N_r_split = AS_SPLIT(N_r);
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q, N_r_split->child[0]), NODE_PAIR(N_q, N_r_split->child[0])));
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q, N_r_split->child[1]), NODE_PAIR(N_q, N_r_split->child[1])));
+
   } else if (!IS_LEAF(N_q) && IS_LEAF(N_r)){
     N_q_par = N_q; // set current query node as parent, keep same reference parent
-    for (VI(ANNkd_node*) n_qc = qn.begin(); n_qc != qn.end(); ++n_qc){
-      score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(*n_qc, N_r), NODE_PAIR(*n_qc, N_r)));
-    }
+
+    // Insert The two children into the multimap, sorted by score
+    ANNkd_split* N_q_split = AS_SPLIT(N_q);
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q_split->child[0], N_r), NODE_PAIR(N_q_split->child[0], N_r)));
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q_split->child[1], N_r), NODE_PAIR(N_q_split->child[1], N_r)));
+
+    // for (VI(ANNkd_node*) n_qc = qn.begin(); n_qc != qn.end(); ++n_qc){
+    //   score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(*n_qc, N_r), NODE_PAIR(*n_qc, N_r)));
+    // }
   } else {
     N_q_par = N_q, N_r_par = N_r; // set parents as the current nodes
-    for (VI(ANNkd_node*) n_qc = qn.begin(); n_qc != qn.end(); ++n_qc){
-      for (VI(ANNkd_node*) n_rc = rn.begin(); n_rc != rn.end(); ++n_rc){
-        score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(*n_qc, *n_rc), NODE_PAIR(*n_qc, *n_rc)));
-      }
-    }
+
+    ANNkd_split* N_q_split = AS_SPLIT(N_q), *N_r_split = AS_SPLIT(N_r);;
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q, N_r_split->child[0]), NODE_PAIR(N_q, N_r_split->child[0])));
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q, N_r_split->child[1]), NODE_PAIR(N_q, N_r_split->child[1])));
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q_split->child[0], N_r), NODE_PAIR(N_q_split->child[0], N_r)));
+    score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(N_q_split->child[1], N_r), NODE_PAIR(N_q_split->child[1], N_r)));
+
+    // for (VI(ANNkd_node*) n_qc = qn.begin(); n_qc != qn.end(); ++n_qc){
+    //   for (VI(ANNkd_node*) n_rc = rn.begin(); n_rc != rn.end(); ++n_rc){
+    //     score_mm.insert(std::pair<ANNdist, NODE_PAIR>(Score(*n_qc, *n_rc), NODE_PAIR(*n_qc, *n_rc)));
+    //   }
+    // }
   }
 
   // Loop through the map values and recurse combinations with scores < infinity
@@ -292,56 +352,34 @@ void DualTreeKNN::DFS(ANNkd_node* N_q, ANNkd_node* N_r){
 
   // KD Trees only store points in the leaves; Base case only needed if comparing two leaves
   if (IS_LEAF(N_q) && IS_LEAF(N_r)){
-    // Get the points held in both the query and reference nodes
-    std::vector<int> qpts = std::vector<int>(), rpts = std::vector<int>();
-    N_q->node_ids(qpts), N_r->node_ids(rpts);
-    for (VI(int) q_idx = qpts.begin(); q_idx != qpts.end(); ++q_idx){
-      for (VI(int) r_idx = rpts.begin(); r_idx != rpts.end(); ++r_idx){
-        BaseCase(qtree->pts[*q_idx], rtree->pts[*r_idx], *q_idx, *r_idx, N_q); // Pass nodes as well to keep track of min_knn
+    ANNkd_leaf* N_q_leaf = AS_LEAF(N_q), *N_r_leaf = AS_LEAF(N_r);
+    for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
+      for (int r_i = 0; r_i < N_r_leaf->n_pts; ++r_i){
+        int q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
+
+        // Compute Base case, saving knn ids and distances along the way
+        R_INFO("Calling base case for: q = " << q_idx << ", r = " << r_idx << ")\n")
+        BaseCase(qtree->pts[q_idx], rtree->pts[r_idx], q_idx, r_idx, N_q); // Pass nodes as well to keep track of min_knn
       }
     }
+    return; // If at the base case, don't recurse!
   }
 
-  // If both are leaves, no need to further recurse
-  if (IS_LEAF(N_q) && IS_LEAF(N_r)){ return; }
-
-  // --- This should no longer be needed: each tree should only have two children ---
-  // Get immediate children kd_nodes of the current query and references nodes
-  // std::vector<ANNkd_node*> qn = std::vector<ANNkd_node*>(), rn = std::vector<ANNkd_node*>();
-  // N_q->child_nodes(qn), N_r->child_nodes(rn);
-
-  // Reference branches still need to be checked
+  // Recursive calls
   if (IS_LEAF(N_q) && !IS_LEAF(N_r)){
     N_r_par = N_r; // set current reference node as parent, keep same query parent
-
-    // Go left and right
-    DFS(N_q, AS_SPLIT(N_r)->child[ANN_LO]);
-    DFS(N_q, AS_SPLIT(N_r)->child[ANN_HI]);
-
-    // for (VI(ANNkd_node*) n_rc = rn.begin(); n_rc != rn.end(); ++n_rc){
-    //   DFS(N_q, *n_rc);
-    // }
+    DFS(N_q, AS_SPLIT(N_r)->child[ANN_LO]); // Go left down the reference node
+    DFS(N_q, AS_SPLIT(N_r)->child[ANN_HI]); // Go right down the reference node
   } else if (!IS_LEAF(N_q) && IS_LEAF(N_r)){
     N_q_par = N_q; // set current query node as parent, keep same reference parent
-    // Go left and right
-    DFS(AS_SPLIT(N_q)->child[ANN_LO], N_r);
-    DFS(AS_SPLIT(N_q)->child[ANN_LO], N_r);
-    // for (VI(ANNkd_node*) n_qc = qn.begin(); n_qc != qn.end(); ++n_qc){
-    //   DFS(*n_qc, N_r);
-    // }
+    DFS(AS_SPLIT(N_q)->child[ANN_LO], N_r); // Go left down the query node
+    DFS(AS_SPLIT(N_q)->child[ANN_HI], N_r); // Go right down the query node
   } else {
-    N_q_par = N_q, N_r_par = N_r; // set parents as the current nodes
-
-    // Traverse all
+    // Set both parents and traverse all combinations
+    N_q_par = N_q, N_r_par = N_r;
     DFS(AS_SPLIT(N_q)->child[ANN_LO], AS_SPLIT(N_r)->child[ANN_LO]);
     DFS(AS_SPLIT(N_q)->child[ANN_LO], AS_SPLIT(N_r)->child[ANN_HI]);
     DFS(AS_SPLIT(N_q)->child[ANN_HI], AS_SPLIT(N_r)->child[ANN_LO]);
     DFS(AS_SPLIT(N_q)->child[ANN_HI], AS_SPLIT(N_r)->child[ANN_HI]);
-
-    // for (VI(ANNkd_node*) n_qc = qn.begin(); n_qc != qn.end(); ++n_qc){
-    //   for (VI(ANNkd_node*) n_rc = rn.begin(); n_rc != rn.end(); ++n_rc){
-    //     DFS(*n_qc, *n_rc);
-    //   }
-    // }
   }
 }

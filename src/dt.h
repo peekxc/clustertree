@@ -4,11 +4,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include "ANN/ANN.h"
-#include "pr_queue_k.h"
-#include "kd_tree.h"
-#include "kd_util.h"
-
+#include "ANNdt.h" // dual kdtree ANN extension
 #include <algorithm> // std::for_each
 #include <unordered_map> // unordered_map
 #include <cassert> // assert
@@ -37,25 +33,25 @@ using namespace Rcpp;
 // Type definitions
 typedef std::pair<ANNkd_node*, ANNkd_node*> NODE_PAIR; // query node is always assumed as the first node
 
-// Every node has a set number of bounds related to it that allow pruning of branch queries,
-// each of which should only need to be computed once. The Bound struct stores these bounds,
-// allowing the recursion to be memoized.
-struct Bound {
-  ANNdist B, rho, lambda;
-  ANNpoint centroid;
-  ANNorthRect* bnd_box; // TODO: Have this point to the box computed in the tree construction
-  Bound() : B(-1.0), rho(-1.0), lambda(-1.0), centroid(NULL) , bnd_box(NULL) { }
-};
-
 // ---- DualTree class definition ----
 class DualTree {
 protected:
-  const int d; // dimension
-  ANNkd_tree* qtree, *rtree; // query and reference tree pinters
+  const bool use_pruning;
+  int d; // dimension
+  ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
+  std::unordered_map<ANNkd_node*, const Bound& >* bounds; // Various bounds per-node to fill in (node_ptr -> bounds)
   std::map< std::pair<int, int>, bool>* BC_check; // Node pair base case check: should default to false if no key found!
 public:
-  // Constructors and destructors: just need two trees
-  DualTree(ANNkd_tree* ref_tree, ANNkd_tree* query_tree);
+  DualTree(const bool prune);
+  virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
+  virtual void setDim(const int dim) { d = dim; }
+  virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
+  virtual void setQueryTree(ANNkd_tree* query_tree) { qtree = query_tree; };
+
+  // To choose between constructing a regular (ANN) kdtree, or an augmented tree with precomputed bounds,
+  // use a static method
+  virtual ANNkd_tree* ConstructTree(ANNpointArray x, const int nrow, const int ncol,
+                                    const int bkt_sz = 15, ANNsplitRule = ANN_KD_SUGGEST);
   // ~DualTree(); // virtual destructor
 
   // Utility

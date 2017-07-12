@@ -96,12 +96,12 @@ public:
 	virtual void ann_pri_search(ANNdist);		// priority search
 	virtual void ann_FR_search(ANNdist); 		// fixed-radius search
 
-
 	// Unimplemented virtuals
 	virtual void child_nodes(std::vector<ANNkd_node*>& nodes){ }; // get all child **nodes**
 	virtual void node_ids(std::vector<int>& ids){ }; // get all point ids in this node
 	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes){ } // get all desc **nodes**, recursively
 	virtual void desc_ids(std::vector<int>& ids){ };
+	virtual ANNdist max_child_dist(int d, ANNpoint centroid){};
 
 };
 

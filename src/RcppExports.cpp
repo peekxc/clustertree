@@ -85,16 +85,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // dt_knn
-List dt_knn(NumericMatrix x, const int k, const int bkt_size, bool prune);
-RcppExport SEXP clustertree_dt_knn(SEXP xSEXP, SEXP kSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
+List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x, const int bkt_size, bool prune);
+RcppExport SEXP clustertree_dt_knn(SEXP q_xSEXP, SEXP kSEXP, SEXP r_xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type q_x(q_xSEXP);
     Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type r_x(r_xSEXP);
     Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
     Rcpp::traits::input_parameter< bool >::type prune(pruneSEXP);
-    rcpp_result_gen = Rcpp::wrap(dt_knn(x, k, bkt_size, prune));
+    rcpp_result_gen = Rcpp::wrap(dt_knn(q_x, k, r_x, bkt_size, prune));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -156,7 +157,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"clustertree_mstToHclust", (DL_FUNC) &clustertree_mstToHclust, 2},
     {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 6},
     {"clustertree_naive_clustertree", (DL_FUNC) &clustertree_naive_clustertree, 4},
-    {"clustertree_dt_knn", (DL_FUNC) &clustertree_dt_knn, 4},
+    {"clustertree_dt_knn", (DL_FUNC) &clustertree_dt_knn, 5},
     {"clustertree_kd_knn", (DL_FUNC) &clustertree_kd_knn, 3},
     {"clustertree_kdtree", (DL_FUNC) &clustertree_kdtree, 1},
     {"clustertree_kNN_int", (DL_FUNC) &clustertree_kNN_int, 6},

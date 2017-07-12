@@ -25,8 +25,8 @@ naive_clustertree <- function(x, r_k, alpha = 1.414213562373095, type = 0L) {
     .Call('clustertree_naive_clustertree', PACKAGE = 'clustertree', x, r_k, alpha, type)
 }
 
-dt_knn <- function(x, k, bkt_size = 30L, prune = FALSE) {
-    .Call('clustertree_dt_knn', PACKAGE = 'clustertree', x, k, bkt_size, prune)
+dt_knn <- function(q_x, k, r_x = matrix(), bkt_size = 30L, prune = FALSE) {
+    .Call('clustertree_dt_knn', PACKAGE = 'clustertree', q_x, k, r_x, bkt_size, prune)
 }
 
 kd_knn <- function(query_x, tree_ptr, k) {

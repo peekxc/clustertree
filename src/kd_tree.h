@@ -56,6 +56,7 @@ public:
 	virtual void node_ids(std::vector<int>& ids) = 0; // get all point ids in this node
 	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all desc **nodes**, recursively
 	virtual void desc_ids(std::vector<int>& ids) = 0; // get all child ids, recursively
+	virtual ANNdist max_child_dist(int d, ANNpoint centroid) = 0;
 	// --- End Node-specific extensions ---
 
 	virtual void getStats(						// get tree statistics
@@ -127,6 +128,7 @@ public:
 	virtual void node_ids(std::vector<int>& ids); // get all point ids in this node
 	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
 	virtual void desc_ids(std::vector<int>& ids); // get all child ids, recursively
+	virtual ANNdist max_child_dist(int d, ANNpoint centroid); // compute the max child distance
 };
 
 //----------------------------------------------------------------------
@@ -200,6 +202,7 @@ public:
 	virtual void node_ids(std::vector<int>& ids); // get all point ids in this node
 	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
 	virtual void desc_ids(std::vector<int>& ids); // get all child ids, recursively
+	virtual ANNdist max_child_dist(int d, ANNpoint centroid); // compute the max child distance
 };
 
 //----------------------------------------------------------------------
@@ -214,16 +217,5 @@ ANNkd_ptr rkd_tree(				// recursive construction of kd-tree
 	int					bsp,			// bucket space
 	ANNorthRect			&bnd_box,		// bounding box for current node
 	ANNkd_splitter		splitter);		// splitting routine
-
-
-// MJP
-ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
-    ANNpointArray		pa,				// point array (unaltered)
-    ANNidxArray			pidx,			// point indices to store in subtree
-    int					n,				// number of points
-    int					dim,			// dimension of space
-    int					bsp,			// bucket space
-    ANNorthRect			&bnd_box,		// bounding box for current node
-    ANNkd_splitter		splitter);		// splitting routine
 
 #endif
