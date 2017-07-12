@@ -4,12 +4,45 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
+// #undef NDEBUG // <-- for 'production' mode, will remove IO
+//#define PROFILING // <-- for 'profile' mode, will give timings of every function being profiled
+
+
 // Allows indexing lower triangular (dist objects)
 #include <math.h>
 #define INDEX_TF(N,to,from) (N)*(to) - (to)*(to+1)/2 + (from) - (to) - (1)
 #define INDEX_TO(k, n) n - 2 - floor(sqrt(-8*k + 4*n*(n-1)-7)/2.0 - 0.5)
 #define INDEX_FROM(k, n, i) k + i + 1 - n*(n-1)/2 + (n-i)*((n-i)-1)/2
 #define INDEX_FROM_KNN(i, k) i % k == 0 ? (i / k) - 1 : int(i / k);
+
+// Simplifies/Shortens iterator definitions
+#define VI(x) std::vector<x>::iterator
+
+// Enables to the redirection of messages to the current R session
+#ifdef NDEBUG
+#define ANN_PERF // Compile ANN library for performance testing
+#define R_INFO(x) Rcpp::Rcout << x;
+#define R_PRINTF(x, ...) Rprintf(x, __VA_ARGS__);
+#else
+#define R_INFO(x)
+#define R_PRINTF(x, ...)
+#endif
+
+// Trivial profiling technique
+#ifdef PROFILING
+  #include <chrono>
+  #define BEGIN_PROFILE() { std::chrono::steady_clock::time_point begin_t = std::chrono::steady_clock::now();
+  #define END_PROFILE() std::chrono::steady_clock::time_point end_t = std::chrono::steady_clock::now();
+  #define REPORT_TIME(x) \
+  std::chrono::steady_clock::time_point end_t = std::chrono::steady_clock::now(); \
+  Rcout << x << " took: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_t - begin_t).count() << " ms\n"; \
+  }
+#else
+#define BEGIN_PROFILE()
+#define END_PROFILE()
+#define REPORT_TIME(x) x;
+#endif
 
 // std::to_string is apparently a c++11 only thing that crashes appveyor, so using ostringstream it is!
 namespace patch

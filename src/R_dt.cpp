@@ -2,6 +2,7 @@
 using namespace Rcpp;
 
 #include "dt_knn.h"
+#include "utilities.h" // R_INFO, profiling mode, etc.
 
 ANNpointArray matrixToANNpointArray(NumericMatrix x){
   // Copy data over to ANN point array
@@ -15,6 +16,7 @@ ANNpointArray matrixToANNpointArray(NumericMatrix x){
   return dataPts;
 }
 
+
 // R-facing API for the KNN-focused dual tree traversal
 // [[Rcpp::export]]
 List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(), const int bkt_size = 30, bool prune = false) {
@@ -22,20 +24,25 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   // If only query points are given, or q_x and r_x point to the same memory,
   // only one tree needs to be constructed
   bool identical_qr = r_x.size() <= 1 ? true : (&q_x) == (&r_x);
-  // Rcout << "identical query and reference sets? " << identical_qr << " Size: " << r_x.size() << std::endl;
+  Rcout << "identical query and reference sets? " << identical_qr << ", size: " << q_x.size() << ", dim: " << q_x.ncol() << std::endl;
   ANNkd_tree* kd_treeQ, *kd_treeR;
 
   // Copy data over to ANN point array
-  ANNpointArray qx_ann = matrixToANNpointArray(q_x);
+  ANNpointArray qx_ann;
+  BEGIN_PROFILE()
+  qx_ann = matrixToANNpointArray(q_x);
+  REPORT_TIME("Query matrix copy")
 
   // Construct the dual tree KNN instance
-  DualTreeKNN dt_knn = DualTreeKNN(prune);
+  DualTreeKNN dt_knn = DualTreeKNN(prune, q_x.ncol());
 
   // Construct the tree(s)
   if (identical_qr){
     r_x = q_x; // Ensure r_x and q_x are identical incase r_x was NULL
+    BEGIN_PROFILE()
     kd_treeQ = dt_knn.ConstructTree(qx_ann, q_x.nrow(), q_x.ncol(), bkt_size, ANN_KD_SUGGEST);
     kd_treeR = kd_treeQ;
+    REPORT_TIME("KD Tree construction")
   } else {
     ANNpointArray rx_ann = matrixToANNpointArray(r_x);
     kd_treeQ = dt_knn.ConstructTree(qx_ann, q_x.nrow(), q_x.ncol(), bkt_size, ANN_KD_SUGGEST);
@@ -43,7 +50,9 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   }
 
   // With the tree(s) created, setup KNN-specific bounds
+  BEGIN_PROFILE()
   dt_knn.setup(kd_treeQ, kd_treeR);
+  REPORT_TIME("Dual Tree setup")
 
   // Note: the search also returns the point itself (as the first hit)!
   // So we have to look for k+1 points.
@@ -53,7 +62,6 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   // Create dual tree using both trees
   dt_knn.KNN(k + 1, dists, id);
   List res = List::create(_["dist"] = dists, _["id"] = id + 1);
-
 
   // Performance test cases
   // // Test cases
@@ -70,8 +78,9 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 ## Testing the search
 test_set <- matrix(c(13, 291, 57, 145, 115, 232, 86, 27, 145, 28, 262, 203, 320, 261, 379, 174, 261, 71, 325, 57), byrow=T, ncol=2)
 test_set[, 2] <- 321 - test_set[, 2]
-clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)
+clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
+
 
 ## Test for correctness
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)$dist[, -1] == dbscan::kNNdist(test_set, k = 4L)

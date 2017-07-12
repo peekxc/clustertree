@@ -21,11 +21,11 @@ protected:
   bool knn_identity; // are reference and query sets the same?
   std::unordered_map<ANNidx, ANNmin_k*>* knn;  // Map between point index and kNN priority queue
   std::unordered_map<ANNkd_node*, BoundKNN& >* bnd_knn;
-  std::vector<ANNidx>* qpts;
+  // std::vector<ANNidx>* qpts;
 public:
 
   // Main constructors
-  DualTreeKNN(const bool prune); // default constructor
+  DualTreeKNN(const bool prune, const int dim); // default constructor
   virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   //~DualTreeKNN();
 
@@ -47,14 +47,14 @@ public:
       R_INFO("Min dist. Q <--> R: " << sqrt(min_dist_qr) << "\n")
 
       // ANNdist bound_nq = B(N_q); // Bound type 1 (TODO: doesnt work right now!)
-      // ANNdist bound_nq = max_knn_B(N_q); // Bound type 2
-      //
-      // if (min_dist_qr < bound_nq){ // check if the minimum distance between two nodes is small enough to recurse
-      //   return (min_dist_qr);
-      // }
-      // R_INFO("Pruning! Q <--> R: " << min_dist_qr << "(> " << bound_nq << ")" <<  "\n")
-      // return ANN_DIST_INF;
-      return 0;
+      ANNdist bound_nq = max_knn_B(N_q); // Bound type 2
+
+      if (min_dist_qr < bound_nq){ // check if the minimum distance between two nodes is small enough to recurse
+        return (min_dist_qr);
+      }
+      R_INFO("Pruning! Q <--> R: " << min_dist_qr << "(> " << bound_nq << ")" <<  "\n")
+      return ANN_DIST_INF; // Prune this branch
+      // return 0;// This branch must be recursed into
   };
 
   // Base case function: try to inline if possible

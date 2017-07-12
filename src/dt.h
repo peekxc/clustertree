@@ -9,26 +9,13 @@ using namespace Rcpp;
 #include <unordered_map> // unordered_map
 #include <cassert> // assert
 #include <queue> // queue
-
-//#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
-#undef NDEBUG // <-- for 'production' mode, will remove IO
-
-#ifdef NDEBUG
-  #define ANN_PERF // Compile ANN library for performance testing
-  #define R_INFO(x) Rcpp::Rcout << x;
-  #define R_PRINTF(x, ...) Rprintf(x, __VA_ARGS__);
-#else
-  #define R_INFO(x)
-  #define R_PRINTF(x, ...)
-#endif
+#include "utilities.h" // R_INFO, profiling mode, etc.
 
 // Utility macros
 #define IS_SPLIT(x) (bool) (dynamic_cast<ANNkd_split*>(x) != NULL)
 #define AS_SPLIT(x) dynamic_cast<ANNkd_split*>(x)
 #define IS_LEAF(x) (bool) (dynamic_cast<ANNkd_leaf*>(x) != NULL)
 #define AS_LEAF(x) dynamic_cast<ANNkd_leaf*>(x)
-
-#define VI(x) std::vector<x>::iterator
 
 // Type definitions
 typedef std::pair<ANNkd_node*, ANNkd_node*> NODE_PAIR; // query node is always assumed as the first node
@@ -37,14 +24,13 @@ typedef std::pair<ANNkd_node*, ANNkd_node*> NODE_PAIR; // query node is always a
 class DualTree {
 protected:
   const bool use_pruning;
-  int d; // dimension
+  const int d; // dimension
   ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
   std::unordered_map<ANNkd_node*, const Bound& >* bounds; // Various bounds per-node to fill in (node_ptr -> bounds)
   std::map< std::pair<int, int>, bool>* BC_check; // Node pair base case check: should default to false if no key found!
 public:
-  DualTree(const bool prune);
+  DualTree(const bool prune, const int dim);
   virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
-  virtual void setDim(const int dim) { d = dim; }
   virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
   virtual void setQueryTree(ANNkd_tree* query_tree) { qtree = query_tree; };
 

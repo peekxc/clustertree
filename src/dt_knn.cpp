@@ -18,7 +18,7 @@ ANNkd_node* N_q_par, *N_r_par;
 
 // Instantiate parent dual tree class along with KNN-specific things, including parent
 // node pointers and KNN-bound mapping
-DualTreeKNN::DualTreeKNN(const bool prune) : DualTree(prune) {
+DualTreeKNN::DualTreeKNN(const bool prune, const int dim) : DualTree(prune, dim) {
   N_q_par = N_r_par = NULL;
   if (prune){
     R_INFO("Allocating KNN bound map\n")
@@ -53,18 +53,24 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
   knn_identity = (qtree == rtree); // Set whether the KNN search is done on identical trees
 
   // Create a map between point indices and their corresponding empty k-nearest neighbors
+  BEGIN_PROFILE()
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
   for (int i = 0; i < qtree->n_pts; ++i) {
     knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
   }
+  REPORT_TIME("Creating KNN objects")
 
   // Contains the indices of all of the points descendent of the current node
   // Should not exceed the number of query points. Updated several times recursively.
-  qpts = new std::vector<ANNidx>();
-  qpts->reserve(qtree->n_pts + 1);
+  // qpts = new std::vector<ANNidx>();
+  // qpts->reserve(qtree->n_pts + 1);
 
   // If pruning is enabled, use that one. Otherwise use regular DFS w/o computing extra bounds.
-  if (use_pruning){ pDFS(rtree->root, qtree->root); } else { DFS(rtree->root, qtree->root); }
+  if (use_pruning){
+    pDFS(rtree->root, qtree->root);
+  } else {
+    DFS(rtree->root, qtree->root);
+  }
 
   // Copy over the distances and ids
   R_INFO("KNN took: " << n_traversals << " traversals\n. Copying to R memory\n")
@@ -103,11 +109,18 @@ ANNdist DualTreeKNN::min_dist(ANNkd_node* N_q, ANNkd_node* N_r){ // assume query
   // box contained by a given node
   ANNdist lambda_i = ANN_DIST_INF, lambda_j = ANN_DIST_INF;
   for (int i = 0; i < d; ++i){
+    R_INFO("Lambda_i: (was " << lambda_i << ") (should be argmin: " << nq_bound.bnd_box->hi[i] - nq_bound.bnd_box->lo[i] << ")\n")
     lambda_i = std::min(lambda_i, nq_bound.bnd_box->hi[i] - nq_bound.bnd_box->lo[i]);
     lambda_j = std::min(lambda_j, nr_bound.bnd_box->hi[i] - nr_bound.bnd_box->lo[i]);
   }
 
   // Return bound
+  R_INFO("NQ centroid: ");
+  for (int i = 0; i < d; ++i) { R_PRINTF("%f", nq_bound.centroid[i]) }
+  R_INFO("\n")
+  R_INFO("NR centroid: ");
+  for (int i = 0; i < d; ++i) { R_PRINTF("%f", nr_bound.centroid[i]) }
+  R_INFO("\n")
   return(annDist(d, nq_bound.centroid, nr_bound.centroid) - lambda_i - lambda_j);
 }
 
@@ -351,6 +364,7 @@ void DualTreeKNN::DFS(ANNkd_node* N_q, ANNkd_node* N_r){
   INC_TRAVERSAL(1)
 
   // KD Trees only store points in the leaves; Base case only needed if comparing two leaves
+  BEGIN_PROFILE()
   if (IS_LEAF(N_q) && IS_LEAF(N_r)){
     ANNkd_leaf* N_q_leaf = AS_LEAF(N_q), *N_r_leaf = AS_LEAF(N_r);
     for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
@@ -364,6 +378,7 @@ void DualTreeKNN::DFS(ANNkd_node* N_q, ANNkd_node* N_r){
     }
     return; // If at the base case, don't recurse!
   }
+  REPORT_TIME("Running base cases")
 
   // Recursive calls
   if (IS_LEAF(N_q) && !IS_LEAF(N_r)){

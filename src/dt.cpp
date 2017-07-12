@@ -6,7 +6,7 @@ using namespace Rcpp;
 
 
 // Constructor initializes the bounds map (if pruning is enabled), and base case map
-DualTree::DualTree(const bool prune) : use_pruning(prune) {
+DualTree::DualTree(const bool prune, const int dim) : use_pruning(prune), d(dim) {
   R_INFO("Instantiating dual tree objects\n")
   if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
   BC_check = new std::map< std::pair<int, int>, bool>();
@@ -15,8 +15,8 @@ DualTree::DualTree(const bool prune) : use_pruning(prune) {
 // Derivable setup function
 void DualTree::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
   // Check dimensionality, then assign trees if the same
-  if (kd_treeR->theDim() != kd_treeQ->theDim()){ stop("Dimensionality of the query set does not match the reference set."); }
-  d = kd_treeR->theDim();
+  if (kd_treeR->theDim() != kd_treeQ->theDim() || kd_treeR->theDim() != d){ stop("Dimensionality of the query set does not match the reference set."); }
+  R_PRINTF("Setting up dual trees for %d dimensions", d)
   rtree = kd_treeR;
   qtree = kd_treeQ;
 }
@@ -42,6 +42,22 @@ ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int n
   if (use_pruning){
     kdTree = new ANNkd_tree_dt(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
     R_INFO("Bounds computed at tree construction: " << bounds->size() << "\n")
+  #ifdef NDEBUG
+    for (std::unordered_map<ANNkd_node*, const Bound& >::iterator it = bounds->begin(); it != bounds->end(); ++it){
+      const Bound& c_bnd = it->second;
+      Rcout << "Node: " << it->first << std::endl;
+      Rcout << "Bounding Box: [(";
+      for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.bnd_box->lo[i] << ", "; }
+      Rcout << "), (";
+      for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.bnd_box->hi[i] << ", "; }
+      Rcout << ")]" << std::endl;
+      Rcout << "Centroid: (";
+      for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.centroid[i] << ", "; }
+      Rcout << ")\n";
+      Rcout << "Lambda: " << c_bnd.lambda << std::endl;
+      Rcout << "Rho: " << c_bnd.rho << std::endl;
+    }
+  #endif
   } else {
     kdTree = new ANNkd_tree(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST);
   }

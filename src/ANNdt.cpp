@@ -1,4 +1,5 @@
 #include "ANNdt.h"
+#include "utilities.h"
 
 ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   ANNpointArray		pa,				// point array (with at least n pts)
@@ -8,16 +9,19 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   ANNsplitRule		split, // splitting method
   std::unordered_map<ANNkd_node*, const Bound& >* bounds) // bounds
 {
+  R_PRINTF("Dimension of trees: %d\n", dd);
   SkeletonTree(n, dd, bs);			// set up the basic stuff
   pts = pa;							// where the points are
   if (n == 0) return;					// no points--no sweat
 
   ANNorthRect bnd_box(dd);			// bounding box for points
   annEnclRect(pa, pidx, n, dd, bnd_box);// construct bounding rectangle
+  R_PRINTF("Root box: [(%f, %f), (%f, %f)]\n", bnd_box.lo[0], bnd_box.hi[0], bnd_box.lo[1], bnd_box.hi[1]);
 
   // Compute the centroid of the current rectangle
-  ANNpoint centroid = new ANNcoord[dim];
+  ANNpoint centroid = new ANNcoord[dd];
   for (int i = 0; i < dd; ++i){ centroid[i] = ANNcoord((bnd_box.lo[i] + bnd_box.hi[i]) / 2.0); }
+  R_PRINTF("Centroid: (%f, %f)\n", centroid[0], centroid[1]);
 
   // copy to tree structure
   bnd_box_lo = annCopyPt(dd, bnd_box.lo);
@@ -43,6 +47,22 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   default:
     annError("Illegal splitting method", ANNabort);
   }
+
+  Bound& bnd = *new Bound();
+  bnd.bnd_box = new ANNorthRect(dim, bnd_box.lo, bnd_box.hi); // Copy bounding box
+  bnd.centroid = annCopyPt(dim, centroid);
+  ANNdist tmp = ANN_DIST_INF;
+  for (int i = 0; i < n; ++i){
+    ANNdist centroid_dist = annDist(dim, (ANNpoint) centroid, (ANNpoint) pa[pidx[i]]);
+    tmp = centroid_dist < tmp ? centroid_dist : tmp;
+  };
+
+  // Update max child and max desc. distance with upper bounds
+  bnd.lambda = annDist(dim, bnd.bnd_box->hi, bnd.centroid); // upper bound
+  bnd.rho = bnd.lambda; // also upper bound
+
+  // Insert root as final key
+  bounds->insert(std::pair< ANNkd_ptr, const Bound& >(root, bnd));
 }
 
 // ANNkd_tree_dt::ANNkd_tree_dt
@@ -65,8 +85,8 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     else	{    // construct the node and return
       ANNkd_node* new_leaf = new ANNkd_leaf(n, pidx);
       Bound& leaf_bnd = *new Bound();
-      leaf_bnd.bnd_box = new ANNorthRect(dim, (const ANNorthRect&) bnd_box); // Copy bounding box
-      leaf_bnd.centroid = centroid;
+      leaf_bnd.bnd_box = new ANNorthRect(dim, bnd_box.lo, bnd_box.hi); // Copy bounding box
+      leaf_bnd.centroid = annCopyPt(dim, centroid);
       ANNdist tmp = ANN_DIST_INF;
       for (int i = 0; i < n; ++i){
         ANNdist centroid_dist = annDist(dim, (ANNpoint) centroid, (ANNpoint) pa[pidx[i]]);
@@ -89,9 +109,11 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
 
     // Create the bounds object for this node
     Bound& node_bnds = *new Bound();
-    node_bnds.bnd_box = new ANNorthRect(dim, bnd_box); // Copy bounding box
-    for (int i = 0; i < dim; ++i){ centroid[i] = ANNcoord((node_bnds.bnd_box->lo[i] + node_bnds.bnd_box->hi[i]) / 2.0); }
-    node_bnds.centroid = centroid;
+
+    // Copy bounding box
+    node_bnds.bnd_box = new ANNorthRect(dim, bnd_box.lo, bnd_box.hi); // Copy bounding box
+    for (int i = 0; i < dim; ++i){ centroid[i] = ANNcoord((bnd_box.lo[i] + bnd_box.hi[i]) / 2.0); }
+    node_bnds.centroid = annCopyPt(dim, centroid);
 
     ANNcoord lv = bnd_box.lo[cd];	// save bounds for cutting dimension
     ANNcoord hv = bnd_box.hi[cd];
