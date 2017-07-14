@@ -60,6 +60,7 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   IntegerMatrix id(q_x.nrow(), k + 1);  // Id matrix of knn indices
 
   // Create dual tree using both trees
+  dt_knn.PrintTree(true);
   dt_knn.KNN(k + 1, dists, id);
   List res = List::create(_["dist"] = dists, _["id"] = id + 1);
 
@@ -78,7 +79,7 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 ## Testing the search
 test_set <- matrix(c(13, 291, 57, 145, 115, 232, 86, 27, 145, 28, 262, 203, 320, 261, 379, 174, 261, 71, 325, 57), byrow=T, ncol=2)
 test_set[, 2] <- 321 - test_set[, 2]
-clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)
+clustertree:::dt_knn(test_set[1:2, ], k = 4L, bkt_size = 1L, prune = TRUE)
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
 
 

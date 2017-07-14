@@ -41,7 +41,7 @@ using namespace Rcpp;
 #else
 #define BEGIN_PROFILE()
 #define END_PROFILE()
-#define REPORT_TIME(x) x;
+#define REPORT_TIME(x)
 #endif
 
 // std::to_string is apparently a c++11 only thing that crashes appveyor, so using ostringstream it is!
@@ -62,6 +62,20 @@ template <typename T, typename C> bool contains (const T& container, const C& ke
   } else {
     return false;
   }
+}
+
+template<typename T> class CompareIdxByVec { std::vector<T>* _values; public: CompareIdxByVec(std::vector<T>* values) : _values(values) {} public: bool operator() (const size_t& a, const size_t& b) const { return (_values)[a] > (_values)[b]; } };
+template <typename T>
+std::vector<size_t> sort_indexes(const std::vector<T> &v) {
+
+  // initialize original index locations
+  std::vector<size_t> idx(v.size());
+  iota(idx.begin(), idx.end(), 0);
+
+  // sort indexes based on comparing values in v
+  sort(idx.begin(), idx.end(), CompareIdxByVec<T>());
+
+  return idx;
 }
 
 inline IntegerVector lowerTri(IntegerMatrix m){

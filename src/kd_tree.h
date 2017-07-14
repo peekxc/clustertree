@@ -52,11 +52,11 @@ public:
 	virtual void ann_FR_search(ANNdist) = 0;	// fixed-radius search
 
 	// --- Node-specific extensions ---
-	virtual void child_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all child **nodes**
-	virtual void node_ids(std::vector<int>& ids) = 0; // get all point ids in this node
-	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all desc **nodes**, recursively
-	virtual void desc_ids(std::vector<int>& ids) = 0; // get all child ids, recursively
-	virtual ANNdist max_child_dist(int d, ANNpoint centroid) = 0;
+	// virtual void child_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all child **nodes**
+	// virtual void node_ids(std::vector<int>& ids) = 0; // get all point ids in this node
+	// virtual void desc_nodes(std::vector<ANNkd_node*>& nodes) = 0; // get all desc **nodes**, recursively
+	// virtual void desc_ids(std::vector<int>& ids) = 0; // get all child ids, recursively
+	// virtual ANNdist max_child_dist(int d, ANNpoint centroid) = 0;
 	// --- End Node-specific extensions ---
 
 	virtual void getStats(						// get tree statistics
@@ -124,11 +124,11 @@ public:
 	virtual void ann_FR_search(ANNdist);		// fixed-radius search
 
 	// --- Node-specific extensions ---
-	virtual void child_nodes(std::vector<ANNkd_node*>& nodes); // get all child **nodes**
-	virtual void node_ids(std::vector<int>& ids); // get all point ids in this node
-	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
-	virtual void desc_ids(std::vector<int>& ids); // get all child ids, recursively
-	virtual ANNdist max_child_dist(int d, ANNpoint centroid); // compute the max child distance
+	// virtual void child_nodes(std::vector<ANNkd_node*>& nodes); // get all child **nodes**
+	// virtual void node_ids(std::vector<int>& ids); // get all point ids in this node
+	// virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
+	// virtual void desc_ids(std::vector<int>& ids); // get all child ids, recursively
+	// virtual ANNdist max_child_dist(int d, ANNpoint centroid); // compute the max child distance
 };
 
 //----------------------------------------------------------------------
@@ -198,11 +198,11 @@ public:
 	virtual void ann_FR_search(ANNdist);		// fixed-radius search
 
 	// --- Node-specific extensions ---
-	virtual void child_nodes(std::vector<ANNkd_node*>& nodes); // get all child **nodes**
-	virtual void node_ids(std::vector<int>& ids); // get all point ids in this node
-	virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
-	virtual void desc_ids(std::vector<int>& ids); // get all child ids, recursively
-	virtual ANNdist max_child_dist(int d, ANNpoint centroid); // compute the max child distance
+	// virtual void child_nodes(std::vector<ANNkd_node*>& nodes); // get all child **nodes**
+	// virtual void node_ids(std::vector<int>& ids); // get all point ids in this node
+	// virtual void desc_nodes(std::vector<ANNkd_node*>& nodes); // get all desc **nodes**, recursively
+	// virtual void desc_ids(std::vector<int>& ids); // get all child ids, recursively
+	// virtual ANNdist max_child_dist(int d, ANNpoint centroid); // compute the max child distance
 };
 
 //----------------------------------------------------------------------

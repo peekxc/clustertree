@@ -86,13 +86,15 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
       ANNkd_node* new_leaf = new ANNkd_leaf(n, pidx);
       Bound& leaf_bnd = *new Bound();
       leaf_bnd.bnd_box = new ANNorthRect(dim, bnd_box.lo, bnd_box.hi); // Copy bounding box
+      for (int i = 0; i < dim; ++i){ centroid[i] = ANNcoord((bnd_box.lo[i] + bnd_box.hi[i]) / 2.0); }
       leaf_bnd.centroid = annCopyPt(dim, centroid);
+      // leaf_bnd.centroid = annCopyPt(dim, centroid);
       ANNdist tmp = ANN_DIST_INF;
       for (int i = 0; i < n; ++i){
         ANNdist centroid_dist = annDist(dim, (ANNpoint) centroid, (ANNpoint) pa[pidx[i]]);
         tmp = centroid_dist < tmp ? centroid_dist : tmp;
       };
-      leaf_bnd.lambda = annDist(dim, leaf_bnd.bnd_box->hi, leaf_bnd.centroid); // upper bound
+      leaf_bnd.lambda = tmp; // annDist(dim, leaf_bnd.bnd_box->hi, leaf_bnd.centroid); // upper bound
       leaf_bnd.rho = tmp; // maximum child distance
       bounds->insert(std::pair< ANNkd_ptr, const Bound& >(new_leaf, leaf_bnd));
       return new_leaf;
@@ -122,22 +124,24 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     lo = rkd_tree_pr(					// build left subtree
       pa, pidx, n_lo,			// ...from pidx[0..n_lo-1]
       dim, bsp, bnd_box, splitter,
-      bounds, node_bnds.centroid); // propagate bounds map and centroid
+      bounds, centroid); // propagate bounds map and centroid
     bnd_box.hi[cd] = hv;			// restore bounds
 
     bnd_box.lo[cd] = cv;			// modify bounds for right subtree
     hi = rkd_tree_pr(					// build right subtree
       pa, pidx + n_lo, n-n_lo,// ...from pidx[n_lo..n-1]
       dim, bsp, bnd_box, splitter,
-      bounds, node_bnds.centroid); // propagate bounds map and centroid
+      bounds, centroid); // propagate bounds map and centroid
     bnd_box.lo[cd] = lv;			// restore bounds
 
     // create the splitting node
     ANNkd_split *ptr = new ANNkd_split(cd, cv, lv, hv, lo, hi);
 
     // Update max child and max desc. distance with upper bounds
-    node_bnds.lambda = annDist(dim, node_bnds.bnd_box->hi, node_bnds.centroid); // upper bound
-    node_bnds.rho = node_bnds.lambda; // also upper bound
+    ANNdist hi_dist = annDist(dim, node_bnds.bnd_box->hi, node_bnds.centroid);
+    ANNdist lo_dist = annDist(dim, node_bnds.bnd_box->lo, node_bnds.centroid);
+    node_bnds.lambda = hi_dist > lo_dist ? hi_dist : lo_dist; // upper bound
+    node_bnds.rho = node_bnds.lambda; // use same bound
 
     // Save bounding information in the hash map
     bounds->insert(std::pair< ANNkd_ptr, const Bound& >(ptr, node_bnds));

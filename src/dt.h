@@ -56,12 +56,12 @@ public:
   // Tree-specific virtual functions: while they can be re-derived, polymorphism is handled internally
   // through function overloading via the ANNkd_node class and it's derivatives, so in many cases the default
   // functionality provided by this class is suitable
-  virtual ANNdist min_dist(ANNkd_node* N_i, ANNkd_node* N_j);
-  virtual ANNdist max_dist(ANNkd_node* N_i, ANNkd_node* N_j);
-  virtual ANNdist max_child_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
-  virtual ANNdist max_desc_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
-  virtual ANNpoint centroid(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
-  virtual ANNorthRect& convex_subset(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true); // Keep ANNorthRect return by reference
+  // virtual ANNdist min_dist(ANNkd_node* N_i, ANNkd_node* N_j);
+  // virtual ANNdist max_dist(ANNkd_node* N_i, ANNkd_node* N_j);
+  // virtual ANNdist max_child_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
+  // virtual ANNdist max_desc_dist(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
+  // virtual ANNpoint centroid(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true);
+  // virtual ANNorthRect& convex_subset(ANNkd_node* N_i, Bound& ni_bnd, bool ref_tree = true); // Keep ANNorthRect return by reference
 
   // void test_cases(List&);
   // void test_cases(List&, ANNkd_node*, int, bool);
