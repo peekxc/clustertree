@@ -33,8 +33,8 @@ kd_knn <- function(query_x, tree_ptr, k) {
     .Call('clustertree_kd_knn', PACKAGE = 'clustertree', query_x, tree_ptr, k)
 }
 
-kdtree <- function(x) {
-    .Call('clustertree_kdtree', PACKAGE = 'clustertree', x)
+kdtree <- function(x, bkt_size) {
+    .Call('clustertree_kdtree', PACKAGE = 'clustertree', x, bkt_size)
 }
 
 kNN_int <- function(data, k, type, bucketSize, splitRule, approx) {

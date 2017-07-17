@@ -1,8 +1,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+#include "utilities.h" // R_INFO, profiling mode, etc. must include first
+#include "R_kdtree.h"
 #include "dt_knn.h"
-#include "utilities.h" // R_INFO, profiling mode, etc.
 
 ANNpointArray matrixToANNpointArray(NumericMatrix x){
   // Copy data over to ANN point array
@@ -24,7 +25,7 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   // If only query points are given, or q_x and r_x point to the same memory,
   // only one tree needs to be constructed
   bool identical_qr = r_x.size() <= 1 ? true : (&q_x) == (&r_x);
-  Rcout << "identical query and reference sets? " << identical_qr << ", size: " << q_x.size() << ", dim: " << q_x.ncol() << std::endl;
+  // Rcout << "identical query and reference sets? " << identical_qr << ", size: " << q_x.size() << ", dim: " << q_x.ncol() << std::endl;
   ANNkd_tree* kd_treeQ, *kd_treeR;
 
   // Copy data over to ANN point array
@@ -60,8 +61,32 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   IntegerMatrix id(q_x.nrow(), k + 1);  // Id matrix of knn indices
 
   // Create dual tree using both trees
-  dt_knn.PrintTree(true);
+  UTIL(dt_knn.PrintTree(true))
+
+  // ----- Start KNN Performance Testing -----
+  #ifdef PROFILING
+  annResetStats(r_x.nrow());
+  annResetCounts();	// reset stats for a set of queries
+
+  // Regular kdtree search
+  List ann_kdtree = kdtree(r_x, bkt_size); // create regular kdtree with the same bucket size
+  List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k);
+
+  // Print statistics
+  Rcout << "Regular KDtree search performance: " << std::endl;
+  annUpdateStats();
+  annPrintStats((ANNbool) false);
+
+  // Dual tree equivalent
+  Rcout << "DualTree search performance: " << std::endl;
+  annResetStats(r_x.nrow());
+  annResetCounts();	// reset stats for a set of queries
   dt_knn.KNN(k + 1, dists, id);
+  annUpdateStats();
+  annPrintStats((ANNbool) false);
+  #endif
+  // ----- End Performance Testing -----
+
   List res = List::create(_["dist"] = dists, _["id"] = id + 1);
 
   // Performance test cases
@@ -79,9 +104,15 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 ## Testing the search
 test_set <- matrix(c(13, 291, 57, 145, 115, 232, 86, 27, 145, 28, 262, 203, 320, 261, 379, 174, 261, 71, 325, 57), byrow=T, ncol=2)
 test_set[, 2] <- 321 - test_set[, 2]
-clustertree:::dt_knn(test_set[1:2, ], k = 4L, bkt_size = 1L, prune = TRUE)
+
+
+clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
 
+
+size <- 50
+ts2 <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size)))
+invisible(clustertree:::dt_knn(ts2, k = 15L, bkt_size = 5L, prune = TRUE))
 
 ## Test for correctness
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)$dist[, -1] == dbscan::kNNdist(test_set, k = 4L)
@@ -90,8 +121,11 @@ dbscan::kNN(test_set, k = 4L, sort = F, bucketSize = 1L)
 ## Benchmarking
 size <- 1500
 xyz <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size), z = rnorm(size)))
-microbenchmark::microbenchmark(invisible(clustertree:::dt_knn(xyz, k = 30L, bkt_size = 15L, prune = FALSE)), times = 15L)
-microbenchmark::microbenchmark(invisible(clustertree:::dt_knn(xyz, k = 30L, bkt_size = 15L, prune = TRUE)), times = 15L)
-microbenchmark::microbenchmark(invisible(dbscan::kNN(xyz, k = 30L, sort = F, bucketSize = 15L)), times = 15L)
+microbenchmark::microbenchmark(invisible(clustertree:::dt_knn(xyz, k = 30L, bkt_size = 30L, prune = FALSE)), times = 15L)
+microbenchmark::microbenchmark(invisible(clustertree:::dt_knn(xyz, k = 30L, bkt_size = 30L, prune = TRUE)), times = 15L)
+microbenchmark::microbenchmark(invisible(dbscan::kNN(xyz, k = 30L, sort = F, bucketSize = 30L)), times = 15L)
+
+clustertree:::dt_knn(xyz, k = 30L, bkt_size = 30L, prune = TRUE)$dist[, -1] == dbscan::kNNdist(xyz, k = 30L, bucketSize = 30L)
+invisible(clustertree:::dt_knn(xyz, k = 30L, bkt_size = 30L, prune = FALSE))
 
 */

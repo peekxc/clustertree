@@ -6,12 +6,12 @@
 //----------------------------------------------------------------------
 // Copyright (c) 1997-2005 University of Maryland and Sunil Arya and
 // David Mount.  All Rights Reserved.
-// 
+//
 // This software and related documentation is part of the Approximate
 // Nearest Neighbor Library (ANN).  This software is provided under
 // the provisions of the Lesser GNU Public License (LGPL).  See the
 // file ../ReadMe.txt for further information.
-// 
+//
 // The University of Maryland (U.M.) and the authors make no
 // representations about the suitability or fitness of this software for
 // any purpose.  It is provided "as is" without express or implied
@@ -85,7 +85,8 @@ ANNmin_k		*ANNkdPointMK;			// set of k closest points
 //----------------------------------------------------------------------
 //	annkSearch - search for the k nearest neighbors
 //----------------------------------------------------------------------
-
+// #include <Rcpp.h>
+// using namespace Rcpp;
 void ANNkd_tree::annkSearch(
 	ANNpoint			q,				// the query point
 	int					k,				// number of near neighbors to return
@@ -161,6 +162,7 @@ void ANNkd_split::ann_search(ANNdist box_dist)
 	}
 	ANN_FLOP(10)						// increment floating ops
 	ANN_SPL(1)							// one more splitting node visited
+	// Rcout << "Number of visited split nodes: " << ann_Nvisit_spl << "\n";
 }
 
 //----------------------------------------------------------------------

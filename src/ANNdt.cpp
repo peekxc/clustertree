@@ -47,6 +47,7 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   default:
     annError("Illegal splitting method", ANNabort);
   }
+  R_INFO("Root created: " << root << "\n")
 
   Bound& bnd = *new Bound();
   bnd.bnd_box = new ANNorthRect(dim, bnd_box.lo, bnd_box.hi); // Copy bounding box
@@ -63,6 +64,7 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
 
   // Insert root as final key
   bounds->insert(std::pair< ANNkd_ptr, const Bound& >(root, bnd));
+
 }
 
 // ANNkd_tree_dt::ANNkd_tree_dt

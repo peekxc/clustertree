@@ -48,7 +48,7 @@ List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k){
 }
 
 // [[Rcpp::export]]
-List kdtree(NumericMatrix x) {
+List kdtree(NumericMatrix x, const int bkt_size) {
 
   // Copy data over to ANN point array
   int nrow = x.nrow(), ncol = x.ncol();
@@ -61,7 +61,7 @@ List kdtree(NumericMatrix x) {
   }
 
   // Create kd tree
-  ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, 30, ANN_KD_SUGGEST);
+  ANNkd_tree* kdTree = new ANNkd_tree(dataPts, nrow, ncol, bkt_size, ANN_KD_SUGGEST);
 
   // Cleanup
   // delete kdTree;
@@ -75,16 +75,3 @@ List kdtree(NumericMatrix x) {
   List ret = List::create(_["kdtree_ptr"] = p);
   return ret;
 }
-
-
-// You can include R code blocks in C++ files processed with sourceCpp
-// (useful for testing and development). The R code will be automatically
-// run after the compilation.
-//
-
-/*** R
-
-data(iris)
-x <- as.matrix(iris[, 1:4])
-
-*/

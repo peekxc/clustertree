@@ -1,0 +1,2 @@
+## for C++ code
+PKG_CPPFLAGS = -DANN_PERF -DPERF

@@ -4,9 +4,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
-// #undef NDEBUG // <-- for 'production' mode, will remove IO
-//#define PROFILING // <-- for 'profile' mode, will give timings of every function being profiled
+//#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
+#undef NDEBUG // <-- for 'production' mode, will remove IO
+#define PROFILING // <-- for 'profile' mode, will give timings of every function being profiled
 
 
 // Allows indexing lower triangular (dist objects)
@@ -20,17 +20,21 @@ using namespace Rcpp;
 #define VI(x) std::vector<x>::iterator
 
 // Enables to the redirection of messages to the current R session
+// UTIL provides a way to input arbitrary code that might be helpful
+// only when debugging code
 #ifdef NDEBUG
-#define ANN_PERF // Compile ANN library for performance testing
 #define R_INFO(x) Rcpp::Rcout << x;
 #define R_PRINTF(x, ...) Rprintf(x, __VA_ARGS__);
+#define UTIL(x) x;
 #else
 #define R_INFO(x)
 #define R_PRINTF(x, ...)
+#define UTIL(x)
 #endif
 
 // Trivial profiling technique
-#ifdef PROFILING
+#ifdef ANN_PERF
+  #include "ANN/ANNperf.h"
   #include <chrono>
   #define BEGIN_PROFILE() { std::chrono::steady_clock::time_point begin_t = std::chrono::steady_clock::now();
   #define END_PROFILE() std::chrono::steady_clock::time_point end_t = std::chrono::steady_clock::now();
@@ -54,6 +58,8 @@ template < typename T > std::string to_string( const T& n )
   return stm.str() ;
 }
 }
+
+// TODO: Make compiler-specific options for __restrict__
 
 template <typename T, typename C> bool contains (const T& container, const C& key)
 {

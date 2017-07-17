@@ -6,12 +6,12 @@
 //----------------------------------------------------------------------
 // Copyright (c) 1997-2005 University of Maryland and Sunil Arya and
 // David Mount.  All Rights Reserved.
-// 
+//
 // This software and related documentation is part of the Approximate
 // Nearest Neighbor Library (ANN).  This software is provided under
 // the provisions of the Lesser GNU Public License (LGPL).  See the
 // file ../ReadMe.txt for further information.
-// 
+//
 // The University of Maryland (U.M.) and the authors make no
 // representations about the suitability or fitness of this software for
 // any purpose.  It is provided "as is" without express or implied
@@ -28,6 +28,11 @@
 
 #include "ANN/ANN.h"					// basic ANN includes
 #include "ANN/ANNperf.h"				// performance includes
+
+// MJP 07/14/2017
+// Need to add Rcpp to enable performance output to R session
+#include <Rcpp.h>
+using namespace Rcpp;
 
 using namespace std;					// make std:: available
 
@@ -104,19 +109,18 @@ DLL_API void annUpdateStats()				// update stats with current counts
 										// print a single statistic
 void print_one_stat(const char *title, ANNsampStat s, double div)
 {
-//R does not allow:	cout << title << "= [ ";
-//R does not allow:	cout.width(9); cout << s.mean()/div			<< " : ";
-//R does not allow:	cout.width(9); cout << s.stdDev()/div		<< " ]<";
-//R does not allow:	cout.width(9); cout << s.min()/div			<< " , ";
-//R does not allow: cout.width(9); cout << s.max()/div			<< " >\n";
+  Rcout << title << "= [ ";
+  Rcout.width(9); Rcout << s.mean()/div			<< " : ";
+  Rcout.width(9); Rcout << s.stdDev()/div		<< " ]<";
+  Rcout.width(9); Rcout << s.min()/div			<< " , ";
+  Rcout.width(9); Rcout << s.max()/div			<< " >\n";
 }
 
 DLL_API void annPrintStats(				// print statistics for a run
 	ANNbool validate)					// true if average errors desired
 {
-//R does not allow:	cout.precision(4);					// set floating precision
-//R does not allow:	cout << "  (Performance stats: "
-//R does not allow:			 << " [      mean :    stddev ]<      min ,       max >\n";
+  Rcout.precision(4);					// set floating precision
+  Rcout << "  (Performance stats: " << " [      mean :    stddev ]<      min ,       max >\n";
 	print_one_stat("    leaf_nodes       ", ann_visit_lfs, 1);
 	print_one_stat("    splitting_nodes  ", ann_visit_spl, 1);
 	print_one_stat("    shrinking_nodes  ", ann_visit_shr, 1);
@@ -128,7 +132,7 @@ DLL_API void annPrintStats(				// print statistics for a run
 		print_one_stat("    average_error    ", ann_average_err, 1);
 		print_one_stat("    rank_error       ", ann_rank_err, 1);
 	}
-//R does not allow:	cout.precision(0);					// restore the default
-//R does not allow:	cout << "  )\n";
-//R does not allow:	cout.flush();
+  Rcout.precision(0);					// restore the default
+	Rcout << "  )\n";
+  Rcout.flush();
 }

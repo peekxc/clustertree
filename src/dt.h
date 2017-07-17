@@ -4,12 +4,13 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+#include "utilities.h" // R_INFO, profiling mode, etc.
 #include "ANNdt.h" // dual kdtree ANN extension
 #include <algorithm> // std::for_each
 #include <unordered_map> // unordered_map
 #include <cassert> // assert
 #include <queue> // queue
-#include "utilities.h" // R_INFO, profiling mode, etc.
+
 
 // Utility macros
 #define IS_SPLIT(x) (bool) (dynamic_cast<ANNkd_split*>(x) != NULL)
