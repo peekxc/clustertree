@@ -3,9 +3,10 @@ using namespace Rcpp;
 
 // ANN library
 #include "ANN/ANN.h"
+#include "kd_pr_search.h"
 
 // [[Rcpp::export]]
-List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k){
+List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k, bool priority){
 
   // Extract the kdtree back
   Rcpp::XPtr<ANNkd_tree> kd_tree_ptr(tree_ptr);
@@ -32,6 +33,10 @@ List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k){
 
     // Search the kd tree
     kd_tree.annkSearch(queryPt, k+1, nnIdx, dists, 0);
+    #ifdef ANN_PERF
+      annUpdateStats();
+    #endif
+    // kd_tree.annkPriSearch();
 
     // Remove self matches
     IntegerVector ids = IntegerVector(nnIdx, nnIdx+k+1);

@@ -103,7 +103,7 @@ void ANNkd_leaf::print(					// print leaf node
 
 void ANNkd_tree::Print(					// print entire tree
 		ANNbool with_pts,				// print points as well?
-		ostream &out)					// output stream
+		ostream &out) // output stream
 {
 	out << "ANN Version " << ANNversion << "\n";
 	if (with_pts) {						// print point coordinates

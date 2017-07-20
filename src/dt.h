@@ -5,6 +5,7 @@
 using namespace Rcpp;
 
 #include "utilities.h" // R_INFO, profiling mode, etc.
+#include "net_sort.h" // 2, 3, and 4 size sorting networks
 #include "ANNdt.h" // dual kdtree ANN extension
 #include <algorithm> // std::for_each
 #include <unordered_map> // unordered_map
@@ -23,13 +24,17 @@ typedef std::pair<ANNkd_node*, ANNkd_node*> NODE_PAIR; // query node is always a
 
 // ---- DualTree class definition ----
 class DualTree {
-protected:
+public:
   const bool use_pruning;
   const int d; // dimension
   ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
   std::unordered_map<ANNkd_node*, const Bound& >* bounds; // Various bounds per-node to fill in (node_ptr -> bounds)
   std::map< std::pair<int, int>, bool>* BC_check; // Node pair base case check: should default to false if no key found!
-public:
+
+#ifdef NDEBUG
+  std::unordered_map<ANNkd_node*, char> node_labels;
+#endif
+
   DualTree(const bool prune, const int dim);
   virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
@@ -42,7 +47,10 @@ public:
   // ~DualTree(); // virtual destructor
 
   // Utility
-  void PrintTree(bool);
+  void PrintTree(ANNbool with_pts, bool);
+  void printNode(ANNkd_split* N, int level);
+  void printNode(ANNkd_leaf* N, int level);
+
   // void PrintStatistics(bool);
   IntegerVector getIDXArray();
   IntegerVector child_ids(bool ref_tree = true);

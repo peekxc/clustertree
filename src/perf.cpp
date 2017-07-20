@@ -113,14 +113,15 @@ void print_one_stat(const char *title, ANNsampStat s, double div)
   Rcout.width(9); Rcout << s.mean()/div			<< " : ";
   Rcout.width(9); Rcout << s.stdDev()/div		<< " ]<";
   Rcout.width(9); Rcout << s.min()/div			<< " , ";
-  Rcout.width(9); Rcout << s.max()/div			<< " >\n";
+  Rcout.width(9); Rcout << s.max()/div			<< " , ";
+  Rcout.width(9); Rcout << s.total()/div			<< " >\n";
 }
 
 DLL_API void annPrintStats(				// print statistics for a run
 	ANNbool validate)					// true if average errors desired
 {
   Rcout.precision(4);					// set floating precision
-  Rcout << "  (Performance stats: " << " [      mean :    stddev ]<      min ,       max >\n";
+  Rcout << "  (Performance stats: " << " [      mean :    stddev ]<      min ,       max ,   total >\n";
 	print_one_stat("    leaf_nodes       ", ann_visit_lfs, 1);
 	print_one_stat("    splitting_nodes  ", ann_visit_spl, 1);
 	print_one_stat("    shrinking_nodes  ", ann_visit_shr, 1);

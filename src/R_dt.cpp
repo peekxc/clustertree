@@ -61,7 +61,7 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   IntegerMatrix id(q_x.nrow(), k + 1);  // Id matrix of knn indices
 
   // Create dual tree using both trees
-  UTIL(dt_knn.PrintTree(true))
+  UTIL(dt_knn.PrintTree((ANNbool) true, true))
 
   // ----- Start KNN Performance Testing -----
   #ifdef PROFILING
@@ -70,7 +70,7 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 
   // Regular kdtree search
   List ann_kdtree = kdtree(r_x, bkt_size); // create regular kdtree with the same bucket size
-  List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k);
+  List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k, false);
 
   // Print statistics
   Rcout << "Regular KDtree search performance: " << std::endl;
@@ -104,8 +104,6 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 ## Testing the search
 test_set <- matrix(c(13, 291, 57, 145, 115, 232, 86, 27, 145, 28, 262, 203, 320, 261, 379, 174, 261, 71, 325, 57), byrow=T, ncol=2)
 test_set[, 2] <- 321 - test_set[, 2]
-
-
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
 

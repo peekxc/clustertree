@@ -9,16 +9,16 @@
 //----------------------------------------------------------------------
 // Copyright (c) 1997-1998 University of Maryland and Sunil Arya and David
 // Mount.  All Rights Reserved.
-// 
-// This software and related documentation is part of the 
+//
+// This software and related documentation is part of the
 // Approximate Nearest Neighbor Library (ANN).
-// 
-// Permission to use, copy, and distribute this software and its 
-// documentation is hereby granted free of charge, provided that 
-// (1) it is not a component of a commercial product, and 
+//
+// Permission to use, copy, and distribute this software and its
+// documentation is hereby granted free of charge, provided that
+// (1) it is not a component of a commercial product, and
 // (2) this notice appears in all copies of the software and
-//     related documentation. 
-// 
+//     related documentation.
+//
 // The University of Maryland (U.M.) and the authors make no representations
 // about the suitability or fitness of this software for any purpose.  It is
 // provided "as is" without express or implied warranty.
@@ -69,7 +69,7 @@ public:
 	ANNkdStats()			// basic constructor
 	{ reset(); }
 
-	void merge(const ANNkdStats &st);	// merge stats from child 
+	void merge(const ANNkdStats &st);	// merge stats from child
 };
 
 //----------------------------------------------------------------------
@@ -80,6 +80,7 @@ public:
 //		reset()		Reset to no samples.
 //		+= x		Include sample x.
 //		samples()	Return number of samples.
+//    total()     Return sum of samples. (MJP 07/19/2017)
 //		mean()		Return mean of samples.
 //		stdDev()	Return standard deviation
 //		min()		Return minimum of samples.
@@ -92,11 +93,11 @@ class DLL_API ANNsampStat {
 	double			minVal, maxVal;	// min and max
 public :
 	void reset()				// reset everything
-	{  
+	{
 		n = 0;
 		sum = sum2 = 0;
 		minVal = ANN_DBL_MAX;
-		maxVal = -ANN_DBL_MAX; 
+		maxVal = -ANN_DBL_MAX;
 	}
 
 	ANNsampStat() { reset(); }		// constructor
@@ -111,6 +112,7 @@ public :
 	int samples() { return n; }		// number of samples
 
 	double mean() { return sum/n; } // mean
+  double total() { return sum; } // sum
 
 									// standard deviation
 	double stdDev() { return std::sqrt((sum2 - (sum*sum)/n)/(n-1));}
@@ -165,7 +167,7 @@ public :
 //				is the number of points for which distance
 //				calculations are performed.
 //
-//	coord_hts	The number of times a coordinate of a 
+//	coord_hts	The number of times a coordinate of a
 //				data point is accessed. This is generally
 //				less than visit_pts*d if partial distance
 //				calculation is used.  This count is low

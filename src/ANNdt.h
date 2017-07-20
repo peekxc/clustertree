@@ -13,8 +13,17 @@
 struct Bound {
   ANNdist rho, lambda;
   ANNpoint centroid; // Centroid computed during tree construction
-  ANNorthRect* bnd_box; // Bounding box computed during tree construction
-  Bound() : rho(-1.0), lambda(-1.0), centroid(NULL) , bnd_box(NULL) { }
+  // ANNorthRect* bnd_box; // Bounding box computed during tree construction
+  Bound() : rho(-1.0), lambda(-1.0), centroid(NULL) { }
+  Bound(const ANNorthRect& bb, int d) : rho(-1.0), lambda(-1.0) {
+    // bnd_box = new ANNorthRect(d, bb->lo, bb->hi);
+    centroid = new ANNcoord[d];
+    for (int i = 0; i < d; ++i){ centroid[i] = ANNcoord((bb.lo[i] + bb.hi[i]) / 2.0); }
+  }
+  ~Bound(){
+    // delete[] centroid;
+    // delete bnd_box;
+  }
 };
 
 // No searching is done via this tree directly! This inherited relationship only exists to provide an
@@ -48,8 +57,7 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     int					bsp,			// bucket space
     ANNorthRect			&bnd_box,		// bounding box for current node
     ANNkd_splitter		splitter, 	// splitting routine
-    std::unordered_map<ANNkd_node*, const Bound& >* bounds, // <-- additional argument to store bound objects
-    ANNpoint centroid // current nodes centroid
+    std::unordered_map<ANNkd_node*, const Bound& >* bounds // <-- additional argument to store bound objects
   );
 
 #endif

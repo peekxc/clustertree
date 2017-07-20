@@ -20,10 +20,66 @@ void DualTree::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
   qtree = kd_treeQ;
 }
 
+
+void DualTree::printNode(ANNkd_leaf* N, int level){
+  Rcout << "    ";
+  for (int i = 0; i < level; i++)		// print indentation
+    Rcout << "..";
+
+  if (N == KD_TRIVIAL) {			// canonical trivial leaf node
+    Rcout << "Leaf (trivial)\n";
+  }
+  else{
+    Rcout << "Leaf n=" << N->n_pts << " <";
+    for (int j = 0; j < N->n_pts; j++) {
+      Rcout << N->bkt[j];
+      if (j < N->n_pts-1) Rcout << ",";
+    }
+  #ifdef NDEBUG
+      Rcout << " (" << node_labels.at(N) << ")\n";
+  #else
+      Rcout << "\n";
+  #endif
+  }
+}
+
+void DualTree::printNode(ANNkd_split* N, int level){
+  IS_LEAF(N->child[ANN_HI]) ? printNode(AS_LEAF(N->child[ANN_HI]), level + 1) : printNode(AS_SPLIT(N->child[ANN_HI]), level + 1);
+  Rcout << "    ";
+  for (int i = 0; i < level; i++)		// print indentation
+    Rcout << "..";
+  Rcout << "Split cd=" << N->cut_dim << " cv=" << N->cut_val;
+  Rcout << " lbnd=" << N->cd_bnds[ANN_LO];
+  Rcout << " hbnd=" << N->cd_bnds[ANN_HI];
+#ifdef NDEBUG
+  Rcout << " (" << node_labels.at(N) << ")\n";
+#else
+  Rcout << "\n";
+#endif
+  IS_LEAF(N->child[ANN_LO]) ? printNode(AS_LEAF(N->child[ANN_LO]), level + 1) : printNode(AS_SPLIT(N->child[ANN_LO]), level + 1);
+}
+
 // TODO: Export better to R, figure out how to extract R output buffer instead of cout for windows users
-void DualTree::PrintTree(bool ref_tree){
-  if (ref_tree){ rtree->Print((ANNbool) true, std::cout); }
-  else { qtree->Print((ANNbool) true, std::cout); }
+void DualTree::PrintTree(ANNbool with_pts, bool ref_tree){
+  ANNkd_tree* ctree = ref_tree ? rtree : qtree;
+  Rcout << "ANN Version " << ANNversion << "\n";
+  if (with_pts) {						// print point coordinates
+    Rcout << "    Points:\n";
+    for (int i = 0; i < ctree->n_pts; i++) {
+      Rcout << "\t" << i << ": ";
+      ANNpoint pt = ctree->pts[i];
+      for (int j = 0; j < d; j++) {
+        Rcout << pt[j];
+        if (j < d-1) Rcout << " ";
+      }
+      Rcout << "\n";
+    }
+  }
+  if (ctree->root == NULL)					// empty tree?
+    Rcout << "    Null tree.\n";
+  else {
+    IS_LEAF(ctree->root) ? printNode(AS_LEAF(ctree->root), 0) : printNode(AS_SPLIT(ctree->root), 0);
+  }
 }
 
 
@@ -41,21 +97,17 @@ ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int n
   if (use_pruning){
     kdTree = new ANNkd_tree_dt(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
     R_INFO("Bounds computed at tree construction: " << bounds->size() << "\n")
-  #ifdef NDEBUG
-    for (std::unordered_map<ANNkd_node*, const Bound& >::iterator it = bounds->begin(); it != bounds->end(); ++it){
-      const Bound& c_bnd = it->second;
-      Rcout << "Node: " << it->first << std::endl;
-      Rcout << "Bounding Box: [(";
-      for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.bnd_box->lo[i] << ", "; }
-      Rcout << "), (";
-      for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.bnd_box->hi[i] << ", "; }
-      Rcout << ")]" << std::endl;
-      Rcout << "Centroid: (";
-      for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.centroid[i] << ", "; }
-      Rcout << ")\n";
-      Rcout << "Lambda: " << c_bnd.lambda << std::endl;
-      Rcout << "Rho: " << c_bnd.rho << std::endl;
-    }
+    #ifdef NDEBUG
+      node_labels = *new std::unordered_map<ANNkd_node*, char>();
+      char letter='A';
+      for (std::unordered_map<ANNkd_node*, const Bound& >::iterator it = bounds->begin(); it != bounds->end(); ++it){
+        const Bound& c_bnd = it->second;
+        node_labels.insert(std::make_pair(it->first, letter));
+        Rcout << "Node: " << letter << ", Centroid: (";
+        for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.centroid[i] << ", "; }
+        Rcout << "), Lambda: " << c_bnd.lambda << ", Rho: " << c_bnd.rho << std::endl;
+        letter++;
+      }
   #endif
   } else {
     kdTree = new ANNkd_tree(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST);
