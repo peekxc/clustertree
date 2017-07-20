@@ -47,6 +47,7 @@ void DualTreeKNN::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
 
 // Entry function to start the KNN process. Stores results by reference in dists and ids
 void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
+  this->k = k; // set k value
   knn_identity = (qtree == rtree); // Set whether the KNN search is done on identical trees
 
   // Create a map between point indices and their corresponding empty k-nearest neighbors
@@ -110,7 +111,8 @@ ANNdist DualTreeKNN::min_dist(ANNkd_node* N_q, ANNkd_node* N_r){ // assume query
   // R_INFO("NR centroid: ");
   // for (int i = 0; i < d; ++i) { R_PRINTF("%f ", nr_bound.centroid[i]) }
   // R_INFO("\n")
-  return(annDist(d, nq_bound.centroid, nr_bound.centroid) - nq_bound.lambda - nr_bound.lambda );
+  ANNdist min_dist = annDist(d, nq_bound.centroid, nr_bound.centroid) - nq_bound.lambda - nr_bound.lambda;
+  return(min_dist < 0 ? 0 : min_dist);
 }
 
 // ANNdist DualTreeKNN::max_knn(ANNkd_node* N_q){
@@ -146,7 +148,8 @@ ANNdist DualTreeKNN::max_knn_B(ANNkd_node* N_q){
   // or if not even k (potentially non-optimal) neighbors of any descendent points have been computed.
   else {
     ANNkd_split* split_node = AS_SPLIT(N_q);
-    ANNdist max_knn = std::max((*bnd_knn)[split_node->child[ANN_LO]].B, (*bnd_knn)[split_node->child[ANN_HI]].B);
+    ANNdist max_knn = std::max((*bnd_knn)[split_node->child[ANN_LO]].B,
+                               (*bnd_knn)[split_node->child[ANN_HI]].B);
     (*bnd_knn)[N_q].B = max_knn; // Update leaf maximum knn bound!
     return(max_knn);
   }
@@ -287,10 +290,12 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
     // Sort closer branches
     NodeScore scores[2] = { NodeScore(N_q, nr_spl->child[ANN_LO], Score(N_q, nr_spl->child[ANN_LO])),
                             NodeScore(N_q, nr_spl->child[ANN_HI], Score(N_q, nr_spl->child[ANN_HI])) };
-    sort2_sn(scores); // Sort by score using sorting network
+    sort2_sn_stable(scores); // Sort by score using sorting network
 
     // Visit closer branches first, return at first sign of infinity
-    R_PRINTF("Score values: %f %f\n", scores[0].score, scores[1].score)
+    R_PRINTF("Score values: (%c, %c) => %f, (%c, %c) => %f\n",
+             node_labels.at(scores[0].lhs), node_labels.at(scores[0].rhs), scores[0].score,
+             node_labels.at(scores[1].lhs), node_labels.at(scores[1].rhs), scores[1].score)
     if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
     if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
   } else if (!IS_LEAF(N_q) && IS_LEAF(N_r)){ ANN_SPL(1); ANN_LEAF(1)
@@ -300,10 +305,12 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
     // Sort closer branches
     NodeScore scores[2] = { NodeScore(nq_spl->child[ANN_LO], N_r, Score(nq_spl->child[ANN_LO], N_r)),
                             NodeScore(nq_spl->child[ANN_HI], N_r, Score(nq_spl->child[ANN_HI], N_r)) };
-    sort2_sn(scores); // Sort by score using sorting network
+    sort2_sn_stable(scores); // Sort by score using sorting network
 
     // Visit closer branches first, return at first sign of infinity
-    R_PRINTF("Score values: %f %f\n", scores[0].score, scores[1].score)
+    R_PRINTF("Score values: (%c, %c) => %f, (%c, %c) => %f\n",
+             node_labels.at(scores[0].lhs), node_labels.at(scores[0].rhs), scores[0].score,
+             node_labels.at(scores[1].lhs), node_labels.at(scores[1].rhs), scores[1].score)
     if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
     if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
   } else { ANN_SPL(2)
@@ -313,12 +320,16 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
     if (N_q != N_r){
       NodeScore scores[4] = { NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO])),
                               NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI])),
-                              NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI])),
+                              NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO])),
                               NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI])) };
       sort4_sn_stable(scores); // Sort by score using sorting network
 
       // Visit closer branches first, return at first sign of infinity
-      R_PRINTF("Score values: %f %f %f %f\n", scores[0].score, scores[1].score, scores[2].score, scores[3].score)
+      R_PRINTF("Score values: (%c, %c) => %f, (%c, %c) => %f, (%c, %c) => %f, (%c, %c) => %f\n",
+               node_labels.at(scores[0].lhs), node_labels.at(scores[0].rhs), scores[0].score,
+               node_labels.at(scores[1].lhs), node_labels.at(scores[1].rhs), scores[1].score,
+               node_labels.at(scores[2].lhs), node_labels.at(scores[2].rhs), scores[2].score,
+               node_labels.at(scores[3].lhs), node_labels.at(scores[3].rhs), scores[3].score)
       if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
       if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
       if (scores[2].score == ANN_DIST_INF) return; else pDFS(scores[2].lhs, scores[2].rhs);
@@ -328,10 +339,13 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
       NodeScore scores[3] = { NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO])),
                               NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI])),
                               NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI])) };
-      sort3_sn(scores); // Sort by score using sorting network
+      sort3_sn_stable(scores); // Sort by score using sorting network
 
       // Visit closer branches first, return at first sign of infinity
-      R_PRINTF("Score values: %f %f %f\n", scores[0].score, scores[1].score, scores[2].score)
+      R_PRINTF("Score values: (%c, %c) => %f, (%c, %c) => %f, (%c, %c) => %f\n",
+               node_labels.at(scores[0].lhs), node_labels.at(scores[0].rhs), scores[0].score,
+               node_labels.at(scores[1].lhs), node_labels.at(scores[1].rhs), scores[1].score,
+               node_labels.at(scores[2].lhs), node_labels.at(scores[2].rhs), scores[2].score)
       if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
       if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
       if (scores[2].score == ANN_DIST_INF) return; else pDFS(scores[2].lhs, scores[2].rhs);

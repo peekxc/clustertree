@@ -37,27 +37,15 @@ static inline void sort4_sn(NodeScore* d){
 #undef max
 }
 
-// Simple 4-part sorting network
+// Simple 4-part sorting network (stable version)
 static inline void sort4_sn_stable(NodeScore* d){
-#define min(x, y) (x.score<y.score?x:y)
-#define max(x, y) (x.score<y.score?y:x)
-#define SWAP(x,y) {                               \
-  const NodeScore a = min(d[x], d[y]);            \
-  const NodeScore b = max(d[x], d[y]);            \
-  d[x] = a; d[y]= b; }
-  SWAP(0, 1);
-  SWAP(2, 3);
-  SWAP(0, 2);
-  SWAP(1, 3);
-  SWAP(1, 2);
+#define SWAP(x,y) if (d[y].score < d[x].score) { NodeScore tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
   SWAP(0, 1);
   SWAP(2, 3);
   SWAP(0, 2);
   SWAP(1, 3);
   SWAP(1, 2);
 #undef SWAP
-#undef min
-#undef max
 }
 
 
@@ -77,6 +65,16 @@ static inline void sort3_sn(NodeScore* d){
 #undef max
 }
 
+// Simple 3-part sorting network (stable version)
+static inline void sort3_sn_stable(NodeScore* d){
+#define SWAP(x,y) if (d[y].score < d[x].score) { NodeScore tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
+  SWAP(1, 2);
+  SWAP(0, 2);
+  SWAP(0, 1);
+#undef SWAP
+}
+
+
 // Trivial 2-part sorting network just to keep syntax clean
 static inline void sort2_sn(NodeScore* d){
 #define min(x, y) (x.score<y.score?x:y)
@@ -90,3 +88,11 @@ static inline void sort2_sn(NodeScore* d){
 #undef min
 #undef max
 }
+
+static inline void sort2_sn_stable(NodeScore* d){
+#define SWAP(x,y) if (d[y].score < d[x].score) { NodeScore tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
+  SWAP(0, 1);
+#undef SWAP
+}
+
+

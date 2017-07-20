@@ -36,9 +36,9 @@ void DualTree::printNode(ANNkd_leaf* N, int level){
       if (j < N->n_pts-1) Rcout << ",";
     }
   #ifdef NDEBUG
-      Rcout << " (" << node_labels.at(N) << ")\n";
+      Rcout << "> (" << node_labels.at(N) << ")\n";
   #else
-      Rcout << "\n";
+      Rcout << ">\n";
   #endif
   }
 }
@@ -52,9 +52,9 @@ void DualTree::printNode(ANNkd_split* N, int level){
   Rcout << " lbnd=" << N->cd_bnds[ANN_LO];
   Rcout << " hbnd=" << N->cd_bnds[ANN_HI];
 #ifdef NDEBUG
-  Rcout << " (" << node_labels.at(N) << ")\n";
+  Rcout << "> (" << node_labels.at(N) << ")\n";
 #else
-  Rcout << "\n";
+  Rcout << ">\n";
 #endif
   IS_LEAF(N->child[ANN_LO]) ? printNode(AS_LEAF(N->child[ANN_LO]), level + 1) : printNode(AS_SPLIT(N->child[ANN_LO]), level + 1);
 }
