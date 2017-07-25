@@ -48,11 +48,12 @@ void DualTreeKNN::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
 // Entry function to start the KNN process. Stores results by reference in dists and ids
 void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
   this->k = k; // set k value
-  knn_identity = (qtree == rtree); // Set whether the KNN search is done on identical trees
+  knn_identity = (qtree == rtree); // is the KNN search using identical trees?
 
   // Create a map between point indices and their corresponding empty k-nearest neighbors
   BEGIN_PROFILE()
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
+  knn->reserve(qtree->n_pts); // reserve enough buckets to hold at least n_pts items
   for (int i = 0; i < qtree->n_pts; ++i) {
     knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
   }
@@ -70,6 +71,7 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
       ids(i, j) = knn->at(i)->ith_smallest_info(j);
     }
   }
+
   // Convert to (non-squared) euclidean distances
   transform(dists.begin(), dists.end(), dists.begin(), ::sqrt);
 
