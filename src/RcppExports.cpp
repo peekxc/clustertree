@@ -55,8 +55,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // clusterTree
-List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha, const int type, IntegerVector knn_indices);
-RcppExport SEXP clustertree_clusterTree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP, SEXP knn_indicesSEXP) {
+List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha, const int type);
+RcppExport SEXP clustertree_clusterTree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -65,8 +65,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type k(kSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type knn_indices(knn_indicesSEXP);
-    rcpp_result_gen = Rcpp::wrap(clusterTree(dist_x, r_k, k, alpha, type, knn_indices));
+    rcpp_result_gen = Rcpp::wrap(clusterTree(dist_x, r_k, k, alpha, type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -90,7 +89,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"clustertree_primsMST", (DL_FUNC) &clustertree_primsMST, 1},
     {"clustertree_primsRSL", (DL_FUNC) &clustertree_primsRSL, 5},
     {"clustertree_mstToHclust", (DL_FUNC) &clustertree_mstToHclust, 2},
-    {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 6},
+    {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 5},
     {"clustertree_naive_clustertree", (DL_FUNC) &clustertree_naive_clustertree, 4},
     {NULL, NULL, 0}
 };

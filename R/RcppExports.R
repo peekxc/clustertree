@@ -17,8 +17,8 @@ mstToHclust <- function(mst, n) {
     .Call('clustertree_mstToHclust', PACKAGE = 'clustertree', mst, n)
 }
 
-clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L, knn_indices = integer()) {
-    .Call('clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type, knn_indices)
+clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L) {
+    .Call('clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
 }
 
 naive_clustertree <- function(x, r_k, alpha = 1.414213562373095, type = 0L) {
