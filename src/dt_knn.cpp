@@ -276,6 +276,9 @@ inline bool sortByValue (const std::pair<T,V>& lhs, const std::pair<T,V>& rhs) {
 // Pruning dual tree depth-first search traversal
 void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
   INC_TRAVERSAL(1)
+// #ifdef ANN_PERF
+//   annUpdateStats();
+// #endif
 
   // KD Trees only store points in the leaves; Base case only needed if comparing two leaves
   if (IS_LEAF(N_q) && IS_LEAF(N_r)) {

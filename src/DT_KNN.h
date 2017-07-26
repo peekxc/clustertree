@@ -182,6 +182,10 @@ public:
       for (int r_i = 0, r_idx = N_r_leaf->bkt[r_i]; r_i < N_r_leaf->n_pts; ++r_i, r_idx = N_r_leaf->bkt[r_i]){
         // Compute Base case, saving knn ids and distances along the way
         if (!hasBeenChecked(q_idx, r_idx)) { ANN_PTS(2) // Has this pair been considered before?
+
+          ANNmin_k& r_knn = (*knn->at(r_idx)); // Retrieve ref point's knn priority queue
+          min_dist_r = r_knn.max_key(); // k-th smallest distance so far (reference)
+
           qq = qtree->pts[q_idx];     // first coord of query point
           pp = rtree->pts[r_idx];			// first coord of reference point
           dist = 0;
@@ -194,13 +198,14 @@ public:
 
             t = *(qq++) - *(pp++);		// compute length and adv coordinate
             // exceeds dist to k-th smallest?
-            if( (dist = ANN_SUM(dist, ANN_POW(t))) > min_dist_q) { // TODO: Fix this! ref is also a query point
+            dist = ANN_SUM(dist, ANN_POW(t));
+            if(dist > min_dist_q && dist > min_dist_r) { // TODO: Fix this! ref is also a query point
               break;
             }
           }
 
           const bool valid_dist = d_i >= d  && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
-          if (valid_dist) {
+          if (valid_dist && dist < min_dist_q) {
             (*bnd_knn)[N_q_leaf].knn_known += q_knn.insert(dist, r_idx); // Update number of points known with non-inf knn distances
             min_dist_q = q_knn.max_key();
           }

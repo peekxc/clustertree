@@ -66,11 +66,12 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   // ----- Start KNN Performance Testing -----
   #ifdef PROFILING
   annResetStats(r_x.nrow());
-  annResetCounts();	// reset stats for a set of queries
 
   // Regular kdtree search
   List ann_kdtree = kdtree(r_x, bkt_size); // create regular kdtree with the same bucket size
+  BEGIN_PROFILE()
   List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k, false);
+  REPORT_TIME("Regular KNN search")
 
   // Print statistics
   Rcout << "Regular KDtree search performance: " << std::endl;
@@ -81,7 +82,9 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   Rcout << "DualTree search performance: " << std::endl;
   annResetStats(r_x.nrow());
   annResetCounts();	// reset stats for a set of queries
+  BEGIN_PROFILE()
   dt_knn.KNN(k + 1, dists, id);
+  REPORT_TIME("Dual tree KNN search")
   annUpdateStats();
   annPrintStats((ANNbool) false);
   #endif
