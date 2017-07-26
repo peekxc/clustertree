@@ -4,7 +4,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-//#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
+// #define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
 #undef NDEBUG // <-- for 'production' mode, will remove IO
 #define PROFILING // <-- for 'profile' mode, will give timings of every function being profiled
 

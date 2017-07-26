@@ -75,7 +75,6 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 
   // Print statistics
   Rcout << "Regular KDtree search performance: " << std::endl;
-  annUpdateStats();
   annPrintStats((ANNbool) false);
 
   // Dual tree equivalent

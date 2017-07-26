@@ -68,11 +68,14 @@ public:
   // Score function: try to inline if possible
   virtual inline ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r) {
     if (N_q == N_r) return 0;
-    ANNdist min_dist_qr = min_dist(N_q, N_r), max_knn_dist = max_knn_B(N_q);
-    R_INFO("Min dist. Q (" << node_labels.at(N_q) << ") <--> R (" << node_labels.at(N_r) << "): " << min_dist_qr << " (smaller than? " << max_knn_dist << " )\n")
+    ANNdist min_dist_qr = min_dist(N_q, N_r); // minimum distance between two bounding rectangles
+    //ANNdist max_knn_dist = ANN_DIST_INF; // max_knn_B(N_q); // max descendent knn distance of N_q
+    ANNdist best_bound = B(N_q); // "best" lower bound
+    R_INFO("Min dist. Q (" << node_labels.at(N_q) << ") <--> R (" << node_labels.at(N_r) << "): " << min_dist_qr)
+    // R_INFO(" (prune if bigger than ==> b1: " << max_knn_dist << ", b2: " << best_bound << " )\n")
 
     // ANNdist bound_nq = B(N_q); // Bound type 1 (TODO: doesnt work right now!)
-    if (min_dist_qr > max_knn_dist){
+    if (min_dist_qr > best_bound){
       return ANN_DIST_INF; // Prune this branch
     }
     return min_dist_qr; // Recurse into this branch
@@ -173,7 +176,7 @@ public:
     ANNcoord t;
     int d_i;
 
-    const bool SAME_LEAF = N_q_leaf == N_r_leaf;
+    // const bool SAME_LEAF = N_q_leaf == N_r_leaf;
     for (int q_i = 0, q_idx = N_q_leaf->bkt[q_i]; q_i < N_q_leaf->n_pts; ++q_i, q_idx = N_q_leaf->bkt[q_i]){
 
       ANNmin_k& q_knn = (*knn->at(q_idx)); // Retrieve query point's knn priority queue
@@ -199,34 +202,45 @@ public:
             t = *(qq++) - *(pp++);		// compute length and adv coordinate
             // exceeds dist to k-th smallest?
             dist = ANN_SUM(dist, ANN_POW(t));
-            if(dist > min_dist_q && dist > min_dist_r) { // TODO: Fix this! ref is also a query point
+            if(dist > min_dist_q && dist > min_dist_r) { // check both since workign with tree from identical data set
               break;
             }
           }
 
           const bool valid_dist = d_i >= d  && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
+
+          // Update query point KNN distance if better
           if (valid_dist && dist < min_dist_q) {
             (*bnd_knn)[N_q_leaf].knn_known += q_knn.insert(dist, r_idx); // Update number of points known with non-inf knn distances
-            min_dist_q = q_knn.max_key();
+            min_dist_q = q_knn.max_key(); // k-th smallest distance of query point so far
           }
 
-          if (valid_dist && q_idx != r_idx && dist < min_dist_r){ // Also update reference point index, since trees are identical
-            (*bnd_knn)[N_r_leaf].knn_known += (*knn->at(r_idx)).insert(dist, q_idx);
-            min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far
+          // Also update reference point index if better as well, since trees are identical
+          if (valid_dist && q_idx != r_idx && dist < min_dist_r){
+            (*bnd_knn)[N_r_leaf].knn_known += r_knn.insert(dist, q_idx);
+            min_dist_r = r_knn.max_key(); // k-th smallest distance of reference point so far
           }
 
+          // Get KNN Bounds
           BoundKNN& qbnd = bnd_knn->at(N_q_leaf), &rbnd = bnd_knn->at(N_r_leaf);
+
+          // Update minimum kth nearest neighbor distances
           qbnd.min_knn = std::min(qbnd.min_knn, min_dist_q); // Update minimum kth nearest distance on query node
-          qbnd.max_real_knn = std::max(qbnd.max_real_knn, min_dist_q == ANN_DIST_INF ? 0 : min_dist_q); // Update max (non-inf) kth nearest distance on query node
+          rbnd.min_knn = std::min(rbnd.min_knn, min_dist_r); // Update minimum kth nearest distance on reference node
+
+          // Update maximum (non-inf) distances as well
+          qbnd.max_real_knn = std::max(qbnd.max_real_knn, min_dist_q == ANN_DIST_INF ? 0 : min_dist_q);
+          rbnd.max_real_knn = std::max(rbnd.max_real_knn, min_dist_r == ANN_DIST_INF ? 0 : min_dist_r);
+
+          // Informational output
           R_INFO("Q (" << node_labels.at(N_q_leaf) << ") max (non-inf) knn: " << qbnd.max_real_knn
                        << " (" << qbnd.knn_known << "/" << N_q_leaf->n_pts << " known)"
-                       << " max_knn: " << qbnd.maxKNN(N_q_leaf->n_pts) << "\n")
-
-          rbnd.min_knn = std::min(rbnd.min_knn, min_dist_r); // Update minimum kth nearest distance on reference node
-          rbnd.max_real_knn = std::max(rbnd.max_real_knn, min_dist_r == ANN_DIST_INF ? 0 : min_dist_r); // Update max (non-inf) kth nearest distance on query node
+                       << " max_knn: " << qbnd.maxKNN(N_q_leaf->n_pts)
+                       << " min_knn: " << qbnd.min_knn << "\n")
           R_INFO("R (" << node_labels.at(N_r_leaf) << ") max (non-inf) knn: " << rbnd.max_real_knn
                        << " (" << rbnd.knn_known << "/" << N_r_leaf->n_pts << " known)"
-                       << " max_knn: " << rbnd.maxKNN(N_r_leaf->n_pts) << "\n")
+                       << " max_knn: " << rbnd.maxKNN(N_r_leaf->n_pts)
+                       << " min_knn: " << rbnd.min_knn << "\n")
         } // if(!hasBeenChecked(q_idx, r_idx))
       }
     }

@@ -31,16 +31,13 @@ List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k, bool priority){
     NumericVector query_pt = query_x.row(i);
     ANNpoint queryPt = &query_pt.at(0);
 
-
     #ifdef ANN_PERF
-        annResetCounts();			// reset counters
+      annResetCounts();
     #endif
-
     // Search the kd tree
     kd_tree.annkSearch(queryPt, k+1, nnIdx, dists, 0);
-
     #ifdef ANN_PERF
-      annUpdateStats();
+        annUpdateStats();
     #endif
     // kd_tree.annkPriSearch();
 
