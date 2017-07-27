@@ -5,52 +5,17 @@
 
 using namespace Rcpp;
 
-// kruskalsMST
-NumericMatrix kruskalsMST(const NumericVector dist_x);
-RcppExport SEXP clustertree_kruskalsMST(SEXP dist_xSEXP) {
+// naive_clustertree
+List naive_clustertree(const NumericVector x, const NumericVector r_k, const double alpha, const int type);
+RcppExport SEXP clustertree_naive_clustertree(SEXP xSEXP, SEXP r_kSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector >::type dist_x(dist_xSEXP);
-    rcpp_result_gen = Rcpp::wrap(kruskalsMST(dist_x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// primsMST
-NumericMatrix primsMST(const NumericVector dist_x);
-RcppExport SEXP clustertree_primsMST(SEXP dist_xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector >::type dist_x(dist_xSEXP);
-    rcpp_result_gen = Rcpp::wrap(primsMST(dist_x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// primsRSL
-NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int n, const double alpha, const int type);
-RcppExport SEXP clustertree_primsRSL(SEXP rSEXP, SEXP r_kSEXP, SEXP nSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector >::type r(rSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type r_k(r_kSEXP);
-    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(primsRSL(r, r_k, n, alpha, type));
-    return rcpp_result_gen;
-END_RCPP
-}
-// mstToHclust
-List mstToHclust(NumericMatrix mst, const int n);
-RcppExport SEXP clustertree_mstToHclust(SEXP mstSEXP, SEXP nSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type mst(mstSEXP);
-    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
-    rcpp_result_gen = Rcpp::wrap(mstToHclust(mst, n));
+    rcpp_result_gen = Rcpp::wrap(naive_clustertree(x, r_k, alpha, type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -67,20 +32,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type knn_indices(knn_indicesSEXP);
     rcpp_result_gen = Rcpp::wrap(clusterTree(dist_x, r_k, k, alpha, type, knn_indices));
-    return rcpp_result_gen;
-END_RCPP
-}
-// naive_clustertree
-List naive_clustertree(const NumericVector x, const NumericVector r_k, const double alpha, const int type);
-RcppExport SEXP clustertree_naive_clustertree(SEXP xSEXP, SEXP r_kSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type r_k(r_kSEXP);
-    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(naive_clustertree(x, r_k, alpha, type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -141,29 +92,38 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// test_ptr
-IntegerVector test_ptr();
-RcppExport SEXP clustertree_test_ptr() {
+// kruskalsMST
+NumericMatrix kruskalsMST(const NumericVector dist_x);
+RcppExport SEXP clustertree_kruskalsMST(SEXP dist_xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(test_ptr());
+    Rcpp::traits::input_parameter< const NumericVector >::type dist_x(dist_xSEXP);
+    rcpp_result_gen = Rcpp::wrap(kruskalsMST(dist_x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// primsMST
+NumericMatrix primsMST(const NumericVector dist_x);
+RcppExport SEXP clustertree_primsMST(SEXP dist_xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type dist_x(dist_xSEXP);
+    rcpp_result_gen = Rcpp::wrap(primsMST(dist_x));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"clustertree_kruskalsMST", (DL_FUNC) &clustertree_kruskalsMST, 1},
-    {"clustertree_primsMST", (DL_FUNC) &clustertree_primsMST, 1},
-    {"clustertree_primsRSL", (DL_FUNC) &clustertree_primsRSL, 5},
-    {"clustertree_mstToHclust", (DL_FUNC) &clustertree_mstToHclust, 2},
-    {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 6},
     {"clustertree_naive_clustertree", (DL_FUNC) &clustertree_naive_clustertree, 4},
+    {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 6},
     {"clustertree_dt_knn", (DL_FUNC) &clustertree_dt_knn, 5},
     {"clustertree_kd_knn", (DL_FUNC) &clustertree_kd_knn, 4},
     {"clustertree_kdtree", (DL_FUNC) &clustertree_kdtree, 2},
     {"clustertree_kNN_int", (DL_FUNC) &clustertree_kNN_int, 6},
-    {"clustertree_test_ptr", (DL_FUNC) &clustertree_test_ptr, 0},
+    {"clustertree_kruskalsMST", (DL_FUNC) &clustertree_kruskalsMST, 1},
+    {"clustertree_primsMST", (DL_FUNC) &clustertree_primsMST, 1},
     {NULL, NULL, 0}
 };
 

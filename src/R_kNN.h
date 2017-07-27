@@ -2,7 +2,7 @@
 #define R_KNN_H
 
 #include <Rcpp.h>
-#include "ANN/ANN.h"
+#include "ANN/ANNx.h"
 
 using namespace Rcpp;
 

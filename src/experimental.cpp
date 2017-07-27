@@ -4,8 +4,8 @@
 using namespace Rcpp;
 
 // Header includes
-#include "union_find.h"
-#include "utilities.h"
+#include "util/union_find.h"
+#include "util/utilities.h"
 
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>

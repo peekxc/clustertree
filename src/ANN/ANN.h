@@ -92,7 +92,6 @@
 
 #include <cmath>			// math includes
 #include <iostream>			// I/O streams
-
 #include <vector>
 
 //----------------------------------------------------------------------
@@ -714,12 +713,9 @@ class ANNkdStats;				// stats on kd-tree
 class ANNkd_node;				// generic node in a kd-tree
 typedef ANNkd_node*	ANNkd_ptr;	// pointer to a kd-tree node
 
-// class DT_Abstract; // Forward declaration
-
 class DLL_API ANNkd_tree: public ANNpointSet {
-  friend class DualTree;
-  friend class DualTreeKNN;
-protected:
+  //friend class Rcpp::DualTree; // Let the dual tree class access internals
+public: // C++ will not respect the friend class declaration at the gloabl namespace
 	int				dim;				// dimension of space
 	int				n_pts;				// number of points in tree
 	int				bkt_size;			// bucket size
