@@ -715,7 +715,7 @@ typedef ANNkd_node*	ANNkd_ptr;	// pointer to a kd-tree node
 
 class DLL_API ANNkd_tree: public ANNpointSet {
   //friend class Rcpp::DualTree; // Let the dual tree class access internals
-public: // C++ will not respect the friend class declaration at the gloabl namespace
+public: // C++ will not respect the friend class declaration at the global namespace, so make everything pulic!
 	int				dim;				// dimension of space
 	int				n_pts;				// number of points in tree
 	int				bkt_size;			// bucket size

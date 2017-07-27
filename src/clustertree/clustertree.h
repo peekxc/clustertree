@@ -5,8 +5,8 @@
 using namespace Rcpp;
 
 // Includes
-#include "../util/union_find.h"
-#include "../util/utilities.h"
+#include <DT/structures/union_find.h>
+#include <utilities.h>
 
 // Computes the connection radius, i.e. the linkage criterion
 inline double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type);

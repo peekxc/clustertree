@@ -1,38 +1,59 @@
 ## C++ compiler flags. Include '.' directory to use bracket include notation
 PKG_CPPFLAGS = -DANN_PERF -DPERF -I.
 
-# Set order of source directories
-SOURCES = $(wildcard ANN/*.cpp util/*.cpp brute_force/*.cpp bd_tree/*.cpp  kd_tree/*.cpp dual_tree/*.cpp dual_tree/*/*.cpp clustertree/*.cpp)
+## Import variables from R make configuration
+MkInclude = $(R_HOME)/etc${R_ARCH}/Makeconf
 
-# Anything with a cpp extension is a source file
-OBJECTS = $(SOURCES:.cpp=.o)
+## ANN and dual tree library paths
+export SRC_DIR = $(realpath .)
+export ANN_PATH = $(dir ANN/)
+export DT_PATH = $(dir DT/)
 
-# Specify subdirectories to build static libraries for
-SUBDIRS = ANN util brute_force bd_tree kd_tree dual_tree clustertree
-SUBLIBS = $(SUBDIRS:=.a)
+## Root source files$(wildcard *.cpp ANNdt/*.cpp KNN/*.cpp MST/*.cpp)
+ANN_SRC_FILES = $(wildcard ANN/*.cpp ANN/**/*.cpp)
+DT_SRC_FILES = $(wildcard DT/*.cpp DT/**/*.cpp)
+PKG_SRC_FILES = $(ANN_SRC_FILES) $(DT_SRC_FILES) $(wildcard clustertree/*.cpp *.cpp)
+# PKG_INTERFACE = $(wildcard)
 
-## All rule
+## Anything with a cpp extension is a object
+## NOTE: Do not change name away from 'OBJECTS'
+OBJECTS = $(PKG_SRC_FILES:.cpp=.o)
+# PKG_INT_OBJECTS = $(PKG_INTERFACE:.cpp=.o)
+# OBJECTS = $(PKG_SRC_OBJECTS) $(PKG_INT_OBJECTS)
+# OBJECTS = PKG_SRC_OBJECTS
+
+## Rules
+# .PHONY: all clean subclean sublibraries
+
+## For each object, build the sub libraries # $(OBJECTS)
+# PKG_LIBS = -L$(realpath ANN) -L$(realpath DT) -lANN -lDT
 all: $(SHLIB)
+$(SHLIB): $(OBJECTS) $(ANN_SRC_FILES:.cpp=.o) $(DT_SRC_FILES:.cpp=.o)
 
-## For each object, build the sub libraries
-$(SHLIB): $(OBJECTS) sublibraries
+# $(OBJECTS): sublibraries
 
+# $(PKG_INT_OBJECTS): $(PKG_SRC_OBJECTS)
+
+%.o: %.cpp $(PKG_SRC_FILES)
+		$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I$(SRC_DIR) -I$(ANN_PATH) -c $< -o $@
 
 # Command to actually build the sources
-sublibraries: subclean
+SUBDIRS = ANN DT
+sublibraries:
 	@for d in $(SUBDIRS); do \
-	  (cd $${d} && CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" $(MAKE) library) || exit 1; \
+	  (cd $${d} && CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" MkInclude="$(MkInclude)" $(MAKE) library) || exit 1; \
 	done
 
 # Clean top directory
+shlib-clean: clean
 clean: subclean
 	@-rm -rf .libs _libs
 	@-rm -f *.o $(SHLIB)
 
 ## Clean rule for sub directories
 subclean:
+	$(warning cleaning static libraries)
 	@-rm -f *.a
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) clean) || exit 1; \
 	done
-

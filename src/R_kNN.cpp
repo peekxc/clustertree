@@ -10,8 +10,6 @@
 
 // Note: does not return self-matches!
 
-#include <Rcpp.h>
-#include "ANN/ANN.h"
 #include "R_kNN.h"
 
 using namespace Rcpp;

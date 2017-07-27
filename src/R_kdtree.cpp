@@ -1,9 +1,4 @@
-#include <Rcpp.h>
-using namespace Rcpp;
-
-// ANN library
-#include "ANN/ANN.h"
-#include "kd_tree/kd_pr_search.h"
+#include "R_kdtree.h"
 
 // [[Rcpp::export]]
 List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k, bool priority){

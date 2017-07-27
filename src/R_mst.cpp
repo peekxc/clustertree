@@ -1,8 +1,8 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include "util/utilities.h"
-#include "util/union_find.h"
+#include <utilities.h> // Indexing macros 
+#include <DT/structures/union_find.h> // disjoint set data structure
 
 // Regular Kruskal's MST
 // [[Rcpp::export]]

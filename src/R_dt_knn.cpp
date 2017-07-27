@@ -1,8 +1,8 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <util/utilities.h> // R_INFO, profiling mode, etc. must include first
-#include <dual_tree/KNN/dt_knn.h> // Dual Tree KNN implementation
+#include <utilities.h> // R_INFO, profiling mode, etc. must include first
+#include <DT/KNN/dt_knn.h> // Dual Tree KNN implementation
 #include "R_kdtree.h" // R Interface to ANN KD trees
 
 ANNpointArray matrixToANNpointArray(NumericMatrix x){

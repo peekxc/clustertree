@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include "clustertree/clustertree.h"
+#include <clustertree/clustertree.h>
 
 // [[Rcpp::export]]
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095,
@@ -25,7 +25,3 @@ List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int 
   List res = mstToHclust(mst, n);
   return (res);
 }
-
-/*** R
-timesTwo(42)
-*/
