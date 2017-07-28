@@ -1,13 +1,10 @@
-#include <Rcpp.h>
-using namespace Rcpp;
+#include <DT/MST/dtb.h> // Header file
 
-#include <iostream>     // std::cout, std::ostream, std::ios
-#include <fstream>      // std::filebuf
+DualTreeBoruvka::DualTreeBoruvka(const bool prune, const int dim): DualTree(prune, dim) {
+    N_q_par = N_r_par = NULL;
+}
 
-// // ANN library
-// #include "ANN/ANN.h"
-// #include "kd_search.h" // kd-search declarations
-// #include "bd_tree.h"	 // bd-tree declarations
-//
-// // KD tree R-accessible functions
-// #include "R_kdtree.h"
+// Now that the tree(s) are made, the knn-specific bound obejcts can be instantiated
+void DualTreeBoruvka::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
+  (*this).DualTree::setup(kd_treeQ, kd_treeR);  // Call parent class setup to assign trees
+}

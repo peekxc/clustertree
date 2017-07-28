@@ -4,56 +4,57 @@ PKG_CPPFLAGS = -DANN_PERF -DPERF -I.
 ## Import variables from R make configuration
 MkInclude = $(R_HOME)/etc${R_ARCH}/Makeconf
 
-## ANN and dual tree library paths
-export SRC_DIR = $(realpath .)
-export ANN_PATH = $(dir ANN/)
-export DT_PATH = $(dir DT/)
+## Source files
+ANN_SRC = $(wildcard ANN/*.cpp ANN/**/*.cpp)
+DT_SRC = $(wildcard DT/*.cpp DT/**/*.cpp)
+CT_SRC = $(wildcard clustertree/*.cpp)
+INT_SRC = $(wildcard *.cpp)
 
-## Root source files$(wildcard *.cpp ANNdt/*.cpp KNN/*.cpp MST/*.cpp)
-ANN_SRC_FILES = $(wildcard ANN/*.cpp ANN/**/*.cpp)
-DT_SRC_FILES = $(wildcard DT/*.cpp DT/**/*.cpp)
-PKG_SRC_FILES = $(ANN_SRC_FILES) $(DT_SRC_FILES) $(wildcard clustertree/*.cpp *.cpp)
-# PKG_INTERFACE = $(wildcard)
+## Object files (exported to clean later)
+export ANN_OBJ := $(ANN_SRC:%.cpp=%.o)
+export DT_OBJ := $(DT_SRC:%.cpp=%.o)
+export CT_OBJ := $(CT_SRC:%.cpp=%.o)
+export INT_OBJ := $(INT_SRC:%.cpp=%.o)
 
-## Anything with a cpp extension is a object
-## NOTE: Do not change name away from 'OBJECTS'
-OBJECTS = $(PKG_SRC_FILES:.cpp=.o)
-# PKG_INT_OBJECTS = $(PKG_INTERFACE:.cpp=.o)
-# OBJECTS = $(PKG_SRC_OBJECTS) $(PKG_INT_OBJECTS)
-# OBJECTS = PKG_SRC_OBJECTS
+## Phony targets to enable ordering the build process
+.PHONY = all ANN DT CT INT
 
-## Rules
-# .PHONY: all clean subclean sublibraries
+## Objects include: ANN library, Dual tree library, cluster tree files, and R interface files
+OBJECTS = $(ANN_OBJ) $(DT_OBJ) $(CT_OBJ) $(INT_OBJ)
 
-## For each object, build the sub libraries # $(OBJECTS)
-# PKG_LIBS = -L$(realpath ANN) -L$(realpath DT) -lANN -lDT
+## Generate shared library form the R_interface
 all: $(SHLIB)
-$(SHLIB): $(OBJECTS) $(ANN_SRC_FILES:.cpp=.o) $(DT_SRC_FILES:.cpp=.o)
+$(SHLIB): INT
 
-# $(OBJECTS): sublibraries
+## ANN compilation
+ANN: $(ANN_OBJ)
+$(ANN_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I$(SRC_DIR) -I$(ANN_PATH) -c $< -o $@
 
-# $(PKG_INT_OBJECTS): $(PKG_SRC_OBJECTS)
+## Dual tree compilation
+DT: $(DT_OBJ) ANN
+$(DT_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I$(SRC_DIR) -I$(ANN_PATH) -c $< -o $@
 
-%.o: %.cpp $(PKG_SRC_FILES)
-		$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I$(SRC_DIR) -I$(ANN_PATH) -c $< -o $@
+## Cluster Tree compilation
+CT: $(CT_OBJ) ANN DT
+$(CT_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I$(SRC_DIR) -I$(ANN_PATH) -c $< -o $@
 
-# Command to actually build the sources
-SUBDIRS = ANN DT
-sublibraries:
-	@for d in $(SUBDIRS); do \
-	  (cd $${d} && CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" MkInclude="$(MkInclude)" $(MAKE) library) || exit 1; \
-	done
+## R Interface compilation
+INT: $(INT_OBJ) ANN DT CT
+$(INT_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I$(SRC_DIR) -I$(ANN_PATH) -c $< -o $@
 
-# Clean top directory
+## Clean rule
 shlib-clean: clean
-clean: subclean
+clean:
 	@-rm -rf .libs _libs
-	@-rm -f *.o $(SHLIB)
-
-## Clean rule for sub directories
-subclean:
-	$(warning cleaning static libraries)
+	@-rm -f $(SHLIB)
 	@-rm -f *.a
-	@for d in $(SUBDIRS); do \
-	  (cd $${d} && $(MAKE) clean) || exit 1; \
-	done
+	@-rm -f ANN/*.o
+	@-rm -f ANN/**/*.o
+	@-rm -f DT/*.o
+	@-rm -f DT/**/*.o
+	@-rm -f clustertree/*.o
+	@-rm -f *.o
