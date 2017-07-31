@@ -6,7 +6,7 @@ using namespace Rcpp;
 
 #include <DT/dt.h> // Dual tree class definitions
 #include <ANN/structures/pr_queue_k.h> // KNN needs priority queue to record ANNidx and ANNdist records
-#include <utilities.h> // R_info, profiling macros, etc. 
+#include <utilities.h> // R_info, profiling macros, etc.
 #include "BoundKNN.h" // Extra bounds specifically for KNN searches
 
 // Useful globals to refer to in the recursion
@@ -33,20 +33,6 @@ public:
   DualTreeKNN(const bool prune, const int dim); // default constructor
   virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   //~DualTreeKNN();
-
-  inline const bool hasBeenChecked(const ANNidx q_idx, const ANNidx r_idx){
-    // inserts new entry (w/ value false) if the value didn't exist
-    const bool pair_visited = (*BC_check)[std::minmax(q_idx, r_idx)];
-    if (!pair_visited) {
-      R_INFO("Calling base case for: q = " << q_idx << ", r = " << r_idx << ")\n")
-      (*BC_check)[std::minmax(q_idx, r_idx)] = true; // Update knowledge known about the nodes
-    }
-    return pair_visited;
-  }
-
-  inline void hasBeenChecked(const ANNidx q_idx, const ANNidx r_idx, const bool status){
-   (*BC_check)[std::minmax(q_idx, r_idx)] = status;
-  }
 
   // New methods for the derived class
   void KNN(int k, NumericMatrix& dists, IntegerMatrix& ids);
@@ -76,7 +62,7 @@ public:
   };
 
   // Simple Base case function: try to inline if possible
-  virtual inline void BaseCase(ANNpoint p_q, ANNpoint p_r, const int q_idx, const int r_idx, ANNkd_node* N_q) {
+  virtual inline ANNdist BaseCase(ANNpoint p_q, ANNpoint p_r, const int q_idx, const int r_idx, ANNkd_node* N_q) {
     // Compute distance and retrieve KNN pr queue
     ANNdist dist = annDist(d, qtree->thePoints()[q_idx], rtree->thePoints()[r_idx]);// (ANNdist) ANN_SUM(box_dist, ANN_DIFF(ANN_POW(box_diff), ANN_POW(cut_diff)));
     ANNmin_k& q_knn = *knn->at(q_idx); // Retrieve query point's knn priority queue
@@ -88,6 +74,7 @@ public:
     if (knn_identity && q_idx != r_idx && dist < knn->at(r_idx)->max_key()){
       knn->at(r_idx)->insert(dist, q_idx);
     }
+    return dist;
   };
 
   // Note: *** Minkowski metrics only *** ( to test? )
@@ -111,7 +98,6 @@ public:
         // Compute Base case, saving knn ids and distances along the way
         if (!hasBeenChecked(q_idx, r_idx)) { // Has this pair been considered before?
           R_INFO("Calling base case for: q = " << q_idx << ", r = " << r_idx << ")\n")
-          hasBeenChecked(q_idx, r_idx, true); // Equivalent pairs won't be visited again
 
           // Update number of points known with non-inf knn distances
           (*bnd_knn)[N_q_leaf].knn_known++;
@@ -161,7 +147,7 @@ public:
     }
   } // end BaseCaseIDC
 
-  inline void BaseCaseIdentity(ANNkd_leaf* N_q_leaf, ANNkd_leaf* N_r_leaf){
+  inline ANNdist BaseCaseIdentity(ANNkd_leaf* N_q_leaf, ANNkd_leaf* N_r_leaf){
 
     ANNdist dist;				// distance to data point
     ANNdist min_dist_q, min_dist_r;			// distance to k-th closest point
@@ -238,6 +224,7 @@ public:
         } // if(!hasBeenChecked(q_idx, r_idx))
       }
     }
+    return dist;
   } // end BaseCaseIDC
 };
 

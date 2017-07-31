@@ -188,11 +188,9 @@ struct double_edge
 {
   unsigned int from, to;
   double weight;
+  double_edge(){}; // don't initialize anything with default constructor
   double_edge(int from_id, int to_id, double cost) : from(from_id), to(to_id), weight(cost) { }
 };
-
-
-
 
 #define REP0(X)
 #define REP1(X) X

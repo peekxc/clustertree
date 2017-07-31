@@ -1,10 +1,14 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <utilities.h> // Indexing macros 
-#include <DT/structures/union_find.h> // disjoint set data structure
+#include "utilities.h" // Indexing macros
+#include "ANN/ANN_util.h" // matrixToANNpointArray
+#include "DT/dt.h"
+#include "DT/MST/dtb.h"
+#include "DT/structures/union_find.h" // disjoint set data structure
 
-// Regular Kruskal's MST
+/* kruskalsMST
+ * Compute MST using Kruskals algorithm w/ disjoint set */
 // [[Rcpp::export]]
 NumericMatrix kruskalsMST(const NumericVector dist_x){
   std::string message = "kruskalsMST expects a 'dist' object.";
@@ -88,4 +92,20 @@ NumericMatrix primsMST(const NumericVector dist_x){
     c_i = min_id;
   }
   return(mst);
+}
+
+// [[Rcpp::export]]
+List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
+  // Copy data over to ANN point array
+  ANNkd_tree* kd_treeQ, *kd_treeR;
+  ANNpointArray x_ann = matrixToANNpointArray(x);
+
+  // Construct the dual tree KNN instance
+  DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow());
+
+  // Construct the tree
+  ANNkd_tree* kd_tree = dtb.ConstructTree(x_ann, x.nrow(), x.ncol(), bkt_size, ANN_KD_SUGGEST);
+
+  // With the tree(s) created, setup DTB-specific bounds
+  dtb.setup(kd_tree, kd_tree);
 }

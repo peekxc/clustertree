@@ -74,24 +74,6 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
   return;
 }
 
-ANNdist DualTreeKNN::min_dist(ANNkd_node* N_q, ANNkd_node* N_r){ // assume query and reference
-  if (N_q == N_r) return 0;
-
-  // Assert they exist
-  assert(bounds->find(N_q) != bounds->end() && bounds->find(N_q) != bounds->end());
-
-  // Retrieve the bounds
-  const Bound& nq_bound = (*bounds)[N_q];
-  const Bound& nr_bound = (*bounds)[N_r];
-
-  // Compute the minimum box distance
-  ANNdist min_dist = annDist(d, nq_bound.centroid, nr_bound.centroid) - nq_bound.lambda - nr_bound.lambda;
-
-  // If it's negative, then the boxes overlap, and the minimum distance between any two points in
-  // either branch is 0.
-  return(min_dist < 0 ? 0 : min_dist);
-}
-
 // Get the maximum KNN distance of any descendent (or child) node
 ANNdist DualTreeKNN::max_knn_B(ANNkd_node* N_q){
   // The maximum KNN distance of any node will always be infinite if not even k (potentially non-optimal)

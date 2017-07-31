@@ -82,15 +82,6 @@ void DualTree::PrintTree(ANNbool with_pts, bool ref_tree){
   }
 }
 
-
-IntegerVector DualTree::getIDXArray(){
-  IntegerVector ids = Rcpp::no_init(rtree->n_pts);
-  for (int i = 0; i < rtree->n_pts; ++i){
-    ids[i] = rtree->pidx[i];
-  }
-  return ids;
-}
-
 ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int ncol, const int bkt_sz, ANNsplitRule split_rule){
   // Create kd tree, either a dual tree version with bounds or a regular ANN kd tree
   ANNkd_tree* kdTree;

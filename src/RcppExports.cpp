@@ -100,6 +100,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dtb
+List dtb(NumericMatrix x, const int bkt_size, bool prune);
+RcppExport SEXP clustertree_dtb(SEXP xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type prune(pruneSEXP);
+    rcpp_result_gen = Rcpp::wrap(dtb(x, bkt_size, prune));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 6},
@@ -109,6 +122,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"clustertree_kNN_int", (DL_FUNC) &clustertree_kNN_int, 6},
     {"clustertree_kruskalsMST", (DL_FUNC) &clustertree_kruskalsMST, 1},
     {"clustertree_primsMST", (DL_FUNC) &clustertree_primsMST, 1},
+    {"clustertree_dtb", (DL_FUNC) &clustertree_dtb, 3},
     {NULL, NULL, 0}
 };
 

@@ -29,3 +29,7 @@ primsMST <- function(dist_x) {
     .Call('clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
 }
 
+dtb <- function(x, bkt_size = 30L, prune = TRUE) {
+    .Call('clustertree_dtb', PACKAGE = 'clustertree', x, bkt_size, prune)
+}
+
