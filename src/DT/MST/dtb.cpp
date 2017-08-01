@@ -31,13 +31,14 @@ inline ANNdist DualTreeBoruvka::BaseCase(ANNpoint p_q, ANNpoint p_r, const int q
   return dist;
 }
 
+// TODO
 inline ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
   if (N_q == N_r) return 0;
   ANNdist min_dist_qr = min_dist(N_q, N_r); // minimum distance between two bounding rectangles
   ANNdist best_bound = B(N_q); // "best" lower bound
   if (min_dist_qr < best_bound){
-    ANNd_split* nq_spl = AS_SPLIT(N_q);
-    ANNd_split* nr_spl = AS_SPLIT(N_q);
+    ANNkd_split* nq_spl = AS_SPLIT(N_q);
+    ANNkd_split* nr_spl = AS_SPLIT(N_q);
     return ANN_DIST_INF; // Prune this branch
   }
   return min_dist_qr; // Recurse into this branch

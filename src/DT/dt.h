@@ -19,10 +19,12 @@ using namespace Rcpp;
 #include <queue> // queue
 
 // Utility macros
-#define IS_SPLIT(x) (bool) (dynamic_cast<ANNkd_split*>(x) != NULL)
-#define AS_SPLIT(x) dynamic_cast<ANNkd_split*>(x)
-#define IS_LEAF(x) (bool) (dynamic_cast<ANNkd_leaf*>(x) != NULL)
-#define AS_LEAF(x) dynamic_cast<ANNkd_leaf*>(x)
+// NOTE: Use caution when using, x is dereferenced in the processed, so expects a pointer
+#include <typeinfo>
+#define IS_SPLIT(x) (typeid(*x) == typeid(ANNkd_split))
+#define AS_SPLIT(x) static_cast<ANNkd_split*>(x)
+#define IS_LEAF(x) (typeid(*x) == typeid(ANNkd_leaf))
+#define AS_LEAF(x) static_cast<ANNkd_leaf*>(x)
 
 // Type definitions
 // typedef std::pair<ANNkd_node*, ANNkd_node*> NODE_PAIR; // query node is always assumed as the first node
