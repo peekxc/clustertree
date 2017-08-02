@@ -83,6 +83,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// vol_nSphere
+double vol_nSphere(const int n, const double R);
+RcppExport SEXP clustertree_vol_nSphere(SEXP nSEXP, SEXP RSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const double >::type R(RSEXP);
+    rcpp_result_gen = Rcpp::wrap(vol_nSphere(n, R));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"clustertree_kruskalsMST", (DL_FUNC) &clustertree_kruskalsMST, 1},
@@ -91,6 +103,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"clustertree_mstToHclust", (DL_FUNC) &clustertree_mstToHclust, 2},
     {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 5},
     {"clustertree_naive_clustertree", (DL_FUNC) &clustertree_naive_clustertree, 4},
+    {"clustertree_vol_nSphere", (DL_FUNC) &clustertree_vol_nSphere, 2},
     {NULL, NULL, 0}
 };
 

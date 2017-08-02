@@ -1,0 +1,67 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library("data.table")
+n <- 1000
+
+# Create correlation matrices
+Sigma_corr1 <- matrix(c(1, 0.65, 0.65, 1), byrow = T, ncol = 2)
+Sigma_corr2 <- matrix(c(1, 0, 0, 1), byrow = T, ncol = 2)
+Sigma_corr3 <- matrix(c(1, -0.6, -0.6, 1), byrow = T, ncol = 2)
+
+# Standard deviations of each variable:
+# 1: keep unit x, but stretch the y dimension
+# 2: stretch x, shrink y
+# 3: strecth y, shrink x
+sd_xy = list(c(1, 2), c(3, 0.75), c(2, 3))
+
+# Covariance matrix
+Sigma1 <- diag(sd_xy[[1]]) %*% Sigma_corr1 %*% diag(sd_xy[[1]])
+Sigma2 <- diag(sd_xy[[2]]) %*% Sigma_corr2 %*% diag(sd_xy[[2]])
+Sigma3 <- diag(sd_xy[[3]]) %*% Sigma_corr3 %*% diag(sd_xy[[3]])
+
+# Generate samples
+gauss1 <- MASS::mvrnorm(n = n, mu = c(10, 7), Sigma = Sigma1)
+gauss2 <- MASS::mvrnorm(n = n, mu = c(0, 1), Sigma = Sigma2)
+gauss3 <- MASS::mvrnorm(n = n, mu = c(-5, 8), Sigma = Sigma3)
+three_gauss <- rbind(gauss1, gauss2, gauss3)
+
+# Add random uniform noise
+x_noise <- runif(500, min = min(three_gauss[, 1]), max = max(three_gauss[, 1]))
+y_noise <- runif(500, min = min(three_gauss[, 2]), max = max(three_gauss[, 2]))
+
+# Organize into one matrix
+all_data <- list(gauss1, gauss2, gauss3, cbind(x_noise, y_noise))
+test_data <- data.table::rbindlist(lapply(all_data, as.data.frame), idcol = TRUE)
+plot(test_data[, .(V1, V2)])
+```
+
+```{r}
+# cluster tree
+C_n <- clustertree::clustertree(as.matrix(test_data[, .(V1, V2)]), k = 500L)
+```
+
+
+
+```{r}
+delta <- 0.99
+get_del <- function(k){
+  # n <- length(C_n$hc$height) + 1
+  d <- ifelse(is.null(C_n[["d"]]), 1, C_n[["d"]])
+  beta_n <- sqrt((4/n) * ((d * log(2*n)) + log(8 / delta)))
+  tmp <- d*log(n) + log(1/delta)
+  C_o <- n * ((beta_n^2 + beta_n * sqrt(C_n$k/n))/(tmp + sqrt(C_n$k * tmp)))
+  C_del <- 2 * C_o * log(2/delta)
+  (k/n) - ((C_del/n) * sqrt(k * d * log(n)))
+}
+plot(get_del, from = 2, to = n)
+abline(a = c(1, 1), b = c(n, n), col = "red")
+```
+

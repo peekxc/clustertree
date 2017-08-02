@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+// Volume of n-dimensional sphere with radius R
 // [[Rcpp::export]]
 double vol_nSphere(const int n, const double R = 1) {
   switch(n){

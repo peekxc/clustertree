@@ -25,3 +25,7 @@ naive_clustertree <- function(x, r_k, alpha = 1.414213562373095, type = 0L) {
     .Call('clustertree_naive_clustertree', PACKAGE = 'clustertree', x, r_k, alpha, type)
 }
 
+vol_nSphere <- function(n, R = 1) {
+    .Call('clustertree_vol_nSphere', PACKAGE = 'clustertree', n, R)
+}
+

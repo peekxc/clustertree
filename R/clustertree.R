@@ -11,11 +11,11 @@
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mutual knn"),
-                        warn_parameter_settings = FALSE){
+clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
+                        estimator = c("RSL", "knn", "mutual knn"),
+                        warn = FALSE){
   if (is(x, "dist")){
-    if (attr(x, "method") != "euclidean" && warn_parameter_settings)
-      warning("Robust Single Linkage expects euclidean distances. See ?clustertree for more details.")
+    d <- NULL
     dist_x <- x
     k <- ifelse(missing(k), log(nrow(dist_x)), k)
   } else {
@@ -35,14 +35,13 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   }
 
   ## Warn about parameter settings yielding unknown results
-  if (k < floor(ncol(x) * log(nrow(x))) && warn_parameter_settings)
-    warning("Existing analysis on RSL rely on alpha being at least sqrt(2) and k being at least as large as d*logn.")
+  warn_message <- "Existing clustertree analysis relies on alpha being at least sqrt(2) and k being at least as large as d*log(n)."
+  if (k < floor(ncol(x) * log(nrow(x))) && warn) warning(warn_message)
 
   r_k <- dbscan::kNNdist(x, k = k - 1)
-  res <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
-  res$call <- match.call()
-  res$method <- "robust single linkage"
-  res$k <- k
-  res$alpha <- alpha
-  res
+  hc <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
+  hc$call <- match.call()
+  hc$method <- possible_estimators[type]
+  res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree")
+  return(res)
 }
