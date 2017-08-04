@@ -7,9 +7,13 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
-```{r}
+
+```{r setup, include=FALSE}
 library("data.table")
-n <- 1000
+```
+
+```{r}
+n <- 100
 
 # Create correlation matrices
 Sigma_corr1 <- matrix(c(1, 0.65, 0.65, 1), byrow = T, ncol = 2)
@@ -34,18 +38,19 @@ gauss3 <- MASS::mvrnorm(n = n, mu = c(-5, 8), Sigma = Sigma3)
 three_gauss <- rbind(gauss1, gauss2, gauss3)
 
 # Add random uniform noise
-x_noise <- runif(500, min = min(three_gauss[, 1]), max = max(three_gauss[, 1]))
-y_noise <- runif(500, min = min(three_gauss[, 2]), max = max(three_gauss[, 2]))
+#x_noise <- runif(500, min = min(three_gauss[, 1]), max = max(three_gauss[, 1]))
+#y_noise <- runif(500, min = min(three_gauss[, 2]), max = max(three_gauss[, 2]))
 
 # Organize into one matrix
-all_data <- list(gauss1, gauss2, gauss3, cbind(x_noise, y_noise))
+all_data <- list(gauss1, gauss2, gauss3)#, cbind(x_noise, y_noise))
 test_data <- data.table::rbindlist(lapply(all_data, as.data.frame), idcol = TRUE)
 plot(test_data[, .(V1, V2)])
 ```
 
 ```{r}
 # cluster tree
-C_n <- clustertree::clustertree(as.matrix(test_data[, .(V1, V2)]), k = 500L)
+C_n <- clustertree::clustertree(as.matrix(test_data[, .(V1, V2)]), k = 50L)
+plot(C_n)
 ```
 
 
@@ -53,7 +58,7 @@ C_n <- clustertree::clustertree(as.matrix(test_data[, .(V1, V2)]), k = 500L)
 ```{r}
 delta <- 0.99
 get_del <- function(k){
-  # n <- length(C_n$hc$height) + 1
+  n <- length(C_n$hc$height) + 1
   d <- ifelse(is.null(C_n[["d"]]), 1, C_n[["d"]])
   beta_n <- sqrt((4/n) * ((d * log(2*n)) + log(8 / delta)))
   tmp <- d*log(n) + log(1/delta)
@@ -61,6 +66,8 @@ get_del <- function(k){
   C_del <- 2 * C_o * log(2/delta)
   (k/n) - ((C_del/n) * sqrt(k * d * log(n)))
 }
+
+possible_k <- (1:n)[sapply(1:n, get_del) > 0]
 plot(get_del, from = 2, to = n)
 abline(a = c(1, 1), b = c(n, n), col = "red")
 ```

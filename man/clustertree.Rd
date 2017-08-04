@@ -4,7 +4,8 @@
 \alias{clustertree}
 \title{Compute the Empirical Cluster Tree}
 \usage{
-clustertree(x, k = "suggest", alpha = "suggest", algorithm = "RSL")
+clustertree(x, d = ncol(x), k = "suggest", alpha = "suggest",
+  estimator = c("RSL", "knn", "mutual knn"), warn = FALSE)
 }
 \arguments{
 \item{x}{a matrix-coercible data set, or a euclidean 'dist' object.}

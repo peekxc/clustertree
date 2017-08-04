@@ -1,10 +1,12 @@
 #' @title Prune an empirical cluster tree
 #' @name prune
-#' @description More details coming soon...
+#' @description Implementation of Chaudhuri et. al's consistent pruning procedure for the cluster tree. By "pruning" the tree,
+#' spurious clusters are removed while salient clusters are recovered.
 #' @param eps A tuning parameter (> 0) representing how aggressively to prune.
+#' @param delta The (1-δ) probability
 #' @references See KC and SD (2014).
 #' @export
-prune <- function(C_n, eps, delta){
+prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
   n <- length(C_n$hc$height) + 1
   d <- ifelse(is.null(C_n[["d"]]), 1, C_n[["d"]])
   k <- C_n$k
@@ -17,7 +19,7 @@ prune <- function(C_n, eps, delta){
   # C_del has to be <= k - sqrt(k * d * log(n))
   const <- (C_del/n) * sqrt(k * d * log(n))
   if ((k / n) - const < 0){
-    message <- "Pruning did not result any changes to the cluster tree. Try lowering the universal constant.\n"
+    message <- "Pruning did not result any changes to the cluster tree. Try lowering the delta or eps thresholds.\n"
     message <- paste0(message, sprintf("Cdelta = %f, eps = %f, delta = %f"))
     warning(message)
     return(C_n)

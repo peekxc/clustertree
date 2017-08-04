@@ -36,12 +36,22 @@ clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
 
   ## Warn about parameter settings yielding unknown results
   warn_message <- "Existing clustertree analysis relies on alpha being at least sqrt(2) and k being at least as large as d*log(n)."
-  if (k < floor(ncol(x) * log(nrow(x))) && warn) warning(warn_message)
+  if (k < ceiling(ncol(x) * log(nrow(x))) && warn) warning(warn_message)
 
   r_k <- dbscan::kNNdist(x, k = k - 1)
   hc <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
   hc$call <- match.call()
-  hc$method <- possible_estimators[type]
+  hc$method <- possible_estimators[type+1]
   res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree")
   return(res)
 }
+
+print.clustertree <- function(C_n){
+  type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
+  est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
+  writeLines(c(
+    paste0("clustertree object estimated using: ", est_type),
+    sprintf("Parameters: k = %d, alpha = %.3f, dim = %d", C_n$k, C_n$alpha, C_n$d)
+  ))
+}
+
