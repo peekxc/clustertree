@@ -13,7 +13,7 @@ X_n <- StockDividends[, 2:12]
 ## Automatically detecting k ~ dlogn sets k around 39, more neighbors than records!
 test_that("Parameter detection works", {
     expect_error(clustertree::clustertree(X_n))
-    expect_warning(clustertree::clustertree(X_n, k = 5L, warn_parameter_settings = T))
+    expect_warning(clustertree::clustertree(X_n, k = 5L, warn = T))
 })
 
 ## Make sure setup code at least works
@@ -24,13 +24,13 @@ test_that("Basic functionality works", {
 
 ## RSL clustertree solution using brute-force/naive version
 test_that("RSL naive solution matches MST", {
-  mst_rsl <- clustertree::clustertree(X_n, k = 5L)
-  r_k <- apply(dbscan::kNNdist(X_n, k = mst_rsl$k - 1), 1, max)
-  rsl_naive <- clustertree:::naive_clustertree(dist_x, r_k, mst_rsl$alpha, type = 0)
+  C_n_rsl <- clustertree::clustertree(X_n, k = 5L)
+  r_k <- apply(dbscan::kNNdist(X_n, k = C_n_rsl$k - 1), 1, max)
+  rsl_naive <- clustertree:::naive_clustertree(dist_x, r_k, C_n_rsl$alpha, type = 0)
 
   ## Do the run time lengths of each symbol match?
   expect_true(all(sapply(rsl_naive, function(cl) {
-    mst_rle <- rle(cutree(mst_rsl, h = cl$R))$lengths
+    mst_rle <- rle(cutree(C_n_rsl$hc, h = cl$R))$lengths
     bf_rle <- rle(cl$cluster)$lengths
     all(mst_rle == bf_rle)
   })))

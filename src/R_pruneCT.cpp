@@ -38,12 +38,13 @@ NumericVector pruneCT(List C_n, NumericVector prune_heights, IntegerVector valid
     if (from < 0 && to < 0) {
       old_merge.row(i) = IntegerVector::create(from, to);
       //pruned_merge.row(i) = IntegerVector::create(from, to);
+      // comp_index.at(i)
     }
     else if (from < 0 || to < 0) {
       int leaf = from < 0 ? from: to;
       int comp = from < 0 ? to : from;
       merge.row(i) = IntegerVector::create(-(leaf), comp_index.at(comp)+1);
-      comp_index.at(components.Find(leaf)) = i;
+      //comp_index.at(components.Find(leaf)) = i;
     }
   }
 
