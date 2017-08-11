@@ -1,12 +1,13 @@
 #' @title Compute the Empirical Cluster Tree
 #' @name clustertree
-#' @description More details coming soon...
+#' @description Implements various estimators for estimating the empirical cluster tree.
 #' @param x a matrix-coercible data set, or a euclidean 'dist' object.
 #' @param k integer; smoothing parameter, controls the radius of the ball containing k points around each x_i.
-#' @param alpha float; regularity parameter determing when to connect points. See below for details.
+#' @param alpha float; regularity parameter that prevents excessive chaining. Can be safely kept on the default. See below for details.
 #' @note The default 'k' parameter will differ between if a 'dist' object is given vs. the original data set, as with
 #' the dist object the original dimensionality of the data is unknown (to which the default setting of k depends on).
-#' @references See KC and SD.
+#' Chaudhuri et. al recommend keeping alpha as low as possible, subject to being no lower than sqrt(2).
+#' @references See Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
 #' @import dbscan
 #' @importFrom methods is
 #' @useDynLib clustertree

@@ -14,7 +14,8 @@ From a high-level perspective, the cluster tree provides a highly interpretable,
 	
 --
 
-For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.  
+For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.
+
 <!--The applications are many—density-based clustering is one such application. The benefits of density-based clustering are numerous, including the ability to capture clusters of arbitrary or non-convex shapes, they do not require *a priori* knowledge concerning number of clusters to find, and they are more often than not robust to varying amounts noise. Akin to some density-based clustering approaches, the cluster tree shares another benefit relatively absent in other clustering approaches: the definition of what constitutes a cluster and its overall object of inference, the hierarchical tree of high-density clusters, is clearly and formally stated. -->
 
 ## Installation 
@@ -30,7 +31,8 @@ The package currently only exists on github. The installation options are as fol
 ) 
 #### Development note 
 
-The package is in very early stage of development, and should be regarded as such. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017. 
+The package is in very early stage of development, and should be regarded as such. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017. Also note that much of the preliminary code is being developed within **separate branches**,
+which are very unstable and highly experimental. 
 
 ## Usage 
 Usage section to be continued.... 
