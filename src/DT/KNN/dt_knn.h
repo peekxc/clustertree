@@ -27,6 +27,7 @@ protected:
   bool knn_identity; // are reference and query sets the same?
   std::unordered_map<ANNidx, ANNmin_k*>* knn;  // Map between point index and kNN priority queue
   std::unordered_map<ANNkd_node*, BoundKNN& >* bnd_knn;
+  std::vector<ANNdist>* D; // array of cached knn distances for every point
 public:
 
   // Main constructors
@@ -39,11 +40,14 @@ public:
   ANNdist max_knn(ANNkd_node* N_q);
 
   // Base-class functions replaced for KNN
-  virtual ANNdist min_dist(ANNkd_node* N_i, ANNkd_node* N_j); // use tracked min_knn to recursively compute
+  // virtual ANNdist min_dist(ANNkd_node* N_i, ANNkd_node* N_j); // use tracked min_knn to recursively compute
   virtual ANNdist B(ANNkd_node* N_q);
   ANNdist max_knn_B(ANNkd_node* N_q);
   virtual void pDFS(ANNkd_node* N_q, ANNkd_node* N_r);
   virtual void DFS(ANNkd_node* N_q, ANNkd_node* N_r);
+
+  // Update various KNN-related bounds
+  ANNdist updateBounds(ANNdist new_dist, ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf, int q_idx, int r_idx);
 
   // Score function: try to inline if possible
   virtual inline ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r) {

@@ -11,6 +11,7 @@ using namespace Rcpp;
 
 // Utilities
 #include <utilities.h> // R_INFO, profiling mode, etc.
+#include <metric.h> // different metrics
 
 // STL or C lib includes
 #include <algorithm> // std::for_each
@@ -29,22 +30,29 @@ using namespace Rcpp;
 // Type definitions
 // typedef std::pair<ANNkd_node*, ANNkd_node*> NODE_PAIR; // query node is always assumed as the first node
 
+struct candidate_pair {
+  bool beenChecked;
+  ANNdist eps;
+  candidate_pair() : beenChecked(false), eps(ANN_DIST_INF) {}
+};
+
 // ---- DualTree class definition ----
 class DualTree {
   enum TREE_TYPE { QUERY_TREE, REF_TREE };
 public:
+  const Metric m_dist;
   const bool use_pruning; // whether to use a pruning-based approach
   const int d; // dimension
   ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
   std::unordered_map<ANNkd_node*, const Bound& >* bounds; // Various bounds per-node to fill in (node_ptr -> bounds)
-  std::map< std::pair<int, int>, bool>* BC_check; // Node pair base case check: should default to false if no key found!
+  std::map< std::pair<int, int>, candidate_pair>* BC_check; // Base Case point pair check: should default to false if no key found!
 
   #ifdef NDEBUG
     std::unordered_map<ANNkd_node*, char> node_labels; // in debug mode the nodes are labeled with characters
   #endif
 
   DualTree(const bool prune, const int dim);
-  virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
+  virtual void setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
   virtual void setQueryTree(ANNkd_tree* query_tree) { qtree = query_tree; };
 
@@ -56,6 +64,9 @@ public:
   void PrintTree(ANNbool with_pts, bool);
   void printNode(ANNkd_split* N, int level);
   void printNode(ANNkd_leaf* N, int level);
+
+  // Distance calculation
+  ANNdist computeDistance();
 
   // Application-specific virtual methods: must be defined by the child!
   virtual void DFS(ANNkd_node* N_q, ANNkd_node* N_r) = 0; // regular full DFS
@@ -72,12 +83,16 @@ public:
   // combinations from being scored multiple times.
   inline const bool hasBeenChecked(const ANNidx q_idx, const ANNidx r_idx){
     // inserts new entry (w/ value false) if the value didn't exist
-    const bool pair_visited = (*BC_check)[std::minmax(q_idx, r_idx)];
+    const bool pair_visited = (*BC_check)[std::minmax(q_idx, r_idx)].beenChecked;
     if (!pair_visited) {
       R_INFO("Calling base case for: q = " << q_idx << ", r = " << r_idx << ")\n")
-      (*BC_check)[std::minmax(q_idx, r_idx)] = true; // Update knowledge known about the nodes
+      (*BC_check)[std::minmax(q_idx, r_idx)].beenChecked = true; // Update knowledge known about the nodes
     }
     return pair_visited;
+  }
+
+  inline const void updateEps(const ANNidx q_idx, const ANNidx r_idx, ANNdist eps){
+    (*BC_check)[std::minmax(q_idx, r_idx)].eps = eps;
   }
 
   inline ANNdist min_dist(ANNkd_node* N_q, ANNkd_node* N_r){// assume query and reference

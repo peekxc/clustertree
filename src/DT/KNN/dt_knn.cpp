@@ -19,7 +19,7 @@ DualTreeKNN::DualTreeKNN(const bool prune, const int dim) : DualTree(prune, dim)
 // Now that the tree(s) are made, the knn-specific bound obejcts can be instantiated
 void DualTreeKNN::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
   // Call parent class setup to assign trees
-  (*this).DualTree::setup(kd_treeQ, kd_treeR);
+  setTrees(kd_treeQ, kd_treeR);
 
   R_INFO("Creating KNN bound objects\n")
   // Create new knn bounds using the new kd_node pointers
@@ -45,6 +45,7 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
   BEGIN_PROFILE()
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
   knn->reserve(qtree->n_pts); // reserve enough buckets to hold at least n_pts items
+  D = new std::vector<ANNdist>(qtree->n_pts, ANN_DIST_INF); // cache of knn distances
   for (int i = 0; i < qtree->n_pts; ++i) {
     knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
   }
@@ -96,6 +97,32 @@ ANNdist DualTreeKNN::max_knn_B(ANNkd_node* N_q){
     return(max_knn);
   }
 }
+
+// Update the various properties of the
+ANNdist DualTreeKNN::updateBounds(ANNdist new_dist, ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf, int q_idx, int r_idx){
+
+  ANNdist min_dist_q = D[q_idx], min_dist_r = D[r_idx]; // current best knn distances
+  BoundKNN& qbnd = bnd_knn->at(N_q_leaf), &rbnd = bnd_knn->at(N_r_leaf);
+
+  // 'new_dist' encodes a newly calculated distance between q and r. If this distance is non-inf,
+  // and the old currently cached distance is inf, then update the number of points known by the
+  // current node to have non-inf distances
+  qbnd.knn_known += (min_dist_q == ANN_DIST_INF && new_dist != ANN_DIST_INF);
+  rbnd.knn_known += (min_dist_r == ANN_DIST_INF && new_dist != ANN_DIST_INF);
+
+  // Update the cache
+  D[q_idx] = std::min(D[q_idx], new_dist);
+  if (q_idx != r_idx) D[r_idx] = std::min(D[r_idx], new_dist);
+
+  // Update minimum kth nearest neighbor distances
+  qbnd.min_knn = std::min(qbnd.min_knn, min_dist_q); // Update minimum kth nearest distance on query node
+  rbnd.min_knn = std::min(rbnd.min_knn, min_dist_r); // Update minimum kth nearest distance on reference node
+
+  // Update maximum (non-inf) distances as well
+  qbnd.max_real_knn = std::max(qbnd.max_real_knn, min_dist_q == ANN_DIST_INF ? 0 : min_dist_q);
+  rbnd.max_real_knn = std::max(rbnd.max_real_knn, min_dist_r == ANN_DIST_INF ? 0 : min_dist_r);
+}
+
 
 // Recursive bound on a given query node
 ANNdist DualTreeKNN::B(ANNkd_node* N_q){
@@ -231,16 +258,11 @@ void DualTreeKNN::DFS(ANNkd_node* N_q, ANNkd_node* N_r){  INC_TRAVERSAL(1)
     for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
       for (int r_i = 0; r_i < N_r_leaf->n_pts; ++r_i){
         int q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
-
-        // Compute Base case, saving knn ids and distances along the way
-        if (!((bool) ((*BC_check)[std::minmax(q_idx, r_idx)]))){ // Has this pair been considered before?
-          R_INFO("Calling base case for: q = " << q_idx << ", r = " << r_idx << ")\n")
+        if (!hasBeenChecked(q_idx, r_idx)){ // Has this pair been considered before?
           BaseCase(qtree->pts[q_idx], rtree->pts[r_idx], q_idx, r_idx, N_q); // Pass nodes as well to keep track of min_knn
-          (*BC_check)[std::minmax(q_idx, r_idx)] = true; // Equivalent pairs won't be visited again
         }
       }
     }
-    ANN_PTS(N_q_leaf->n_pts + N_r_leaf->n_pts)
     return; // If at the base case, don't recurse!
   }
 

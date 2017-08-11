@@ -8,17 +8,96 @@ using namespace Rcpp;
 // Constructor initializes the bounds map (if pruning is enabled), and base case map
 DualTree::DualTree(const bool prune, const int dim) : use_pruning(prune), d(dim) {
   if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
-  BC_check = new std::map< std::pair<int, int>, bool>();
+  BC_check = new std::map< std::pair<int, int>, candidate_pair>();
+  m_dist = Metrics::L_2(dim); // default
 }
 
 // Derivable setup function
-void DualTree::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
+void DualTree::setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
   // Check dimensionality, then assign trees if the same
   if (kd_treeR->theDim() != kd_treeQ->theDim() || kd_treeR->theDim() != d){ stop("Dimensionality of the query set does not match the reference set."); }
   // R_PRINTF("Setting up dual trees for %d dimensions\n", d)
   rtree = kd_treeR;
   qtree = kd_treeQ;
 }
+
+
+ANNdist DualTree::computeDistance(const int q_idx, const int r_idx,
+                                  ANNdist eps1 = ANN_DIST_INF,
+                                  ANNdist eps2 = ANN_DIST_INF
+                                  ){
+  ANNcoord* qq = qtree->pts[q_idx];     // first coord of query point
+  ANNcoord* pp = rtree->pts[r_idx];			// first coord of reference point
+  ANNdist dist = 0;
+  bool valid_dist = true;
+  switch(m_dist.use_inc_distance){ // If the metric supports incremental distance calculations, use it
+    case true:
+      for (int d_i = 0; d_i < d; ++d_i) {
+        dist += m_dist(qq, pp, d_i);
+        if(dist > eps1 && dist > eps2) { // check both since working with tree from identical data set
+          break;
+        }
+      }
+      valid_dist = d_i >= d  && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
+      break;
+    case false:
+      dist = m_dist(qq, pp);
+      break;
+    default:
+      break;
+  }
+  return valid_dist ? dist : ANN_DIST_INF;
+}
+
+// Given two leaf nodes and an array of "best" distances so far
+// void DualTree::compareLeaves(ANNkd_leaf* N_q_leaf, ANNkd_leaf* N_r_leaf,
+//                              ANNdist* q_best_dist, // An array of the best
+//                              ANNdist* r_best_dist
+//                             ){
+//   ANNdist dist;				// distance to data point
+//   ANNdist min_dist_q, min_dist_r;			// distance to k-th closest point
+//   ANNcoord* pp; // first coord of reference point
+//   ANNcoord* qq; // first coord of query point
+//   ANNcoord t;
+//   int d_i;
+//
+//   ANNpoint p_q, p_r;
+//   int q_idx, r_idx;
+//   ANNdist min_dist_q, min_dist_r; // the minimum
+//
+//   for (int q_i = 0, q_idx = N_q_leaf->bkt[q_i]; q_i < N_q_leaf->n_pts; ++q_i, q_idx = N_q_leaf->bkt[q_i]){
+//     min_dist_r = EL[q_idx].weight; // k-th smallest distance so far (query)
+//     for (int r_i = 0, r_idx = N_r_leaf->bkt[r_i]; r_i < N_r_leaf->n_pts; ++r_i, r_idx = N_r_leaf->bkt[r_i]){
+//
+//
+//
+//       // Compute Base case, saving knn ids and distances along the way
+//       if (!hasBeenChecked(q_idx, r_idx)) { ANN_PTS(2) // Has this pair been considered before?
+//         min_dist_r = EL[r_idx].weight; // k-th smallest distance so far (reference)
+//
+//         qq = qtree->pts[q_idx];     // first coord of query point
+//         pp = rtree->pts[r_idx];			// first coord of reference point
+//         dist = 0;
+//
+//         // Incrementally compute distance. If at any dimension the distance exceeds the kth smallest
+//         // distance so far, continue on to the next reference point
+//         for(d_i = 0; d_i < d; d_i++) {
+//           ANN_COORD(1)				// one more coordinate hit
+//           ANN_FLOP(4)					// increment floating ops
+//
+//           t = *(qq++) - *(pp++);		// compute length and adv coordinate
+//           // exceeds dist to k-th smallest?
+//           dist = ANN_SUM(dist, ANN_POW(t));
+//           if(dist > min_dist_q && dist > min_dist_r) { // check both since working with tree from identical data set
+//             break;
+//           }
+//         }
+//       }
+//     } // end ref pts
+//   } // end query pts
+//
+//
+// }
 
 
 void DualTree::printNode(ANNkd_leaf* N, int level){

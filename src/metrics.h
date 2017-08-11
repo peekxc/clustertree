@@ -2,26 +2,25 @@
 #define METRICS_H
 
 #include <ANN/ANN.h> // ANN typedefs
-#include <utilities.h> // REP
 
-// L_p norm
-struct L_2 {
-  const int d;
-  L_2(const int _d) : d(_d) { }
-  inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
-    switch(d){
-      case 1:
-        return (x_j[0] - x_i[0]) * (x_j[0] - x_i[0]);
-      case 2:
-        return (x_j[0] - x_i[0]) * (x_j[0] - x_i[0]) + (x_j[1] - x_i[1]) * (x_j[1] - x_i[1]);
-      default:
-        break;
+// Functors to compute some notion of distance
+namespace Metrics{
+  // L_2 norm (squared)
+  struct L_2 {
+    const int d;
+    const bool use_inc_distance;
+    L_2(const int _d) : d(_d), use_inc_distance(false) { }
+    inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
+      ANNdist dist = 0;
+      for (int i = 0; i < d; ++i) { dist += (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]); }
+      return dist;
     }
-    ANNdist dist = 0;
-    for (int i = 0; i < d; ++i)
-    { dist += (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]); }
-    return dist;
-  }
-};
+    // Allow dimension-specific distance calculation for incremental distance updates
+    inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j, const int i){
+      return (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]);
+    }
+  };
+}
+
 
 #endif

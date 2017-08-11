@@ -106,6 +106,22 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   // Construct the tree
   ANNkd_tree* kd_tree = dtb.ConstructTree(x_ann, x.nrow(), x.ncol(), bkt_size, ANN_KD_SUGGEST);
 
-  // With the tree(s) created, setup DTB-specific bounds
+  // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
   dtb.setup(kd_tree, kd_tree);
+
+  // Run the dual tree boruvka algorithm
+  NumericMatrix mst = dtb.DTB(x);
+
+  // Return the minimum spanning tree
+  return List::create(mst);
 }
+
+
+/*** R
+  data("iris")
+  X_n <- iris[, 1:4]
+  clustertree:::dtb(as.matrix(X_n))
+
+  */
+
+
