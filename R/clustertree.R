@@ -15,7 +15,7 @@ clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
                         estimator = c("RSL", "knn", "mutual knn"),
                         warn = FALSE){
   if (is(x, "dist")){
-    d <- NULL
+    d <- ifelse(missing(d), NULL, d)
     dist_x <- x
     k <- ifelse(missing(k), log(nrow(dist_x)), k)
   } else {
@@ -46,6 +46,7 @@ clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
   return(res)
 }
 
+#' @export
 print.clustertree <- function(C_n){
   type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]

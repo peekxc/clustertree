@@ -2,30 +2,34 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 kruskalsMST <- function(dist_x) {
-    .Call('clustertree_kruskalsMST', PACKAGE = 'clustertree', dist_x)
+    .Call('_clustertree_kruskalsMST', PACKAGE = 'clustertree', dist_x)
 }
 
 primsMST <- function(dist_x) {
-    .Call('clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
+    .Call('_clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
 }
 
 primsRSL <- function(r, r_k, n, alpha, type) {
-    .Call('clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
+    .Call('_clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
 }
 
 mstToHclust <- function(mst, n) {
-    .Call('clustertree_mstToHclust', PACKAGE = 'clustertree', mst, n)
+    .Call('_clustertree_mstToHclust', PACKAGE = 'clustertree', mst, n)
 }
 
 clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L) {
-    .Call('clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
+    .Call('_clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
 }
 
 naive_clustertree <- function(x, r_k, alpha = 1.414213562373095, type = 0L) {
-    .Call('clustertree_naive_clustertree', PACKAGE = 'clustertree', x, r_k, alpha, type)
+    .Call('_clustertree_naive_clustertree', PACKAGE = 'clustertree', x, r_k, alpha, type)
+}
+
+pruneCT <- function(C_n, prune_heights, valid_idx) {
+    .Call('_clustertree_pruneCT', PACKAGE = 'clustertree', C_n, prune_heights, valid_idx)
 }
 
 vol_nSphere <- function(n, R = 1) {
-    .Call('clustertree_vol_nSphere', PACKAGE = 'clustertree', n, R)
+    .Call('_clustertree_vol_nSphere', PACKAGE = 'clustertree', n, R)
 }
 

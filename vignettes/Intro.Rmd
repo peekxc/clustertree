@@ -13,8 +13,6 @@ library("data.table")
 ```
 
 ```{r}
-n <- 100
-
 # Create correlation matrices
 Sigma_corr1 <- matrix(c(1, 0.65, 0.65, 1), byrow = T, ncol = 2)
 Sigma_corr2 <- matrix(c(1, 0, 0, 1), byrow = T, ncol = 2)
@@ -31,20 +29,20 @@ Sigma1 <- diag(sd_xy[[1]]) %*% Sigma_corr1 %*% diag(sd_xy[[1]])
 Sigma2 <- diag(sd_xy[[2]]) %*% Sigma_corr2 %*% diag(sd_xy[[2]])
 Sigma3 <- diag(sd_xy[[3]]) %*% Sigma_corr3 %*% diag(sd_xy[[3]])
 
-# Generate samples
-gauss1 <- MASS::mvrnorm(n = n, mu = c(10, 7), Sigma = Sigma1)
-gauss2 <- MASS::mvrnorm(n = n, mu = c(0, 1), Sigma = Sigma2)
-gauss3 <- MASS::mvrnorm(n = n, mu = c(-5, 8), Sigma = Sigma3)
-three_gauss <- rbind(gauss1, gauss2, gauss3)
-
-# Add random uniform noise
-#x_noise <- runif(500, min = min(three_gauss[, 1]), max = max(three_gauss[, 1]))
-#y_noise <- runif(500, min = min(three_gauss[, 2]), max = max(three_gauss[, 2]))
-
-# Organize into one matrix
-all_data <- list(gauss1, gauss2, gauss3)#, cbind(x_noise, y_noise))
-test_data <- data.table::rbindlist(lapply(all_data, as.data.frame), idcol = TRUE)
-plot(test_data[, .(V1, V2)], asp = 1)
+# # Generate samples
+# gauss1 <- MASS::mvrnorm(n = n, mu = c(10, 7), Sigma = Sigma1)
+# gauss2 <- MASS::mvrnorm(n = n, mu = c(0, 1), Sigma = Sigma2)
+# gauss3 <- MASS::mvrnorm(n = n, mu = c(-5, 8), Sigma = Sigma3)
+# three_gauss <- rbind(gauss1, gauss2, gauss3)
+# 
+# # Add random uniform noise
+# #x_noise <- runif(500, min = min(three_gauss[, 1]), max = max(three_gauss[, 1]))
+# #y_noise <- runif(500, min = min(three_gauss[, 2]), max = max(three_gauss[, 2]))
+# 
+# # Organize into one matrix
+# all_data <- list(gauss1, gauss2, gauss3)#, cbind(x_noise, y_noise))
+# test_data <- data.table::rbindlist(lapply(all_data, as.data.frame), idcol = TRUE)
+# plot(test_data[, .(V1, V2)], asp = 1)
 ```
 
 ```{r}
@@ -66,6 +64,7 @@ cut_with_noise <- function(hc, h){
   return(match(cl, sort(unique(cl)))-1)
 }
 ```
+
 ```{r}
 H <- function(x, base = 2){ -sum(table(x)/length(x) * log(table(x)/length(x), base = base)) }
 
@@ -82,18 +81,9 @@ sample_mix <- function(n, f_list, mix_weights = rep(1/length(f_list), length(f_l
 ```
 
 ## Animations
-```{r}
-S <- sample_mix(100, f_list = list(mix1, mix2, mix3))
-X_n <- S[, 1:2]
-I <- S[, 3]
-
-# Find the optimal cut 
-C_n <- clustertree::clustertree(X_n)
-
-ARI_scores <- sapply(C_n$hc$height, function(h) ARI(cut_with_noise(C_n$hc, h+.Machine$double.eps), I))
 
 
-
+```{r ARI}
 ARI <- function(X, Y){
   n <- length(X)
   cross <- unname(as.matrix(table(X, Y)))
@@ -103,9 +93,27 @@ ARI <- function(X, Y){
   max_idx <- 0.5 * (sum(choose(a, 2)) + sum(choose(b, 2)))
   return ((index - exp_idx) / (max_idx - exp_idx))
 }
+```
 
-cl <- cut_with_noise(C_n$hc, h = C_n$hc$height[63]) + 1
-plot(X_n, col = cl[C_n$hc$order])
+```{r}
+S <- sample_mix(150, f_list = list(mix1, mix2, mix3))
+X_n <- S[, 1:2]
+I <- S[, 3]
+
+# Find the optimal cut 
+C_n <- clustertree::clustertree(X_n)
+
+m <- diag(nrow(X_n))
+m_con <- mapply(function(x, y) { ifelse(I[x] == I[y], 1, -1) }, row(m), col(m), SIMPLIFY = T)
+constraints <- matrix(m_con, nrow = nrow(X_n), byrow = F)
+
+ARI_scores <- sapply(C_n$hc$height, function(h) ARI(cut_with_noise(C_n$hc, h+.Machine$double.eps), I))
+
+opt_ext <- dbscan::extractFOSC(C_n$hc, constraints = constraints, alpha = 0)
+ARI(, I)
+plot(X_n, col = cut_with_noise(C_n$hc, h = C_n$hc$height[which.max(ARI_scores)]) + 1)
+plot(X_n, col = opt_ext$cluster+1)
+
 
 # Create map between true labels and majority label of each cluster 
 sapply(unique(I), function(class_label) as.integer(names(which.max(table(cl[which(I == class_label)])))))
@@ -120,6 +128,9 @@ animation::saveGIF({
 
 
 ```
+
+
+
 
 
 
