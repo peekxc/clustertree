@@ -122,12 +122,12 @@ ANNdist DualTreeKNN::updateBounds(ANNdist new_dist, ANNkd_node* N_q_leaf, ANNkd_
 
   // Informational output
   R_INFO("Q (" << node_labels.at(N_q_leaf) << ") max (non-inf) knn: " << qbnd.max_real_knn
-               << " (" << qbnd.knn_known << "/" << N_q_leaf->n_pts << " known)"
-               << " max_knn: " << qbnd.maxKNN(N_q_leaf->n_pts)
+               << " (" << qbnd.knn_known << "/" << AS_LEAF(N_q_leaf)->n_pts << " known)"
+               << " max_knn: " << qbnd.maxKNN(AS_LEAF(N_q_leaf)->n_pts)
                << " min_knn: " << qbnd.min_knn << "\n")
   R_INFO("R (" << node_labels.at(N_r_leaf) << ") max (non-inf) knn: " << rbnd.max_real_knn
-               << " (" << rbnd.knn_known << "/" << N_r_leaf->n_pts << " known)"
-               << " max_knn: " << rbnd.maxKNN(N_r_leaf->n_pts)
+               << " (" << rbnd.knn_known << "/" << AS_LEAF(N_r_leaf)->n_pts << " known)"
+               << " max_knn: " << rbnd.maxKNN(AS_LEAF(N_r_leaf)->n_pts)
                << " min_knn: " << rbnd.min_knn << "\n")
 }
 
@@ -313,10 +313,18 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
         min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far (reference)
         dist = computeDistance(q_idx, r_idx, min_dist_q, min_dist_r);
 
+        R_INFO("min_dist_q: " << min_dist_r << ", min_dist_r: " << min_dist_r << std::endl;)
+        R_INFO("new dist: " << dist << " (" << q_idx << ", " << r_idx << ")" << std::endl;)
+
         // Update the priority queue and cache
         bool add_query_known = false, add_ref_known = false;
         if (dist < min_dist_q){ add_query_known = (*knn->at(q_idx)).insert(dist, r_idx); }
         if (dist < min_dist_r){ add_ref_known = (*knn->at(r_idx)).insert(dist, q_idx); }
+
+        // Refresh the kth smallest again and update bounds
+        min_dist_q = (*knn->at(q_idx)).max_key(); // k-th smallest distance so far (query)
+        min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far (reference)
+        R_INFO("(new) min_dist_q: " << min_dist_r << ", min_dist_r: " << min_dist_r << std::endl;)
         updateBounds(dist, N_q_leaf, N_r_leaf, min_dist_q, min_dist_r, add_query_known, add_ref_known); // Update KNN bound info.
 
         // Update cache of current best knn distances

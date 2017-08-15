@@ -35,7 +35,6 @@ inline ANNdist DualTree::BaseCase(ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf){
     }
 }
 
-
 // Generic function to comput ethe distance between a query and reference point
 // Note that this function uses incremental distance calculations, stopping the
 // calculation and returning Infinity if the distance is greater than both the
@@ -53,7 +52,7 @@ ANNdist DualTree::computeDistance(const int q_idx, const int r_idx, ANNdist eps1
       break;
     }
   }
-  valid_dist = d_i >= d  && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
+  valid_dist = d_i >= d && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
   return valid_dist ? dist : ANN_DIST_INF;
 }
 
