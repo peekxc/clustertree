@@ -9,7 +9,7 @@ using namespace Rcpp;
 
 // R-facing API for the KNN-focused dual tree traversal
 // [[Rcpp::export]]
-List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(), const int bkt_size = 30, bool prune = false) {
+List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(), const int bkt_size = 30, bool prune = true) {
 
   // If only query points are given, or q_x and r_x point to the same memory,
   // only one tree needs to be constructed
@@ -79,13 +79,6 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   // ----- End Performance Testing -----
 
   List res = List::create(_["dist"] = dists, _["id"] = id + 1);
-
-  // Performance test cases
-  // // Test cases
-  // List test_res = List();
-  // dt.test_cases(test_res);
-  // res["test_results] = test_res;
-
 
   // Return results
   return(res);

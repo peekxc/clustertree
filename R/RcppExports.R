@@ -2,34 +2,34 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L, knn_indices = integer()) {
-    .Call('clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type, knn_indices)
+    .Call('_clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type, knn_indices)
 }
 
-dt_knn <- function(q_x, k, r_x = matrix(), bkt_size = 30L, prune = FALSE) {
-    .Call('clustertree_dt_knn', PACKAGE = 'clustertree', q_x, k, r_x, bkt_size, prune)
+dt_knn <- function(q_x, k, r_x = matrix(), bkt_size = 30L, prune = TRUE) {
+    .Call('_clustertree_dt_knn', PACKAGE = 'clustertree', q_x, k, r_x, bkt_size, prune)
 }
 
 kd_knn <- function(query_x, tree_ptr, k, priority) {
-    .Call('clustertree_kd_knn', PACKAGE = 'clustertree', query_x, tree_ptr, k, priority)
+    .Call('_clustertree_kd_knn', PACKAGE = 'clustertree', query_x, tree_ptr, k, priority)
 }
 
 kdtree <- function(x, bkt_size) {
-    .Call('clustertree_kdtree', PACKAGE = 'clustertree', x, bkt_size)
+    .Call('_clustertree_kdtree', PACKAGE = 'clustertree', x, bkt_size)
 }
 
 kNN_int <- function(data, k, type, bucketSize, splitRule, approx) {
-    .Call('clustertree_kNN_int', PACKAGE = 'clustertree', data, k, type, bucketSize, splitRule, approx)
+    .Call('_clustertree_kNN_int', PACKAGE = 'clustertree', data, k, type, bucketSize, splitRule, approx)
 }
 
 kruskalsMST <- function(dist_x) {
-    .Call('clustertree_kruskalsMST', PACKAGE = 'clustertree', dist_x)
+    .Call('_clustertree_kruskalsMST', PACKAGE = 'clustertree', dist_x)
 }
 
 primsMST <- function(dist_x) {
-    .Call('clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
+    .Call('_clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
 }
 
 dtb <- function(x, bkt_size = 30L, prune = TRUE) {
-    .Call('clustertree_dtb', PACKAGE = 'clustertree', x, bkt_size, prune)
+    .Call('_clustertree_dtb', PACKAGE = 'clustertree', x, bkt_size, prune)
 }
 

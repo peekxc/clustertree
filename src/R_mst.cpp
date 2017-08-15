@@ -6,6 +6,7 @@ using namespace Rcpp;
 #include "DT/dt.h"
 #include "DT/MST/dtb.h"
 #include "DT/structures/union_find.h" // disjoint set data structure
+#include "metrics.h"
 
 /* kruskalsMST
  * Compute MST using Kruskals algorithm w/ disjoint set */
@@ -101,7 +102,8 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   ANNpointArray x_ann = matrixToANNpointArray(x);
 
   // Construct the dual tree KNN instance
-  DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow());
+  Metric* l2_metric = new L_2(x.ncol());
+  DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow(), l2_metric);
 
   // Construct the tree
   ANNkd_tree* kd_tree = dtb.ConstructTree(x_ann, x.nrow(), x.ncol(), bkt_size, ANN_KD_SUGGEST);
@@ -120,8 +122,10 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
 /*** R
   data("iris")
   X_n <- iris[, 1:4]
-  clustertree:::dtb(as.matrix(X_n))
 
+  # Make sure KNN works
+  clustertree::dt_knn(as.matrix(X_n), k = 5)
+  clustertree:::dtb(as.matrix(X_n))
   */
 
 

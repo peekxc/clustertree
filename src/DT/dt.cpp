@@ -6,10 +6,10 @@ using namespace Rcpp;
 #include <ANN/kd_tree/kd_split.h> // ANNsplitRule
 
 // Constructor initializes the bounds map (if pruning is enabled), and base case map
-DualTree::DualTree(const bool prune, const int dim) : use_pruning(prune), d(dim) {
+DualTree::DualTree(const bool prune, const int dim, Metric* m): use_pruning(prune), d(dim) {
   if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
   BC_check = new std::map< std::pair<int, int>, candidate_pair>();
-  m_dist = Metrics::L_2(dim); // default
+  m_dist = m == NULL ? new L_2(dim) : m;
 }
 
 // Derivable setup function
@@ -21,31 +21,39 @@ void DualTree::setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
   qtree = kd_treeQ;
 }
 
+// Use specialized base cases based on whether the trees are identical
+// (Identical implying they were built on the same data set, and with the same
+// splitting criteria)
+inline ANNdist DualTree::BaseCase(ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf){
+  switch(qtree == rtree){
+    case true:
+      BaseCaseIdentity(N_q_leaf, N_r_leaf);
+      break;
+    case false:
+      BaseCaseNonIdentity(N_q_leaf, N_r_leaf);
+      break;
+    }
+}
 
-ANNdist DualTree::computeDistance(const int q_idx, const int r_idx,
-                                  ANNdist eps1 = ANN_DIST_INF,
-                                  ANNdist eps2 = ANN_DIST_INF
-                                  ){
+
+// Generic function to comput ethe distance between a query and reference point
+// Note that this function uses incremental distance calculations, stopping the
+// calculation and returning Infinity if the distance is greater than both the
+// given thresholds. This is used to dramatically reduce the number of floating
+// point operations in higher-dimensional space
+ANNdist DualTree::computeDistance(const int q_idx, const int r_idx, ANNdist eps1, ANNdist eps2){
   ANNcoord* qq = qtree->pts[q_idx];     // first coord of query point
   ANNcoord* pp = rtree->pts[r_idx];			// first coord of reference point
   ANNdist dist = 0;
   bool valid_dist = true;
-  switch(m_dist.use_inc_distance){ // If the metric supports incremental distance calculations, use it
-    case true:
-      for (int d_i = 0; d_i < d; ++d_i) {
-        dist += m_dist(qq, pp, d_i);
-        if(dist > eps1 && dist > eps2) { // check both since working with tree from identical data set
-          break;
-        }
-      }
-      valid_dist = d_i >= d  && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
+  int d_i;
+  for (d_i = 0; d_i < d; ++d_i) {
+    dist += (*m_dist)(qq, pp, d_i);
+    if(dist > eps1 && dist > eps2) { // check both since working with tree from identical data set
       break;
-    case false:
-      dist = m_dist(qq, pp);
-      break;
-    default:
-      break;
+    }
   }
+  valid_dist = d_i >= d  && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
   return valid_dist ? dist : ANN_DIST_INF;
 }
 

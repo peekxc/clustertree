@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // clusterTree
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha, const int type, IntegerVector knn_indices);
-RcppExport SEXP clustertree_clusterTree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP, SEXP knn_indicesSEXP) {
+RcppExport SEXP _clustertree_clusterTree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP, SEXP knn_indicesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,7 @@ END_RCPP
 }
 // dt_knn
 List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x, const int bkt_size, bool prune);
-RcppExport SEXP clustertree_dt_knn(SEXP q_xSEXP, SEXP kSEXP, SEXP r_xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
+RcppExport SEXP _clustertree_dt_knn(SEXP q_xSEXP, SEXP kSEXP, SEXP r_xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +38,7 @@ END_RCPP
 }
 // kd_knn
 List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k, bool priority);
-RcppExport SEXP clustertree_kd_knn(SEXP query_xSEXP, SEXP tree_ptrSEXP, SEXP kSEXP, SEXP prioritySEXP) {
+RcppExport SEXP _clustertree_kd_knn(SEXP query_xSEXP, SEXP tree_ptrSEXP, SEXP kSEXP, SEXP prioritySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -52,7 +52,7 @@ END_RCPP
 }
 // kdtree
 List kdtree(NumericMatrix x, const int bkt_size);
-RcppExport SEXP clustertree_kdtree(SEXP xSEXP, SEXP bkt_sizeSEXP) {
+RcppExport SEXP _clustertree_kdtree(SEXP xSEXP, SEXP bkt_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -64,7 +64,7 @@ END_RCPP
 }
 // kNN_int
 List kNN_int(NumericMatrix data, int k, int type, int bucketSize, int splitRule, double approx);
-RcppExport SEXP clustertree_kNN_int(SEXP dataSEXP, SEXP kSEXP, SEXP typeSEXP, SEXP bucketSizeSEXP, SEXP splitRuleSEXP, SEXP approxSEXP) {
+RcppExport SEXP _clustertree_kNN_int(SEXP dataSEXP, SEXP kSEXP, SEXP typeSEXP, SEXP bucketSizeSEXP, SEXP splitRuleSEXP, SEXP approxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -80,7 +80,7 @@ END_RCPP
 }
 // kruskalsMST
 NumericMatrix kruskalsMST(const NumericVector dist_x);
-RcppExport SEXP clustertree_kruskalsMST(SEXP dist_xSEXP) {
+RcppExport SEXP _clustertree_kruskalsMST(SEXP dist_xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -91,7 +91,7 @@ END_RCPP
 }
 // primsMST
 NumericMatrix primsMST(const NumericVector dist_x);
-RcppExport SEXP clustertree_primsMST(SEXP dist_xSEXP) {
+RcppExport SEXP _clustertree_primsMST(SEXP dist_xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -102,7 +102,7 @@ END_RCPP
 }
 // dtb
 List dtb(NumericMatrix x, const int bkt_size, bool prune);
-RcppExport SEXP clustertree_dtb(SEXP xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
+RcppExport SEXP _clustertree_dtb(SEXP xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -115,14 +115,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"clustertree_clusterTree", (DL_FUNC) &clustertree_clusterTree, 6},
-    {"clustertree_dt_knn", (DL_FUNC) &clustertree_dt_knn, 5},
-    {"clustertree_kd_knn", (DL_FUNC) &clustertree_kd_knn, 4},
-    {"clustertree_kdtree", (DL_FUNC) &clustertree_kdtree, 2},
-    {"clustertree_kNN_int", (DL_FUNC) &clustertree_kNN_int, 6},
-    {"clustertree_kruskalsMST", (DL_FUNC) &clustertree_kruskalsMST, 1},
-    {"clustertree_primsMST", (DL_FUNC) &clustertree_primsMST, 1},
-    {"clustertree_dtb", (DL_FUNC) &clustertree_dtb, 3},
+    {"_clustertree_clusterTree", (DL_FUNC) &_clustertree_clusterTree, 6},
+    {"_clustertree_dt_knn", (DL_FUNC) &_clustertree_dt_knn, 5},
+    {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
+    {"_clustertree_kdtree", (DL_FUNC) &_clustertree_kdtree, 2},
+    {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 6},
+    {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
+    {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
+    {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 3},
     {NULL, NULL, 0}
 };
 

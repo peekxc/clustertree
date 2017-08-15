@@ -11,7 +11,7 @@ using namespace Rcpp;
 
 // Utilities
 #include <utilities.h> // R_INFO, profiling mode, etc.
-#include <metric.h> // different metrics
+#include <metrics.h> // different metrics
 
 // STL or C lib includes
 #include <algorithm> // std::for_each
@@ -38,9 +38,8 @@ struct candidate_pair {
 
 // ---- DualTree class definition ----
 class DualTree {
-  enum TREE_TYPE { QUERY_TREE, REF_TREE };
 public:
-  const Metric m_dist;
+  Metric* m_dist;
   const bool use_pruning; // whether to use a pruning-based approach
   const int d; // dimension
   ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
@@ -51,7 +50,7 @@ public:
     std::unordered_map<ANNkd_node*, char> node_labels; // in debug mode the nodes are labeled with characters
   #endif
 
-  DualTree(const bool prune, const int dim);
+  DualTree(const bool prune, const int dim, Metric* m = NULL);
   virtual void setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
   virtual void setQueryTree(ANNkd_tree* query_tree) { qtree = query_tree; };
@@ -66,17 +65,26 @@ public:
   void printNode(ANNkd_leaf* N, int level);
 
   // Distance calculation
-  ANNdist computeDistance();
+  ANNdist computeDistance(const int q_idx, const int r_idx,
+                          ANNdist eps1 = ANN_DIST_INF,
+                          ANNdist eps2 = ANN_DIST_INF);
 
   // Application-specific virtual methods: must be defined by the child!
   virtual void DFS(ANNkd_node* N_q, ANNkd_node* N_r) = 0; // regular full DFS
   virtual void pDFS(ANNkd_node* N_q, ANNkd_node* N_r) = 0; // pruning DFS variant
-  virtual ANNdist BaseCase(ANNpoint p_q, ANNpoint p_r, const int q_idx, const int r_idx, ANNkd_node* N_q = NULL) = 0;
   virtual ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r) = 0;
   virtual ANNdist B(ANNkd_node* N_q) = 0;  // Bound function
 
+
+  // Base case functions. Actual implementations to be derived, however
+  // the simple base case can be used determine when to use a specific base
+  // case based on if the trees are identical
+  virtual ANNdist BaseCase(ANNkd_node* N_q, ANNkd_node* N_r);
+  virtual ANNdist BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) = 0;
+  virtual ANNdist BaseCaseNonIdentity(ANNkd_node* N_q, ANNkd_node* N_r) = 0;
+
   // Accessors to allow sub classes to access kd tree internals
-  ANNkd_node* getRoot(TREE_TYPE type) { return type == QUERY_TREE ? qtree->root : rtree->root; };
+  //ANNkd_node* getRoot(TREE_TYPE type) { return type == QUERY_TREE ? qtree->root : rtree->root; };
 
 
   // With every dual tree traversal, pairs of points need to be scored. This method prevents equivalent
