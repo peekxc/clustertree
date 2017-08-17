@@ -14,14 +14,10 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   // If only query points are given, or q_x and r_x point to the same memory,
   // only one tree needs to be constructed
   bool identical_qr = r_x.size() <= 1 ? true : (&q_x) == (&r_x);
-  // Rcout << "identical query and reference sets? " << identical_qr << ", size: " << q_x.size() << ", dim: " << q_x.ncol() << std::endl;
   ANNkd_tree* kd_treeQ, *kd_treeR;
 
   // Copy data over to ANN point array
-  ANNpointArray qx_ann;
-  BEGIN_PROFILE()
-  qx_ann = matrixToANNpointArray(q_x);
-  REPORT_TIME("Query matrix copy")
+  ANNpointArray qx_ann = matrixToANNpointArray(q_x);
 
   // Construct the dual tree KNN instance
   DualTreeKNN dt_knn = DualTreeKNN(prune, q_x.ncol());
@@ -40,14 +36,12 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   }
 
   // With the tree(s) created, setup KNN-specific bounds
-  BEGIN_PROFILE()
   dt_knn.setup(kd_treeQ, kd_treeR);
-  REPORT_TIME("Dual Tree setup")
 
   // Note: the search also returns the point itself (as the first hit)!
   // So we have to look for k+1 points.
-  NumericMatrix dists(q_x.nrow(), k + 1);   // Distance matrix of kNN distances
-  IntegerMatrix id(q_x.nrow(), k + 1);  // Id matrix of knn indices
+  NumericMatrix dists(q_x.nrow(), k);   // Distance matrix of kNN distances
+  IntegerMatrix id(q_x.nrow(), k);  // Id matrix of knn indices
 
   // Create dual tree using both trees
   UTIL(dt_knn.PrintTree((ANNbool) true, true))
@@ -71,7 +65,7 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   annResetStats(r_x.nrow());
   annResetCounts();	// reset stats for a set of queries
   BEGIN_PROFILE()
-  dt_knn.KNN(k + 1, dists, id);
+  dt_knn.KNN(k, dists, id);
   REPORT_TIME("Dual tree KNN search")
   annUpdateStats();
   annPrintStats((ANNbool) false);
@@ -97,9 +91,20 @@ ts2 <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size)))
 invisible(clustertree:::dt_knn(ts2, k = 15L, bkt_size = 5L, prune = TRUE))
 
 ## Test for correctness
-clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)$dist[, -1] == dbscan::kNNdist(test_set, k = 4L)
-clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)$dist[, -1] == dbscan::kNNdist(test_set, k = 4L)
-dbscan::kNN(test_set, k = 4L, sort = F, bucketSize = 1L)
+bkt_sz = 5L
+clustertree:::dt_knn(test_set, k = 8L, bkt_size = bkt_sz, prune = TRUE)$dist == dbscan::kNNdist(test_set, k = 8L)
+clustertree:::dt_knn(test_set, k = 8L, bkt_size = bkt_sz, prune = TRUE)$id == unname(dbscan::kNN(test_set, k = 8L)$id)
+
+
+#sapply(seq(1, 140, by = 10), function(i){
+  X_n <- as.matrix(iris[c(41, 42, 43, 44, 45, 46, 47, 50, 51), 1:4])
+  k <- 2L
+  truth <- dbscan::kNN(X_n, k = k)
+  all(clustertree:::dt_knn(X_n, k = k, bkt_size = bkt_sz, prune = TRUE)$dist == truth$dist)
+  #clustertree:::dt_knn(X_n, k = k, bkt_size = bkt_sz, prune = TRUE)$id == unname(truth$id)
+#})
+
+
 ## Benchmarking
 size <- 1500
 xyz <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size), z = rnorm(size)))

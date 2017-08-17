@@ -42,7 +42,7 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
   // Create a map between point indices and their corresponding empty k-nearest neighbors
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
   knn->reserve(qtree->n_pts); // reserve enough buckets to hold at least n_pts items
-  D = new std::vector<ANNdist>(qtree->n_pts, ANN_DIST_INF); // cache of knn distances
+  // D = new std::vector<ANNdist>(qtree->n_pts, ANN_DIST_INF); // cache of knn distances
   for (int i = 0; i < qtree->n_pts; ++i) {
     knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
   }
@@ -295,7 +295,7 @@ inline ANNdist DualTreeKNN::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
   return min_dist_qr; // Recurse into this branch
 };
 
-
+// TODO: rewrite second loop of base case to reset j to track i in the case the nodes are equivalent
 inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
   ANNdist dist;			// distance to data point
   int q_idx, r_idx; // Indices ot query and reference points
@@ -318,8 +318,20 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
 
         // Update the priority queue and cache
         bool add_query_known = false, add_ref_known = false;
-        if (dist < min_dist_q){ add_query_known = (*knn->at(q_idx)).insert(dist, r_idx); }
-        if (dist < min_dist_r){ add_ref_known = (*knn->at(r_idx)).insert(dist, q_idx); }
+        if (dist < min_dist_q){
+          add_query_known = (*knn->at(q_idx)).insert(dist, r_idx);
+          R_INFO("Inserting " << r_idx << " into " << q_idx << " knn list\n")
+          R_INFO("Current list (" << q_idx << "): " <<
+            knn->at(q_idx)->ith_smallest_info(0) <<
+            knn->at(q_idx)->ith_smallest_info(1) << "\n")
+        }
+        if (dist < min_dist_r){
+          add_ref_known = (*knn->at(r_idx)).insert(dist, q_idx);
+          R_INFO("Inserting " << q_idx << " into " << r_idx << " knn list\n")
+          R_INFO("Current list (" << r_idx << "): " <<
+            knn->at(r_idx)->ith_smallest_info(0) <<
+            knn->at(r_idx)->ith_smallest_info(1) << "\n")
+        }
 
         // Refresh the kth smallest again and update bounds
         min_dist_q = (*knn->at(q_idx)).max_key(); // k-th smallest distance so far (query)
@@ -328,8 +340,8 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
         updateBounds(dist, N_q_leaf, N_r_leaf, min_dist_q, min_dist_r, add_query_known, add_ref_known); // Update KNN bound info.
 
         // Update cache of current best knn distances
-        (*D)[q_idx] = std::min((*D)[q_idx], (*knn->at(q_idx)).max_key());
-        (*D)[r_idx] = std::min((*D)[r_idx], (*knn->at(r_idx)).max_key());
+        // (*D)[q_idx] = std::min((*D)[q_idx], (*knn->at(q_idx)).max_key());
+        // (*D)[r_idx] = std::min((*D)[r_idx], (*knn->at(r_idx)).max_key());
       } // if(!hasBeenChecked(q_idx, r_idx))
     }
   }

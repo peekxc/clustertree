@@ -14,11 +14,23 @@ using namespace Rcpp;
 // Extend the DualTreeKNN class
 #include <DT/KNN/dt_knn.h>
 
+struct edgeFT {
+  unsigned int from, to;
+  edgeFT() {} // default constructor: don't initialize anything
+  edgeFT(int from_id, int to_id) : from(from_id), to(to_id) { }
+};
+
 class DualTreeBoruvka : public DualTreeKNN {
 protected:
   UnionFind CC;
+  std::vector<edgeFT> N; // component index map to edge of point in the component to the candidate nearest neighbor outside of the component
+  ANNdist* D; // Component index map to the distance between the two points above
   double_edge* EL; // edge list mapping component indices (starting with 1-n) to their closest
-  std::unordered_map<ANNkd_node*, bool> ALL_CC_SAME; // are all descendent points of a given node in the same component?
+
+  // Are all descendent points of a given node in the same component?
+  // -1 if no, o.w. stores the component index
+  std::unordered_map<ANNkd_node*, int> ALL_CC_SAME;
+
   //edge* knn;  // Map between point index and kNN priority queue (k = 1 in this case)
   // std::unordered_map<unsigned int, double_edge> N; // Map from component index to shortest edge between components
   // std::unordered_map<unsigned int, ANNdist> D; // Map from component index to shortest edge distance

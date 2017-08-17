@@ -113,7 +113,7 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
 
   // Run the dual tree boruvka algorithm
   NumericMatrix mst = dtb.DTB(x);
-
+  // NumericMatrix mst = NumericMatrix();
   // Return the minimum spanning tree
   return List::create(mst);
 }
@@ -124,8 +124,10 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   X_n <- iris[, 1:4]
 
   # Make sure KNN works
-  clustertree::dt_knn(as.matrix(X_n), k = 5)
-  clustertree:::dtb(as.matrix(X_n))
+  clustertree:::dt_knn(as.matrix(X_n), k = 5, bkt_size = 1)
+
+  # Dual Tree Borvuka MSt
+  clustertree:::dtb(as.matrix(X_n), bkt_size = 1)
   */
 
 

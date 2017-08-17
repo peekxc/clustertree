@@ -25,7 +25,7 @@ protected:
   bool knn_identity; // are reference and query sets the same?
   std::unordered_map<ANNidx, ANNmin_k*>* knn;  // Map between point index and kNN priority queue
   std::unordered_map<ANNkd_node*, BoundKNN& >* bnd_knn;
-  std::vector<ANNdist>* D; // array of cached knn distances for every point
+  //std::vector<ANNdist>* D; // array of cached knn distances for every point
 public:
 
   // Main constructors

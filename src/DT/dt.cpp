@@ -182,10 +182,12 @@ ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int n
         node_labels.insert(std::make_pair(it->first, letter));
         Rcout << "Node: " << letter << ", Centroid: (";
         for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.centroid[i] << ", "; }
-        Rcout << "), Lambda: " << c_bnd.lambda << ", Rho: " << c_bnd.rho << std::endl;
+        Rcout << "), Lambda: " << c_bnd.lambda << ", Rho: " << c_bnd.rho;
+        // Rcout << " Bnd Box: ";
+        //for (int i = 0; i < ncol; ++i){ Rcout <<  << ", "; }
         letter++;
       }
-  #endif
+    #endif
   } else {
     kdTree = new ANNkd_tree(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST);
   }

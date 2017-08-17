@@ -107,7 +107,7 @@ public:
     if (N_q == N_r) return 0; //equivalent nodes conatin the same points
 
     // Assert they exist
-    assert(bounds->find(N_q) != bounds->end() && bounds->find(N_q) != bounds->end());
+    assert(bounds->find(N_q) != bounds->end() && bounds->find(N_r) != bounds->end());
 
     // Retrieve the bounds
     const Bound& nq_bound = (*bounds)[N_q];
