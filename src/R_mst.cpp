@@ -111,6 +111,9 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
   dtb.setup(kd_tree, kd_tree);
 
+  // Debug mode: Print the tree
+  UTIL(dtb.PrintTree((ANNbool) true, true))
+
   // Run the dual tree boruvka algorithm
   NumericMatrix mst = dtb.DTB(x);
   // NumericMatrix mst = NumericMatrix();
@@ -124,10 +127,13 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   X_n <- iris[, 1:4]
 
   # Make sure KNN works
-  clustertree:::dt_knn(as.matrix(X_n), k = 5, bkt_size = 1)
+  # clustertree:::dt_knn(as.matrix(X_n), k = 5, bkt_size = 1)
 
   # Dual Tree Borvuka MSt
-  clustertree:::dtb(as.matrix(X_n), bkt_size = 1)
+  el <- matrix(mapply(function(i, j) c(i, j, as.matrix(dist(as.matrix(X_n)[1:5, 1:2]))[i, j]), row(matrix(0, nrow = 5, ncol = 5)), col(matrix(0, nrow = 5, ncol = 5))), ncol = 3, byrow = T)
+
+
+  clustertree:::dtb(as.matrix(X_n)[c(60:70, 101),], bkt_size = 1)
   */
 
 

@@ -9,7 +9,6 @@ unsigned int n_traversals = 0;
 DualTreeKNN::DualTreeKNN(const bool prune, const int dim, Metric* m) : DualTree(prune, dim, m) {
   N_q_par = N_r_par = NULL;
   if (prune){
-    R_INFO("Allocating KNN bound map\n")
     bnd_knn = new std::unordered_map<ANNkd_node*, BoundKNN& >();
   }
 }
@@ -19,7 +18,6 @@ void DualTreeKNN::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
   // Call parent class setup to assign trees
   setTrees(kd_treeQ, kd_treeR);
 
-  R_INFO("Creating KNN bound objects\n")
   // Create new knn bounds using the new kd_node pointers
   if (use_pruning){
     for (std::unordered_map<ANNkd_node*, const Bound& >::iterator bnd = bounds->begin(); bnd != bounds->end(); ++bnd){
@@ -35,15 +33,16 @@ void DualTreeKNN::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
 // }
 
 // Entry function to start the KNN process. Stores results by reference in dists and ids
-void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
+List DualTreeKNN::KNN(int k) {
   this->k = k; // set k value
   knn_identity = (qtree == rtree); // is the KNN search using identical trees?
+  const int n = qtree->n_pts; // number of query points
 
   // Create a map between point indices and their corresponding empty k-nearest neighbors
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
-  knn->reserve(qtree->n_pts); // reserve enough buckets to hold at least n_pts items
+  knn->reserve(n); // reserve enough buckets to hold at least n_pts items
   // D = new std::vector<ANNdist>(qtree->n_pts, ANN_DIST_INF); // cache of knn distances
-  for (int i = 0; i < qtree->n_pts; ++i) {
+  for (int i = 0; i < n; ++i) {
     knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
   }
 
@@ -55,20 +54,41 @@ void DualTreeKNN::KNN(int k, NumericMatrix& dists, IntegerMatrix& ids) {
   #ifdef ANN_PERF
     Rcout << "KNN took: " << n_traversals << " traversals\n. Copying to R memory\n";
   #endif
+
+
+  NumericMatrix dists(n, k - 1);   // Distance matrix of kNN distances
+  IntegerMatrix id(n, k - 1);  // Id matrix of knn indices
+  NumericVector dist_row = NumericVector(k); // The current distance row
+  IntegerVector id_row = IntegerVector(k); // the id row
   for (int i = 0; i < qtree->n_pts; ++i){
     for (int j = 0; j < k; j++) {		// extract the k-th closest points
-      dists(i, j) = knn->at(i)->ith_smallest_key(j);
-      ids(i, j) = knn->at(i)->ith_smallest_info(j);
+      dist_row(j) = knn->at(i)->ith_smallest_key(j);
+      id_row(j) = knn->at(i)->ith_smallest_info(j);
     }
+    LogicalVector take = id_row != i;
+    dists(i, _) = as<NumericVector>(dist_row[take]);
+    id(i, _) = as<IntegerVector>(id_row[take]);
   }
 
-  // Convert to (non-squared) euclidean distances
+  // Finalize results for R-end
   transform(dists.begin(), dists.end(), dists.begin(), ::sqrt);
+  id = id + 1;
 
+  List res = List::create(_["dist"] = dists, _["id"] = id);
   // Cleanup deallocate closest point set
   // delete k_min_pts;
 
-  return;
+  return res;
+}
+
+// Reset the knn pririty queues
+void DualTreeKNN::resetKNN(){
+  std::unordered_map<ANNidx, ANNmin_k*>().swap(*knn); // clear old knn
+  knn = new std::unordered_map<ANNidx, ANNmin_k*>();
+  knn->reserve(qtree->n_pts); // reserve enough buckets to hold at least n_pts items
+  for (int i = 0; i < qtree->n_pts; ++i) {
+    knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(k)));
+  }
 }
 
 // Get the maximum KNN distance of any descendent (or child) node
@@ -91,6 +111,13 @@ ANNdist DualTreeKNN::max_knn_B(ANNkd_node* N_q){
                                (*bnd_knn)[split_node->child[ANN_HI]].B);
     (*bnd_knn)[N_q].B = max_knn; // Update leaf maximum knn bound!
     return(max_knn);
+  }
+}
+
+// Reset the KNN-related bounds
+void DualTreeKNN::resetBounds(){
+  for (std::unordered_map<ANNkd_node*, BoundKNN& >::iterator it = bnd_knn->begin(); it != bnd_knn->end(); ++it){
+    bnd_knn->at((*it).first).reset();
   }
 }
 
@@ -148,20 +175,23 @@ ANNdist DualTreeKNN::B(ANNkd_node* N_q){
     if (IS_SPLIT(N_q)){
       ANNkd_split* nq_split = AS_SPLIT(N_q); // get split node
       ANNdist lchild_B = (*bnd_knn)[nq_split->child[ANN_LO]].B, rchild_B = (*bnd_knn)[nq_split->child[ANN_HI]].B;
-      bound = std::min(
-                std::min(lchild_B + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_LO]].lambda),
-                         rchild_B + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_HI]].lambda)),
-                N_q_par == NULL ? ANN_DIST_INF : (*bnd_knn)[N_q_par].B);
+      ANNdist b1 = std::min(lchild_B + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_LO]].lambda),
+                            rchild_B + 2 * (nq_bound.lambda - (*bounds)[nq_split->child[ANN_HI]].lambda));
+      bound = std::min(b1, N_q_par == NULL ? ANN_DIST_INF : (*bnd_knn)[N_q_par].B);
+      // R_INFO(node_labels.at(N_q) << ": min(max(INF), INF, " << b1 << ", " << (N_q_par == NULL ? ANN_DIST_INF : (*bnd_knn)[N_q_par].B) << ")\n")
     } else {
       ANNkd_leaf* nq_leaf = AS_LEAF(N_q); // get leaf node
       ANNdist max_knn = nq_knn_bnd.maxKNN(nq_leaf->n_pts);
-      bound = std::min(std::min(max_knn, nq_knn_bnd.min_knn + nq_bound.rho + nq_bound.lambda),
+      ANNdist b2 = nq_knn_bnd.min_knn + nq_bound.rho + nq_bound.lambda;
+      bound = std::min(std::min(max_knn, b2),
                        N_q_par == NULL ? ANN_DIST_INF : (*bnd_knn)[N_q_par].B);
+      // R_INFO(node_labels.at(N_q) << ": min(" << max_knn << ", " << b2 << ", INF, " << (N_q_par == NULL ? ANN_DIST_INF : (*bnd_knn)[N_q_par].B) << ")\n")
     }
 
     // Final bound (lower)
     nq_knn_bnd.B = bound;
-    R_INFO(node_labels.at(N_q) << ": final Bound == " << nq_knn_bnd.B << (IS_LEAF(N_q) ? " (leaf)\n" : "(split)\n"))
+
+    // R_INFO(node_labels.at(N_q) << ": final Bound == " << nq_knn_bnd.B << (IS_LEAF(N_q) ? " (leaf)\n" : "(split)\n"))
     // Return final bound
     return nq_knn_bnd.B;
   }
@@ -217,7 +247,7 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
     N_q_par = N_q, N_r_par = N_r; // set parents as the current nodes
 
     ANNkd_split *const nq_spl = AS_SPLIT(N_q), *const nr_spl = AS_SPLIT(N_r);
-    if (N_q != N_r){
+    // if (N_q != N_r){
       NodeScore scores[4] = { NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO])),
                               NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI])),
                               NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO])),
@@ -234,22 +264,6 @@ void DualTreeKNN::pDFS(ANNkd_node* N_q, ANNkd_node* N_r) {
       if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
       if (scores[2].score == ANN_DIST_INF) return; else pDFS(scores[2].lhs, scores[2].rhs);
       if (scores[3].score == ANN_DIST_INF) return; else pDFS(scores[3].lhs, scores[3].rhs);
-    } else {
-      // If the nodes are identical, it is unnecessary to score and recurse into both children
-      NodeScore scores[3] = { NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO])),
-                              NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI])),
-                              NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI])) };
-      sort3_sn_stable(scores); // Sort by score using sorting network
-
-      // Visit closer branches first, return at first sign of infinity
-      R_PRINTF("Score values: (%c, %c) => %f, (%c, %c) => %f, (%c, %c) => %f\n",
-               node_labels.at(scores[0].lhs), node_labels.at(scores[0].rhs), scores[0].score,
-               node_labels.at(scores[1].lhs), node_labels.at(scores[1].rhs), scores[1].score,
-               node_labels.at(scores[2].lhs), node_labels.at(scores[2].rhs), scores[2].score)
-      if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
-      if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
-      if (scores[2].score == ANN_DIST_INF) return; else pDFS(scores[2].lhs, scores[2].rhs);
-    }
   }
   return;
 }
@@ -288,7 +302,7 @@ inline ANNdist DualTreeKNN::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
   ANNdist min_dist_qr = min_dist(N_q, N_r); // minimum distance between two bounding rectangles
   ANNdist best_bound = B(N_q); // "best" lower bound
   R_INFO("Min dist. Q (" << node_labels.at(N_q) << ") <--> R (" << node_labels.at(N_r) << "): " << min_dist_qr)
-  R_INFO(" (prune if bigger than ==> b1: " << max_knn_B(N_q) << ", b2: " << best_bound << " )\n")
+  R_INFO(" (prune if bigger than ==> B(" << node_labels.at(N_q) << "): " << best_bound << " )\n")// : " << max_knn_B(N_q) << ", b2: "
   if (min_dist_qr > best_bound){
     return ANN_DIST_INF; // Prune this branch
   }
@@ -305,13 +319,12 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
   for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
     for (int r_i = 0; r_i < N_r_leaf->n_pts; ++r_i){
       int q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
-      if (q_idx == r_idx) continue; // identity base case doesn't need to check identical points
 
       // Compute Base case, saving knn ids and distances along the way
       if (!hasBeenChecked(q_idx, r_idx)) { ANN_PTS(2) // Has this pair been considered before?
         min_dist_q = (*knn->at(q_idx)).max_key(); // k-th smallest distance so far (query)
         min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far (reference)
-        dist = computeDistance(q_idx, r_idx, min_dist_q, min_dist_r);
+        dist = q_idx == r_idx ? 0 : computeDistance(q_idx, r_idx, min_dist_q, min_dist_r);
 
         R_INFO("min_dist_q: " << min_dist_r << ", min_dist_r: " << min_dist_r << std::endl;)
         R_INFO("new dist: " << dist << " (" << q_idx << ", " << r_idx << ")" << std::endl;)
@@ -325,7 +338,7 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
             knn->at(q_idx)->ith_smallest_info(0) <<
             knn->at(q_idx)->ith_smallest_info(1) << "\n")
         }
-        if (dist < min_dist_r){
+        if (dist < min_dist_r && q_idx != r_idx){
           add_ref_known = (*knn->at(r_idx)).insert(dist, q_idx);
           R_INFO("Inserting " << q_idx << " into " << r_idx << " knn list\n")
           R_INFO("Current list (" << r_idx << "): " <<

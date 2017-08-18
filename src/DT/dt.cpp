@@ -52,7 +52,7 @@ ANNdist DualTree::computeDistance(const int q_idx, const int r_idx, ANNdist eps1
       break;
     }
   }
-  valid_dist = d_i >= d && (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
+  valid_dist = d_i >= d; //&& (ANN_ALLOW_SELF_MATCH || dist!=0); // ensure is valid distance
   return valid_dist ? dist : ANN_DIST_INF;
 }
 
@@ -175,14 +175,14 @@ ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int n
     kdTree = new ANNkd_tree_dt(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
     R_INFO("Bounds computed at tree construction: " << bounds->size() << "\n")
     #ifdef NDEBUG
-      node_labels = *new std::unordered_map<ANNkd_node*, char>();
+      node_labels = *new std::map<ANNkd_node*, char>();
       char letter='A';
       for (std::unordered_map<ANNkd_node*, const Bound& >::iterator it = bounds->begin(); it != bounds->end(); ++it){
         const Bound& c_bnd = it->second;
         node_labels.insert(std::make_pair(it->first, letter));
         Rcout << "Node: " << letter << ", Centroid: (";
         for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.centroid[i] << ", "; }
-        Rcout << "), Lambda: " << c_bnd.lambda << ", Rho: " << c_bnd.rho;
+        Rcout << "), Lambda: " << c_bnd.lambda << ", Rho: " << c_bnd.rho << "\n";
         // Rcout << " Bnd Box: ";
         //for (int i = 0; i < ncol; ++i){ Rcout <<  << ", "; }
         letter++;

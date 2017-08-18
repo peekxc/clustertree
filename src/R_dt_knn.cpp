@@ -40,20 +40,19 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
 
   // Note: the search also returns the point itself (as the first hit)!
   // So we have to look for k+1 points.
-  NumericMatrix dists(q_x.nrow(), k);   // Distance matrix of kNN distances
-  IntegerMatrix id(q_x.nrow(), k);  // Id matrix of knn indices
 
   // Create dual tree using both trees
   UTIL(dt_knn.PrintTree((ANNbool) true, true))
 
   // ----- Start KNN Performance Testing -----
+  List res;
   #ifdef PROFILING
   annResetStats(r_x.nrow());
 
   // Regular kdtree search
   List ann_kdtree = kdtree(r_x, bkt_size); // create regular kdtree with the same bucket size
   BEGIN_PROFILE()
-  List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k, false);
+    List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k, false);
   REPORT_TIME("Regular KNN search")
 
   // Print statistics
@@ -65,14 +64,13 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   annResetStats(r_x.nrow());
   annResetCounts();	// reset stats for a set of queries
   BEGIN_PROFILE()
-  dt_knn.KNN(k, dists, id);
+  res = dt_knn.KNN(k+1);
   REPORT_TIME("Dual tree KNN search")
   annUpdateStats();
   annPrintStats((ANNbool) false);
   #endif
   // ----- End Performance Testing -----
 
-  List res = List::create(_["dist"] = dists, _["id"] = id + 1);
 
   // Return results
   return(res);

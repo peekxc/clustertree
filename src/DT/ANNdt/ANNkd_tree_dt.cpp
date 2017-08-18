@@ -47,15 +47,13 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   R_INFO("Root created: " << root << "\n")
 
   ANNdist tmp = ANN_DIST_INF;
-  for (int i = 0; i < n; ++i){
-    ANNdist centroid_dist = annDist(dd, (ANNpoint) bnd.centroid, (ANNpoint) pa[pidx[i]]);
-    tmp = centroid_dist < tmp ? centroid_dist : tmp;
-  };
+  // for (int i = 0; i < n; ++i){
+  //   ANNdist centroid_dist = annDist(dd, (ANNpoint) bnd.centroid, (ANNpoint) pa[pidx[i]]);
+  //   tmp = centroid_dist < tmp ? centroid_dist : tmp;
+  // };
 
   // Update max child and max desc. distance with upper bounds
-  ANNdist hi_dist = annDist(dd, bnd_box.hi, bnd.centroid);
-  ANNdist lo_dist = annDist(dd, bnd_box.lo, bnd.centroid);
-  bnd.lambda = hi_dist > lo_dist ? hi_dist : lo_dist; // upper bound
+  bnd.lambda = annDist(dd, bnd_box.hi, bnd.centroid); // upper bound - hi or lo have equal distance
   bnd.rho = bnd.lambda; // also upper bound
 
   // Insert root as final key
@@ -81,13 +79,13 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
 
       Bound& leaf_bnd = *new Bound(bnd_box, dim); // copies the bounding box, computes the centroid
       // Computes the radius of the smallest hypersphere containing all bucket points
-      ANNdist tmp = ANN_DIST_INF;
-      for (int i = 0; i < n; ++i){
-        ANNdist centroid_dist = annDist(dim, (ANNpoint) leaf_bnd.centroid, (ANNpoint) pa[pidx[i]]);
-        tmp = centroid_dist < tmp ? centroid_dist : tmp;
-      };
-      leaf_bnd.lambda = tmp; // annDist(dim, leaf_bnd.bnd_box->hi, leaf_bnd.centroid); // upper bound
-      leaf_bnd.rho = tmp; // maximum child distance
+      ANNdist tmp = annDist(dim, bnd_box.hi, leaf_bnd.centroid); // upper bound
+      // for (int i = 0; i < n; ++i){
+      //   ANNdist centroid_dist = annDist(dim, (ANNpoint) leaf_bnd.centroid, (ANNpoint) pa[pidx[i]]);
+      //   tmp = centroid_dist < tmp ? centroid_dist : tmp;
+      // };
+      leaf_bnd.lambda = tmp; // max desc. distance -- upper bound
+      leaf_bnd.rho = tmp; // maxi child distance -- upper bound
       bounds->insert(std::pair< ANNkd_ptr, const Bound& >(new_leaf, leaf_bnd));
       return new_leaf;
     }
@@ -123,9 +121,9 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     ANNkd_split *ptr = new ANNkd_split(cd, cv, lv, hv, lo, hi);
 
     // Update max child and max desc. distance with upper bounds
-    ANNdist hi_dist = annDist(dim, bnd_box.hi, node_bnds.centroid);
-    ANNdist lo_dist = annDist(dim, bnd_box.lo, node_bnds.centroid);
-    node_bnds.lambda = hi_dist > lo_dist ? hi_dist : lo_dist; // upper bound
+    //ANNdist hi_dist = annDist(dim, bnd_box.hi, node_bnds.centroid);
+    //ANNdist lo_dist = annDist(dim, bnd_box.lo, node_bnds.centroid);
+    node_bnds.lambda = annDist(dim, bnd_box.hi, node_bnds.centroid); // upper bound
     node_bnds.rho = node_bnds.lambda; // use same bound
 
     // Save bounding information in the hash map

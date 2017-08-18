@@ -16,7 +16,7 @@ using namespace Rcpp;
 
 struct edgeFT {
   unsigned int from, to;
-  edgeFT() {} // default constructor: don't initialize anything
+  edgeFT() { from = -1; to = -1; } // default constructor
   edgeFT(int from_id, int to_id) : from(from_id), to(to_id) { }
 };
 
@@ -24,7 +24,7 @@ class DualTreeBoruvka : public DualTreeKNN {
 protected:
   UnionFind CC;
   std::vector<edgeFT> N; // component index map to edge of point in the component to the candidate nearest neighbor outside of the component
-  ANNdist* D; // Component index map to the distance between the two points above
+  std::vector<ANNdist> D; // Component index map to the distance between the two points above
   double_edge* EL; // edge list mapping component indices (starting with 1-n) to their closest
 
   // Are all descendent points of a given node in the same component?
@@ -50,6 +50,15 @@ public:
   //ANNdist B(ANNkd_node* N_q);
   //void pDFS(ANNkd_node* N_q, ANNkd_node* N_r);
   //void DFS(ANNkd_node* N_q, ANNkd_node* N_r){};
+
+  // Simple check to see if the components are fully connected, indicating a spanning tree is complete
+  bool fully_connected(){
+    bool is_fully_connected = true;
+    for (int i = 0; i < CC.size - 1 && is_fully_connected; ++i){
+      is_fully_connected = CC.Find(i) == CC.Find(i+1);
+    }
+    return is_fully_connected;
+  }
 };
 
 #endif

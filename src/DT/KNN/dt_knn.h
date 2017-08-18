@@ -34,7 +34,7 @@ public:
   //~DualTreeKNN();
 
   // New methods for the derived class
-  void KNN(int k, NumericMatrix& dists, IntegerMatrix& ids);
+  List KNN(int k);
   ANNdist max_knn(ANNkd_node* N_q);
 
   // Base-class functions replaced for KNN
@@ -48,6 +48,8 @@ public:
   ANNdist updateBounds(ANNdist new_dist, ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf,
                        ANNdist min_dist_q, ANNdist min_dist_r,
                        bool add_known_query, bool add_known_ref);
+  void resetBounds();
+  void resetKNN();
 
   // Score function: try to inline if possible
   virtual inline ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r);

@@ -47,7 +47,7 @@ public:
   std::map< std::pair<int, int>, candidate_pair>* BC_check; // Base Case point pair check: should default to false if no key found!
 
   #ifdef NDEBUG
-    std::unordered_map<ANNkd_node*, char> node_labels; // in debug mode the nodes are labeled with characters
+    std::map<ANNkd_node*, char> node_labels; // in debug mode the nodes are labeled with characters
   #endif
 
   DualTree(const bool prune, const int dim, Metric* m = NULL);
@@ -99,6 +99,14 @@ public:
     return pair_visited;
   }
 
+  // Reset whether the base cases have been compared before
+  void resetBaseCases(){
+    for(std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check->begin(); it != BC_check->end(); ++it){
+      (*BC_check)[it->first].beenChecked = false;
+    }
+  }
+
+  // Future work
   inline const void updateEps(const ANNidx q_idx, const ANNidx r_idx, ANNdist eps){
     (*BC_check)[std::minmax(q_idx, r_idx)].eps = eps;
   }
@@ -114,6 +122,7 @@ public:
     const Bound& nr_bound = (*bounds)[N_r];
 
     // Compute the minimum box distance
+    // TODO: Move to other metrics, save result in cache
     ANNdist min_dist = annDist(d, nq_bound.centroid, nr_bound.centroid) - nq_bound.lambda - nr_bound.lambda;
 
     // If it's negative, then the boxes overlap, and the minimum distance between any two points in either branch is 0.

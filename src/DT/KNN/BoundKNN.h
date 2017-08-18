@@ -12,7 +12,12 @@ struct BoundKNN {
   ANNdist max_real_knn;         // maximum non-inf knn distance
   BoundKNN() : B(ANN_DIST_INF), knn_known(0), min_knn(ANN_DIST_INF), max_real_knn(0) {};
   inline ANNdist maxKNN(const int npts){ return knn_known < npts ? ANN_DIST_INF : max_real_knn; }
-
+  void reset(){
+    B = ANN_DIST_INF;
+    knn_known = 0;
+    min_knn = ANN_DIST_INF;
+    max_real_knn = 0;
+  }
   // Inserts point into knn priority queue.
   // inline void insert(ANNmin_k& qknn, ANNdist dist, ANNidx idx){
   //   qknn.insert(dist, idx);
