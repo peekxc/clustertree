@@ -84,10 +84,17 @@ test_set[, 2] <- 321 - test_set[, 2]
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
 
-l1_dist <- as.matrix(dist(test_set, method = "manhattan"))
+
+
+test_knn <- clustertree:::dt_knn(ts2, k = 40L, bkt_size = 1L, prune = TRUE)
+
+
+l1_dist <- as.matrix(dist(ts2, method = "manhattan"))
 l1_knn_id <- t(apply(l1_dist, 1, order))
 l1_knn_dist <- t(apply(l1_dist, 1, sort))
-apply()
+
+all(test_knn$dist == l1_knn_dist[, 2:41L])
+all(test_knn$id == l1_knn_id[, 2:41L])
 
 size <- 50
 ts2 <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size)))

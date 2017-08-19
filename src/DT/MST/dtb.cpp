@@ -22,6 +22,7 @@ void DualTreeBoruvka::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
   }
 }
 
+// Base case for DTB (when the query and reference sets are identical)
 inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) {
   ANNdist dist;				// distance to data point
   int q_idx, r_idx; // Indices ot query and reference points
@@ -231,3 +232,7 @@ List DualTreeBoruvka::DTB(NumericMatrix& x){
   IntegerMatrix bc = getBaseCases();
   return List::create(_["mst"] = mst_el, _["base_cases"] = wrap(bc));
 }
+
+
+
+

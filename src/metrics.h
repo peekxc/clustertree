@@ -94,7 +94,7 @@ struct L_inf : Metric {
 };
 
 
-
+// Lp norm
 struct L_p : Metric {
   const unsigned int d; // dimension of the space
   const unsigned int p; // p norm
@@ -116,6 +116,29 @@ struct L_p : Metric {
     }
   }
 };
+
+
+// struct RSL : Metric {
+//   const unsigned int d;
+//   const double alpha;
+//   NumericVector r_k;
+//   RSL(const int _d, const double _alpha, NumericVector& _r_k) : d(_d), alpha(_alpha), r_k(_r_k) { }
+//   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
+//     ANNdist dist = 0, r_xi = r_k ;
+//     for (int i = 0; i < d; ++i) { dist += (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]); }
+//     std::max(dist / alpha, std::max(radius_i, radius_j)
+//     return dist;
+//   }
+//   // Allow dimension-specific distance calculation for incremental distance updates
+//   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j, const int i, ANNdist dist){
+//     return dist + ((x_j[i] - x_i[i]) * (x_j[i] - x_i[i]));
+//   }
+//
+//   // Finalize by taking the square root
+//   inline void finalize(Rcpp::NumericVector& dist_x){
+//     std::transform(dist_x.begin(), dist_x.end(), dist_x.begin(), ::sqrt);
+//   }
+// };
 
 
 // List metric_chooser(std::string metric_name, List options){

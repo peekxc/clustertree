@@ -1,11 +1,12 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <clustertree/clustertree.h>
+#include <clustertree/clustertree.h> // Auxiliary C++ extensions related to the clustertree
+#include <clustertree/dtb_ct.h> // Dual Tree Boruvka extensions for RSL
 
 // [[Rcpp::export]]
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095,
-                 const int type = 0, IntegerVector knn_indices = IntegerVector()) {
+                 const int type = 0) {
   std::string message = "clusterTree expects a 'dist' object.";
   if (!dist_x.hasAttribute("class") || as<std::string>(dist_x.attr("class")) != "dist") { stop(message); }
   if (!dist_x.hasAttribute("method")) { stop(message); }
@@ -22,6 +23,6 @@ List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int 
   NumericMatrix mst = primsRSL(r, r_k, n, alpha, type);
 
   // Convert to HCLUST object
-  List res = mstToHclust(mst, n);
+  List res = mstToHclust(mst);
   return (res);
 }

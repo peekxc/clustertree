@@ -50,94 +50,33 @@ IntegerVector extractOrder(IntegerMatrix merge){
   return(order);
 }
 
-// Algorithm 2: kNN Graph
-// r_k := vector of k - 1 nearest neighbors
-// knn_indices := id's of knn correspond to r_k
-// List kruskalsKNN(const NumericVector dist_x,
-//                           const NumericVector r_k,
-//                           const IntegerVector knn_indices,
-//                           const int n, const int k, const double alpha){
-//
-//   Rcpp::Rcout << "Beginning kruskals" << std::endl;
-//   // Set up resulting MST
-//   NumericMatrix mst = NumericMatrix(n - 1, 3);
-//
-//   // Get sorted radii
-//   NumericVector lambda = Rcpp::clone(r_k).sort(false);
-//
-//   // Get order of original; use R order function to get consistent ordering
-//   Function order = Function("order"), duplicated = Function("duplicated");
-//   IntegerVector rk_order = as<IntegerVector>(order(r_k)) - 1;
-//   LogicalVector admitted = LogicalVector(n, false);
-//
-//   IntegerVector x_order = as<IntegerVector>(order(dist_x)) - 1;
-//   NumericVector inc_dist = Rcpp::clone(dist_x).sort(false);
-//
-//   // Create disjoint-set data structure to track components
-//   UnionFind components = UnionFind(n);
-//   UnionFind prev_components = UnionFind(n);
-//   UnionFind dist_components = UnionFind(n);
-//
-//   bool connect_next = false;
-//   int i = 0, cr_k = 0, crow = 0, px_i = INDEX_TO(x_order.at(0), n), px_j = INDEX_FROM(x_order.at(0), n, px_i);
-//   for(NumericVector::iterator dist_ij = inc_dist.begin(); dist_ij != inc_dist.end(); ++dist_ij, ++i){
-//     int x_j = INDEX_TO(x_order.at(i), n), x_i = INDEX_FROM(x_order.at(i), n, x_j);
-//     if (dist_components.Find(x_i) != dist_components.Find(x_j)) dist_components.Union(x_i, x_j);
-//     while(cr_k < n - 1 && r_k.at(rk_order.at(cr_k)) <= (*dist_ij)) { admitted.at(int(rk_order.at(cr_k++))) = true; }
-//     if (connect_next){
-//       prev_components.Union(px_i, px_j);
-//       connect_next = false;
-//     }
-//     if ((*dist_ij)/alpha <= lambda.at(cr_k) && admitted.at(x_i) && admitted.at(x_j)){
-//         //IntegerVector CCs = components.getCC();
-//         components.merge(dist_components, admitted);
-//         if (components != prev_components)
-//         {
-//           mst(crow, _) = NumericVector::create(x_i, x_j, *dist_ij);
-//           crow++;
-//           components.Union(x_i, x_j);
-//           px_i = x_i, px_j = x_j;
-//           connect_next = true;
-//           if (crow == n) break;
-//         }
-//     }
-//   }
-//
-//   // // Create disjoint-set data structure to track components
-//   // UnionFind components = UnionFind(n);
-//   // i = 0;
-//   // int crow = 0;
-//   // for (NumericVector::const_iterator r = lambda.begin(); r != lambda.end(); ++r, ++i) {
-//   //   if (i % 100 == 0) Rcpp::checkUserInterrupt();
-//   //
-//   //   // Point x_i becomes admitted into the graph G_r
-//   //   admitted.at(r_order.at(i)) = true;
-//   //
-//   //   // Retrieve index of x_i and x_j
-//   //   // if (i < 2){
-//   //   //   int from = INDEX_FROM_KNN(i+1, k);
-//   //   //   Rcout << "rorder_i: " << r_order.at(i) << std::endl;
-//   //   //   Rcout << "index from: " << ((int) from) << std::endl;
-//   //   //   Rcout << "to: " << knn_indices.at( r_order.at(i)) - 1 << std::endl;
-//   //   //   Rcout << "to_i: " <<  r_order.at(knn_indices.at( r_order.at(i)) - 1) << std::endl;
-//   //   // }
-//   //   int x_i = r_order.at(i); //(int) INDEX_FROM_KNN(i+1, k);
-//   //   int x_j = int(knn_indices.at(x_i) - 1);
-//   //   // int to = INDEX_TO(r_order.at(i), n), from = INDEX_FROM(r_order.at(i), n, to);
-//   //
-//   //
-//   //   if (admitted.at(x_i) && admitted.at(x_j)) {
-//   //     if (components.Find(x_i) != components.Find(x_j)){
-//   //       mst(crow, _) = NumericVector::create(x_i, x_j, *r);
-//   //       crow++;
-//   //       components.Union(x_i, x_j);
-//   //       if (crow == n) break;
-//   //     }
-//   //   }
-//   // }
-//
-//   return(List::create(_["mst"] = mst, _["admitted"] = admitted));
-// }
+
+List dtbRSL(const NumericMatrix x, const NumericVector r_k, const double alpha, const int type){
+  const int d = x.ncol();
+  const int n = x.nrow();
+
+  // Copy data over to ANN point array
+  ANNkd_tree* kd_treeQ, *kd_treeR;
+  ANNpointArray x_ann = matrixToANNpointArray(x);
+
+  // Construct the dual tree KNN instance
+  L_2 metric = L_2(x.ncol());
+  DTB_CT dtb_setup = DTB_CT(true, d, n, metric, r_k, alpha);
+
+  // Construct the tree
+  ANNkd_tree* kd_tree = dtb_setup.ConstructTree(x_ann, x.nrow(), x.ncol(), 30, ANN_KD_SUGGEST);
+
+  // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
+  dtb_setup.setup(kd_tree, kd_tree);
+
+  // Debug mode: Print the tree
+  // UTIL(dtb.PrintTree((ANNbool) true, true))
+
+  // Run the dual tree boruvka algorithm (w/ augmented distance function)
+  List mst = dtb_setup.DTB(x);
+
+  return mst;
+}
 
 /*
 * Compute MST using variant of Prim's, constrained by the radius of the Balls around each x_i.
@@ -198,11 +137,12 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
 /* mstToHclust
  * Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), create a valid hclust object
  * using a disjoint-set structure to track components
- * Notes: expects 0-based mst indices, and that all edge indices are 0 <= i < n
+ * Notes: expects 0-based mst indices, and that all edge indices are 0 <= i < n. Is unsafe otherwise!
  */
-List mstToHclust(NumericMatrix mst, const int n){
+List mstToHclust(NumericMatrix mst){
 
   // Extract merge heights and associated order of such heights
+  const int n = mst.nrow() + 1;
   NumericVector dist = mst.column(2);
   IntegerVector height_order = order_(dist) - 1;
 
@@ -213,22 +153,24 @@ List mstToHclust(NumericMatrix mst, const int n){
 
   // Go through each row of MST, tracking component indices
   IntegerMatrix merge = IntegerMatrix(n - 1, 2);
+  bool from_singleton, to_singleton;
   for (int i = 0; i < n - 1; ++i) {
     if (i % 1000 == 0) Rcpp::checkUserInterrupt();
     NumericVector crow = mst.row(height_order.at(i));
     int from = crow.at(0), to = crow.at(1);
     int from_comp = components.Find(from), to_comp = components.Find(to);
     components.Union(from, to);
+    from_singleton = assigned.at(from) == 0, to_singleton = assigned.at(to) == 0;
 
     // CASE 1: Two singletons a merging
-    if (assigned.at(from) == 0 && assigned.at(to) == 0) { // Rcout << "1";
+    if (from_singleton && to_singleton) { // Rcout << "1";
       merge.row(i) = IntegerVector::create(-(from + 1), -(to + 1));
       comp_index.at(components.Find(from)) = i;
     }
     // CASE 2: One singleton and one component are merging
-    else if (assigned.at(from) == 0 || assigned.at(to) == 0) { // Rcout << "2";
-      int leaf = assigned.at(from) == 0 ? from : to;
-      int comp = assigned.at(from) == 0 ? to_comp : from_comp;
+    else if (from_singleton || to_singleton) { // Rcout << "2";
+      int leaf = from_singleton ? from : to;
+      int comp = from_singleton ? to_comp : from_comp;
       merge.row(i) = IntegerVector::create(-(leaf+1), comp_index.at(comp)+1);
       comp_index.at(components.Find(leaf)) = i;
     }

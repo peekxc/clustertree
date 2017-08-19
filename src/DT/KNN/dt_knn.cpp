@@ -350,10 +350,6 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
         min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far (reference)
         R_INFO("(new) min_dist_q: " << min_dist_r << ", min_dist_r: " << min_dist_r << std::endl;)
         updateBounds(dist, N_q_leaf, N_r_leaf, min_dist_q, min_dist_r, add_query_known, add_ref_known); // Update KNN bound info.
-
-        // Update cache of current best knn distances
-        // (*D)[q_idx] = std::min((*D)[q_idx], (*knn->at(q_idx)).max_key());
-        // (*D)[r_idx] = std::min((*D)[r_idx], (*knn->at(r_idx)).max_key());
       } // if(!hasBeenChecked(q_idx, r_idx))
     }
   }

@@ -66,7 +66,11 @@ public:
   IntegerMatrix getBaseCases();
 
   // Distance calculation
-  ANNdist computeDistance(const int q_idx, const int r_idx,
+  // By default, relies on a supplied metric and does incremental distance calculations. If any of the
+  // distances exceed the given threshold parameters eps1 and eps2, the distance calculation is stopped,
+  // and infinity is returned. Can be inherited and overridden by a derived class if more flexiblity is
+  // needed.
+  virtual ANNdist computeDistance(const int q_idx, const int r_idx,
                           ANNdist eps1 = ANN_DIST_INF,
                           ANNdist eps2 = ANN_DIST_INF);
 
