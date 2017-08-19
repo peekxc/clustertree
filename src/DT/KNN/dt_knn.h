@@ -29,7 +29,7 @@ protected:
 public:
 
   // Main constructors
-  DualTreeKNN(const bool prune, const int dim, Metric* m = NULL); // default constructor
+  DualTreeKNN(const bool prune, const int dim, Metric& m); // default constructor
   virtual void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   //~DualTreeKNN();
 

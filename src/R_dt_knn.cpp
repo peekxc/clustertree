@@ -6,7 +6,6 @@ using namespace Rcpp;
 #include "R_kdtree.h" // R Interface to ANN KD trees
 #include <ANN/ANN_util.h>
 
-
 // R-facing API for the KNN-focused dual tree traversal
 // [[Rcpp::export]]
 List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(), const int bkt_size = 30, bool prune = true) {
@@ -20,7 +19,9 @@ List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x = NumericMatrix(),
   ANNpointArray qx_ann = matrixToANNpointArray(q_x);
 
   // Construct the dual tree KNN instance
-  DualTreeKNN dt_knn = DualTreeKNN(prune, q_x.ncol());
+  const int d = q_x.ncol();
+  L_1 metric = L_1(d);
+  DualTreeKNN dt_knn = DualTreeKNN(prune, d, metric);
 
   // Construct the tree(s)
   if (identical_qr){
@@ -83,6 +84,10 @@ test_set[, 2] <- 321 - test_set[, 2]
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = TRUE)
 clustertree:::dt_knn(test_set, k = 4L, bkt_size = 1L, prune = FALSE)
 
+l1_dist <- as.matrix(dist(test_set, method = "manhattan"))
+l1_knn_id <- t(apply(l1_dist, 1, order))
+l1_knn_dist <- t(apply(l1_dist, 1, sort))
+apply()
 
 size <- 50
 ts2 <- as.matrix(data.frame(x = rnorm(size), y = rnorm(size)))

@@ -6,7 +6,7 @@ unsigned int n_traversals = 0;
 
 // Instantiate parent dual tree class along with KNN-specific things, including parent
 // node pointers and KNN-bound mapping
-DualTreeKNN::DualTreeKNN(const bool prune, const int dim, Metric* m) : DualTree(prune, dim, m) {
+DualTreeKNN::DualTreeKNN(const bool prune, const int dim, Metric& m) : DualTree(prune, dim, m) {
   N_q_par = N_r_par = NULL;
   if (prune){
     bnd_knn = new std::unordered_map<ANNkd_node*, BoundKNN& >();
@@ -71,7 +71,6 @@ List DualTreeKNN::KNN(int k) {
   }
 
   // Finalize results for R-end
-  transform(dists.begin(), dists.end(), dists.begin(), ::sqrt);
   id = id + 1;
 
   List res = List::create(_["dist"] = dists, _["id"] = id);

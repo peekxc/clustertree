@@ -6,10 +6,9 @@ using namespace Rcpp;
 #include <ANN/kd_tree/kd_split.h> // ANNsplitRule
 
 // Constructor initializes the bounds map (if pruning is enabled), and base case map
-DualTree::DualTree(const bool prune, const int dim, Metric* m): use_pruning(prune), d(dim) {
+DualTree::DualTree(const bool prune, const int dim, Metric& m): use_pruning(prune), d(dim), m_dist(m) {
   if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
   BC_check = new std::map< std::pair<int, int>, candidate_pair>();
-  m_dist = m == NULL ? new L_2(dim) : m;
 }
 
 // Derivable setup function
@@ -47,7 +46,7 @@ ANNdist DualTree::computeDistance(const int q_idx, const int r_idx, ANNdist eps1
   bool valid_dist = true;
   int d_i;
   for (d_i = 0; d_i < d; ++d_i) {
-    dist += (*m_dist)(qq, pp, d_i);
+    dist = m_dist(qq, pp, d_i, dist);
     if(dist > eps1 && dist > eps2) { // check both since working with tree from identical data set
       break;
     }
@@ -182,7 +181,7 @@ ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int n
   // Create kd tree, either a dual tree version with bounds or a regular ANN kd tree
   ANNkd_tree* kdTree;
   if (use_pruning){
-    kdTree = new ANNkd_tree_dt(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
+    kdTree = new ANNkd_tree_dt(x, nrow, ncol, m_dist, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
     R_INFO("Bounds computed at tree construction: " << bounds->size() << "\n")
     #ifdef NDEBUG
       node_labels = *new std::map<ANNkd_node*, char>();

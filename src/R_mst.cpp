@@ -102,8 +102,8 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   ANNpointArray x_ann = matrixToANNpointArray(x);
 
   // Construct the dual tree KNN instance
-  Metric* l2_metric = new L_2(x.ncol());
-  DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow(), l2_metric);
+  L_2 metric = L_2(x.ncol());
+  DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow(), metric);
 
   // Construct the tree
   ANNkd_tree* kd_tree = dtb.ConstructTree(x_ann, x.nrow(), x.ncol(), bkt_size, ANN_KD_SUGGEST);

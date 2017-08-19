@@ -36,7 +36,7 @@ protected:
   // std::unordered_map<unsigned int, ANNdist> D; // Map from component index to shortest edge distance
 public:
   // Main constructors
-  DualTreeBoruvka(const bool prune, const int dim, const int n, Metric* m = NULL); // default constructor
+  DualTreeBoruvka(const bool prune, const int dim, const int n, Metric& m); // default constructor
   void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
 
   // New methods for the derived class

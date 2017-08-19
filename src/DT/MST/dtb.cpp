@@ -4,7 +4,7 @@ using namespace Rcpp;
 #include "dtb.h"
 
 
-DualTreeBoruvka::DualTreeBoruvka(const bool prune, const int dim, const int n, Metric* m)
+DualTreeBoruvka::DualTreeBoruvka(const bool prune, const int dim, const int n, Metric& m)
   : DualTreeKNN(prune, dim, m), CC(UnionFind(n)) {
   N_q_par = N_r_par = NULL;
   if (prune){

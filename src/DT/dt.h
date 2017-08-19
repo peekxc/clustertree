@@ -39,7 +39,7 @@ struct candidate_pair {
 // ---- DualTree class definition ----
 class DualTree {
 public:
-  Metric* m_dist;
+  Metric& m_dist;
   const bool use_pruning; // whether to use a pruning-based approach
   const int d; // dimension
   ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
@@ -50,7 +50,7 @@ public:
     std::map<ANNkd_node*, char> node_labels; // in debug mode the nodes are labeled with characters
   #endif
 
-  DualTree(const bool prune, const int dim, Metric* m = NULL);
+  DualTree(const bool prune, const int dim, Metric& m);
   virtual void setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
   virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
   virtual void setQueryTree(ANNkd_tree* query_tree) { qtree = query_tree; };
@@ -124,7 +124,7 @@ public:
 
     // Compute the minimum box distance
     // TODO: Move to other metrics, save result in cache
-    ANNdist min_dist = annDist(d, nq_bound.centroid, nr_bound.centroid) - nq_bound.lambda - nr_bound.lambda;
+    ANNdist min_dist = m_dist(nq_bound.centroid, nr_bound.centroid) - nq_bound.lambda - nr_bound.lambda;
 
     // If it's negative, then the boxes overlap, and the minimum distance between any two points in either branch is 0.
     return(min_dist < 0 ? 0 : min_dist);

@@ -1,5 +1,5 @@
 ## C++ compiler flags. Include '.' directory to use bracket include notation
-PKG_CPPFLAGS = -DANN_PERF -DPERF -I$(realpath .)
+PKG_CPPFLAGS = -DANN_PERF -DPERF -I$(realpath .) -std=c++11
 
 ## Import variables from R make configuration
 MkInclude = $(R_HOME)/etc${R_ARCH}/Makeconf

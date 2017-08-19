@@ -4,9 +4,11 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   ANNpointArray		pa,				// point array (with at least n pts)
   int					n,				// number of points
   int					dd,				// dimension
+  Metric& m,            // The metric distance to build the tree on
   int					bs,				// bucket size
   ANNsplitRule		split, // splitting method
-  std::unordered_map<ANNkd_node*, const Bound& >* bounds) // bounds
+  std::unordered_map<ANNkd_node*, const Bound& >* bounds // bounds
+  )
 {
   R_PRINTF("Dimension of trees: %d\n", dd);
   SkeletonTree(n, dd, bs);		// set up the basic stuff
@@ -26,20 +28,20 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
 
   switch (split) {					// build by rule
   case ANN_KD_STD:					// standard kd-splitting rule
-    root = rkd_tree_pr(pa, pidx, n, dd, bs, bnd_box, kd_split, bounds);
+    root = rkd_tree_pr(pa, pidx, n, dd, m, bs, bnd_box, kd_split, bounds);
     break;
   case ANN_KD_MIDPT:					// midpoint split
-    root = rkd_tree_pr(pa, pidx, n, dd, bs, bnd_box, midpt_split, bounds);
+    root = rkd_tree_pr(pa, pidx, n, dd, m, bs, bnd_box, midpt_split, bounds);
     break;
   case ANN_KD_FAIR:					// fair split
-    root = rkd_tree_pr(pa, pidx, n, dd, bs, bnd_box, fair_split, bounds);
+    root = rkd_tree_pr(pa, pidx, n, dd, m, bs, bnd_box, fair_split, bounds);
     break;
   case ANN_KD_SUGGEST:				// best (in our opinion)
   case ANN_KD_SL_MIDPT:				// sliding midpoint split
-    root = rkd_tree_pr(pa, pidx, n, dd, bs, bnd_box, sl_midpt_split, bounds);
+    root = rkd_tree_pr(pa, pidx, n, dd, m, bs, bnd_box, sl_midpt_split, bounds);
     break;
   case ANN_KD_SL_FAIR:				// sliding fair split
-    root = rkd_tree_pr(pa, pidx, n, dd, bs, bnd_box, sl_fair_split, bounds);
+    root = rkd_tree_pr(pa, pidx, n, dd, m, bs, bnd_box, sl_fair_split, bounds);
     break;
   default:
     annError("Illegal splitting method", ANNabort);
@@ -53,7 +55,7 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   // };
 
   // Update max child and max desc. distance with upper bounds
-  bnd.lambda = annDist(dd, bnd_box.hi, bnd.centroid); // upper bound - hi or lo have equal distance
+  bnd.lambda = m(bnd_box.hi, bnd.centroid); // upper bound - hi or lo have equal distance
   bnd.rho = bnd.lambda; // also upper bound
 
   // Insert root as final key
@@ -66,10 +68,12 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     ANNidxArray			pidx,			// point indices to store in subtree
     int					n,				// number of points
     int					dim,			// dimension of space
+    Metric& m,            // The metric distance to build the tree on
     int					bsp,			// bucket space
     ANNorthRect			&bnd_box,		// bounding box for current node
     ANNkd_splitter		splitter, // splitting routine
-    std::unordered_map<ANNkd_node*, const Bound& >* bounds) // bounds map
+    std::unordered_map<ANNkd_node*, const Bound& >* bounds // bounds map
+  )
 {
   if (n <= bsp) {						// n small, make a leaf node
     if (n == 0)						// empty leaf node
@@ -79,7 +83,8 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
 
       Bound& leaf_bnd = *new Bound(bnd_box, dim); // copies the bounding box, computes the centroid
       // Computes the radius of the smallest hypersphere containing all bucket points
-      ANNdist tmp = annDist(dim, bnd_box.hi, leaf_bnd.centroid); // upper bound
+      ANNdist tmp = m(bnd_box.hi, leaf_bnd.centroid); // upper bound
+      // Maximum child distance
       // for (int i = 0; i < n; ++i){
       //   ANNdist centroid_dist = annDist(dim, (ANNpoint) leaf_bnd.centroid, (ANNpoint) pa[pidx[i]]);
       //   tmp = centroid_dist < tmp ? centroid_dist : tmp;
@@ -106,14 +111,17 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     bnd_box.hi[cd] = cv;			// modify bounds for left subtree
     lo = rkd_tree_pr(					// build left subtree
       pa, pidx, n_lo,			// ...from pidx[0..n_lo-1]
-      dim, bsp, bnd_box, splitter,
+      dim,
+      m, // Include metric functor
+      bsp, bnd_box, splitter,
       bounds); // propagate bounds map and centroid
     bnd_box.hi[cd] = hv;			// restore bounds
 
     bnd_box.lo[cd] = cv;			// modify bounds for right subtree
     hi = rkd_tree_pr(					// build right subtree
       pa, pidx + n_lo, n-n_lo,// ...from pidx[n_lo..n-1]
-      dim, bsp, bnd_box, splitter,
+      dim, m, // Include metric functor
+      bsp, bnd_box, splitter,
       bounds); // propagate bounds map and centroid
     bnd_box.lo[cd] = lv;			// restore bounds
 
@@ -121,9 +129,7 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     ANNkd_split *ptr = new ANNkd_split(cd, cv, lv, hv, lo, hi);
 
     // Update max child and max desc. distance with upper bounds
-    //ANNdist hi_dist = annDist(dim, bnd_box.hi, node_bnds.centroid);
-    //ANNdist lo_dist = annDist(dim, bnd_box.lo, node_bnds.centroid);
-    node_bnds.lambda = annDist(dim, bnd_box.hi, node_bnds.centroid); // upper bound
+    node_bnds.lambda = m(bnd_box.hi, node_bnds.centroid); // upper bound
     node_bnds.rho = node_bnds.lambda; // use same bound
 
     // Save bounding information in the hash map
