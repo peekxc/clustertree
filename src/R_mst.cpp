@@ -115,10 +115,10 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   UTIL(dtb.PrintTree((ANNbool) true, true))
 
   // Run the dual tree boruvka algorithm
-  NumericMatrix mst = dtb.DTB(x);
+  List mst = dtb.DTB(x);
   // NumericMatrix mst = NumericMatrix();
   // Return the minimum spanning tree
-  return List::create(mst);
+  return mst;
 }
 
 
@@ -129,11 +129,16 @@ List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
   # Make sure KNN works
   # clustertree:::dt_knn(as.matrix(X_n), k = 5, bkt_size = 1)
 
+  what <- dbscan::kNN(as.matrix(X_n)[c(60:70, 101),], k = 1)
+  cbind(what$id - 1, what$dist)
+
   # Dual Tree Borvuka MSt
-  el <- matrix(mapply(function(i, j) c(i, j, as.matrix(dist(as.matrix(X_n)[1:5, 1:2]))[i, j]), row(matrix(0, nrow = 5, ncol = 5)), col(matrix(0, nrow = 5, ncol = 5))), ncol = 3, byrow = T)
+  test_set <- as.matrix(X_n) #c(60:70, 101)
+  dist_ts <- as.matrix(dist(test_set))
+  el <- matrix(mapply(function(i, j) c(i, j, dist_ts[i, j]), row(dist_ts), col(dist_ts)), ncol = 3, byrow = T)
 
-
-  clustertree:::dtb(as.matrix(X_n)[c(60:70, 101),], bkt_size = 1)
+  sum(optrees::msTreePrim(1:nrow(test_set), el)$tree.arcs[, 3])
+  sum(clustertree:::dtb(as.matrix(X_n)[c(60:70, 101),], bkt_size = 1)[[1]][, 3])
   */
 
 

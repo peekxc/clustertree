@@ -39,12 +39,16 @@ inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_
         min_dist_q = (*knn->at(q_idx)).max_key(); // k-th smallest distance so far (query)
         min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far (reference)
         dist = q_idx == r_idx ? 0 : computeDistance(q_idx, r_idx, min_dist_q, min_dist_r);
+        R_PRINTF("q: %d <--> r: %d = %f", q_idx, r_idx, dist)
+        R_INFO(", qknn dist: " << min_dist_q << ", rknn dist: " << min_dist_r << "\n")
 
         // Update the knn priority queue
         bool add_query_known = false, add_ref_known = false;
         if (dist < min_dist_q){
+          R_PRINTF("Adding r_idx: %d to q_idx: %d knn queue\n", r_idx, q_idx)
           add_query_known = (*knn->at(q_idx)).insert(dist, r_idx); }
         if (dist < min_dist_r && q_idx != r_idx){
+          R_PRINTF("Adding q_idx: %d to r_idx: %d knn queue\n", q_idx, r_idx)
           add_ref_known = (*knn->at(r_idx)).insert(dist, q_idx);
         }
 
@@ -57,10 +61,16 @@ inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_
         if (q_idx != r_idx){
           const int q_comp = CC.Find(q_idx), r_comp = CC.Find(r_idx);
           if (q_comp != r_comp && dist < D[q_comp]){
-            D[q_comp] = dist;
             N.at(q_comp).from = q_idx;
             N.at(q_comp).to = r_idx;
-            R_INFO("Shortest edge: " << q_idx << " <--> " << r_idx << " " << dist << "\n")
+            R_INFO("Shortest edge: " << q_idx << " <--> " << r_idx << " " << dist << " (old dist: " << D[q_comp] << ")\n")
+            D[q_comp] = dist;
+          }
+          if (q_comp != r_comp && dist < D[r_comp]){
+            N.at(r_comp).from = r_idx;
+            N.at(r_comp).to = q_idx;
+            R_INFO("Shortest edge: " << r_idx << " <--> " << q_idx << " " << dist << " (old dist: " << D[r_comp] << ")\n")
+            D[r_comp] = dist;
           }
         }
       } // if(!hasBeenChecked(q_idx, r_idx))
@@ -157,14 +167,14 @@ inline ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
 // }
 //
 
-NumericMatrix DualTreeBoruvka::DTB(NumericMatrix& x){
+List DualTreeBoruvka::DTB(NumericMatrix& x){
 
   // Necessary data structures for the DTB
   const int n = x.nrow();
   N = std::vector<edgeFT>(n); // one edge per component in the beginning
   D = std::vector<ANNdist>(n, ANN_DIST_INF); // one distance per component
 
-  // Initialize knn structure with k = 1
+  // Initialize knn structure with k = 2 (1 neighbor outside of identity)
   knn = new std::unordered_map<ANNidx, ANNmin_k*>();
   knn->reserve(n); // reserve enough buckets to hold at least n_pts items
   for (int i = 0; i < n; ++i) {
@@ -172,7 +182,7 @@ NumericMatrix DualTreeBoruvka::DTB(NumericMatrix& x){
   }
 
   // Initialize the components as all false
-  ALL_CC_SAME = *new std::unordered_map<ANNkd_node*, int>();
+  ALL_CC_SAME = std::unordered_map<ANNkd_node*, int>();
   ALL_CC_SAME.reserve(n);
   if (use_pruning){
     for (std::unordered_map<ANNkd_node*, const Bound& >::iterator bnd = bounds->begin(); bnd != bounds->end(); ++bnd){
@@ -185,6 +195,7 @@ NumericMatrix DualTreeBoruvka::DTB(NumericMatrix& x){
   if (use_pruning) {
     int c_i = 0;
     while(!fully_connected()){
+    //for (int j = 0; j < 1; ++j){
       Rcpp::checkUserInterrupt();
 
       // Run pruning traversal
@@ -207,7 +218,7 @@ NumericMatrix DualTreeBoruvka::DTB(NumericMatrix& x){
       std::fill(D.begin(), D.end(), ANN_DIST_INF); // reset shortest edge distance array
       resetBounds(); // Reset KNN bounds
       resetKNN(); // Reset K nearest neighbors priority queue
-      // resetBaseCases();
+      resetBaseCases(); // Reset base cases: distances need to be recomputed
 
       // Informative output
       IntegerVector components = CC.getCC();
@@ -217,5 +228,6 @@ NumericMatrix DualTreeBoruvka::DTB(NumericMatrix& x){
     }
   } // use_pruning
 
-  return mst_el;
+  IntegerMatrix bc = getBaseCases();
+  return List::create(_["mst"] = mst_el, _["base_cases"] = wrap(bc));
 }

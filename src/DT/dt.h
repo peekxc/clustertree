@@ -63,6 +63,7 @@ public:
   void PrintTree(ANNbool with_pts, bool);
   void printNode(ANNkd_split* N, int level);
   void printNode(ANNkd_leaf* N, int level);
+  IntegerMatrix getBaseCases();
 
   // Distance calculation
   ANNdist computeDistance(const int q_idx, const int r_idx,
@@ -93,7 +94,7 @@ public:
     // inserts new entry (w/ value false) if the value didn't exist
     const bool pair_visited = (*BC_check)[std::minmax(q_idx, r_idx)].beenChecked;
     if (!pair_visited) {
-      R_INFO("Calling base case for: q = " << q_idx << ", r = " << r_idx << ")\n")
+      R_INFO("== Calling base case for: q = " << q_idx << ", r = " << r_idx << "\n")
       (*BC_check)[std::minmax(q_idx, r_idx)].beenChecked = true; // Update knowledge known about the nodes
     }
     return pair_visited;

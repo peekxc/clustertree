@@ -168,6 +168,16 @@ void DualTree::PrintTree(ANNbool with_pts, bool ref_tree){
   }
 }
 
+// Returns the base cases checked
+IntegerMatrix DualTree::getBaseCases(){
+  IntegerMatrix basecases = IntegerMatrix(BC_check->size(), 2);
+  int i = 0;
+  for (std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check->begin(); it != BC_check->end(); ++it, ++i){
+    basecases(i, _) = IntegerVector::create(it->first.first, it->first.first);
+  }
+  return basecases;
+}
+
 ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int ncol, const int bkt_sz, ANNsplitRule split_rule){
   // Create kd tree, either a dual tree version with bounds or a regular ANN kd tree
   ANNkd_tree* kdTree;
