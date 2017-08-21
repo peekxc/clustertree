@@ -54,6 +54,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// simplified_hclust
+List simplified_hclust(List hcl, const int min_sz);
+RcppExport SEXP _clustertree_simplified_hclust(SEXP hclSEXP, SEXP min_szSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type hcl(hclSEXP);
+    Rcpp::traits::input_parameter< const int >::type min_sz(min_szSEXP);
+    rcpp_result_gen = Rcpp::wrap(simplified_hclust(hcl, min_sz));
+    return rcpp_result_gen;
+END_RCPP
+}
 // clusterTree
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha, const int type);
 RcppExport SEXP _clustertree_clusterTree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
@@ -109,32 +121,16 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP clustertree_clusterTree(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP clustertree_kruskalsMST(SEXP);
-RcppExport SEXP clustertree_mstToHclust(SEXP, SEXP);
-RcppExport SEXP clustertree_naive_clustertree(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP clustertree_primsMST(SEXP);
-RcppExport SEXP clustertree_primsRSL(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP clustertree_pruneCT(SEXP, SEXP, SEXP);
-RcppExport SEXP clustertree_vol_nSphere(SEXP, SEXP);
-
 static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
+    {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
     {"_clustertree_clusterTree", (DL_FUNC) &_clustertree_clusterTree, 5},
     {"_clustertree_naive_clustertree", (DL_FUNC) &_clustertree_naive_clustertree, 4},
     {"_clustertree_pruneCT", (DL_FUNC) &_clustertree_pruneCT, 3},
     {"_clustertree_vol_nSphere", (DL_FUNC) &_clustertree_vol_nSphere, 2},
-    {"clustertree_clusterTree",       (DL_FUNC) &clustertree_clusterTree,       5},
-    {"clustertree_kruskalsMST",       (DL_FUNC) &clustertree_kruskalsMST,       1},
-    {"clustertree_mstToHclust",       (DL_FUNC) &clustertree_mstToHclust,       2},
-    {"clustertree_naive_clustertree", (DL_FUNC) &clustertree_naive_clustertree, 4},
-    {"clustertree_primsMST",          (DL_FUNC) &clustertree_primsMST,          1},
-    {"clustertree_primsRSL",          (DL_FUNC) &clustertree_primsRSL,          5},
-    {"clustertree_pruneCT",           (DL_FUNC) &clustertree_pruneCT,           3},
-    {"clustertree_vol_nSphere",       (DL_FUNC) &clustertree_vol_nSphere,       2},
     {NULL, NULL, 0}
 };
 

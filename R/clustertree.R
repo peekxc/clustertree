@@ -56,3 +56,10 @@ print.clustertree <- function(C_n){
   ))
 }
 
+#' @export
+plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
+
+}
+
+
+

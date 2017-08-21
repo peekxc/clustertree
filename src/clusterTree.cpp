@@ -4,6 +4,11 @@ using namespace Rcpp;
 // Includes
 #include "union_find.h"
 #include "utilities.h"
+#include <unordered_map>
+#include <stack>
+
+static int global_cid = 0;
+static int counter = 0; // global counter
 
 // Computes the connection radius, i.e. the linkage criterion, required to
 // connect edges. If the there is some saliency criteria preventing connectivity
@@ -208,6 +213,13 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
 // [[Rcpp::export(name = "mstToHclust")]]
 List mstToHclust(NumericMatrix mst, const int n){
 
+  // Check indices to make sure visiting the ordering is ok!
+  NumericMatrix::Column from = mst.column(0);
+  NumericMatrix::Column to = mst.column(1);
+  if (all(from >= 0 & from <= n-1).is_false() || all(to >= 0 & to <= n-1).is_false()){
+    Rcpp::stop("Invalid spanning tree indices passed.");
+  }
+
   // Extract merge heights and associated order of such heights
   NumericVector dist = mst.column(2);
   IntegerVector height_order = order_(dist) - 1;
@@ -258,6 +270,250 @@ List mstToHclust(NumericMatrix mst, const int n){
   return(res);
 }
 
+
+// Simple struct to hold simplified cluster info
+struct cl_info{
+  IntegerVector contains;
+  NumericVector eps;
+  double eps_death, eps_birth;
+  bool processed;
+  int n_children;
+  IntegerVector children;
+  cl_info(){
+    contains = IntegerVector();
+    eps = NumericVector();
+    processed = false;
+    eps_death = eps_birth = n_children = 0;
+  };
+};
+
+
+// Populate the from, to, and height vectors needed to make a hierarchy
+int genSimMerges(int cid, std::unordered_map<int, cl_info>& cl,
+                 IntegerVector& from, // from indices
+                 IntegerVector& to, // to indices
+                 IntegerVector& level_idx, // record the comp index from and to merged into
+                 IntegerVector& comp, // record the comp index from and to merged into
+                 NumericVector& height, // Height of the tree
+                 NumericVector& height, // Height of the tree
+                 std::map<std::pair<int, int>, int>& parent_map, // map of child pairs to parent id
+                 List& cl_hierarchy,
+                 int level  // In the case of ties in height, prioritize by level to ensure mappings work out
+                ){
+  if (cl[cid].n_children == 0){
+    return -cid;
+  } else {
+    // Get the left and right child cluster ids
+    int left_id = cl[cid].children.at(0), right_id = cl[cid].children.at(1);
+    cl_hierarchy[patch::to_string(cid)] = IntegerVector::create(left_id, right_id);
+
+    // Store the parent, indexed by the children! This is necessary for later.
+    parent_map.insert(std::make_pair(std::minmax(left_id, right_id), cid));
+
+    // Recursively go left and right
+    int left_pt = genSimMerges(left_id, cl, from, to, level_idx, height, parent_map, cl_hierarchy, level+1);
+    int right_pt = genSimMerges(right_id, cl, from, to, level_idx, height, parent_map, cl_hierarchy, level+1);
+    double cheight = std::min(cl[left_pt].eps_birth, cl[right_pt].eps_birth);
+
+    from.push_back(left_pt);
+    to.push_back(right_pt);
+    level_idx.push_back(level);
+    comp.push_back(cid);
+
+    // Trick
+    // while(any(height == cheight).is_true()){
+    //   cheight += std::numeric_limits<double>::epsilon();
+    // }
+    height.push_back(cheight);
+
+
+    // Return arbitrary point index; let the disjoint set handle the tracing of the indices later on
+    return left_pt;
+  }
+}
+
+
+
+// Given an hclust object and a minimum cluster size, traverse the tree divisely to create a
+// simplified hclust object, where each leaf contains at least min_sz points
+// [[Rcpp::export]]
+List simplified_hclust(List hcl, const int min_sz) {
+  // Extract hclust info
+  NumericMatrix merge = hcl["merge"];
+  NumericVector eps_dist = hcl["height"];
+  IntegerVector pt_order = hcl["order"];
+  int n = merge.nrow() + 1, k;
+
+  //  Auxilary information not saved
+  std::vector<int> cl_tracker = std::vector<int>(n-1 , 0); // cluster component each step
+  std::vector<int> member_sizes = std::vector<int>(n-1, 0); // Size each step
+
+  // Primary information needed
+  std::unordered_map<int, cl_info> cl = std::unordered_map<int, cl_info>();
+  cl.reserve(n);
+
+  // First pass: Hclust object are intrinsically agglomerative structures. Splitting the hierarchy
+  // divisively requires knwoledge of the sizes of each branch. So agglomerate up the hierarchy, recording member sizes.
+  // This enables a dynamic programming strategy to improve performance below.
+  for (k = 0; k < n-1; ++k){
+    int lm = merge(k, 0), rm = merge(k, 1);
+    IntegerVector m = IntegerVector::create(lm, rm);
+    if (all(m < 0).is_true()){
+      member_sizes[k] = 2;
+    } else if (any(m < 0).is_true()) {
+      int pos_merge = (lm < 0 ? rm : lm), merge_size = member_sizes[pos_merge - 1];
+      member_sizes[k] = merge_size + 1;
+    } else {
+      // Record Member Sizes
+      int merge_size1 = member_sizes[lm-1], merge_size2 = member_sizes[rm-1];
+      member_sizes[k] = merge_size1 + merge_size2;
+    }
+  }
+
+  // Initialize root (unknown size, might be 0, so don't initialize length)
+  int root_id = 0;
+  cl[root_id].eps_birth = eps_dist.at(eps_dist.length()-1);
+
+  // Second pass: Divisively split the hierarchy, recording the epsilon and point index values as needed
+  for (k = n-2; k >= 0; --k){
+    // Current Merge
+    int lm = merge(k, 0), rm = merge(k, 1), cid = cl_tracker.at(k);
+    IntegerVector m = IntegerVector::create(lm, rm);
+
+    // Get reference to the current cluster info
+    cl_info& info = cl[cid]; // construct one using default constructor if doesn't exist
+
+    // Trivial case: split into singletons, record eps, contains, and ensure eps_death is minimal
+    if (all(m < 0).is_true()){
+      info.contains.push_back(-lm), info.contains.push_back(-rm);
+      double noise_eps = info.processed ? info.eps_death : eps_dist.at(k);
+      info.eps.push_back(noise_eps), info.eps.push_back(noise_eps);
+      if (!info.processed && eps_dist.at(k) < info.eps_death){
+        info.eps_death = eps_dist.at(k);
+      }
+    } else if (any(m < 0).is_true()) {
+      // Record new point info and mark the non-singleton with the cluster id
+      info.contains.push_back(-(lm < 0 ? lm : rm));
+      info.eps.push_back(info.processed ? info.eps_death : eps_dist.at(k));
+      cl_tracker.at((lm < 0 ? rm : lm) - 1) = cid;
+    } else {
+      int merge_size1 = member_sizes[lm-1], merge_size2 = member_sizes[rm-1];
+
+      // The cluster-simplification step: if two daughter nodes have 'runt sizes' at least as
+      // big as the threshold given, consider this as a true split.
+      if (merge_size1 >= min_sz && merge_size2 >= min_sz){
+        // Record death of current cluster
+        info.eps_death = eps_dist.at(k);
+        info.processed = true;
+
+        // Mark the lower merge steps as new clusters
+        info.children = IntegerVector::create(global_cid+1, global_cid+2);
+        int l_index = global_cid+1, r_index = global_cid+2;
+        cl_tracker.at(lm - 1) = ++global_cid, cl_tracker.at(rm - 1) = ++global_cid;
+
+        // Record the distance the new clusters appeared and initialize containers
+        cl_info& left_node = cl[l_index], &right_node = cl[r_index];
+        left_node.eps_birth = eps_dist.at(k), right_node.eps_birth = eps_dist.at(k);
+        left_node.eps_death = eps_dist.at(lm - 1), right_node.eps_birth = eps_dist.at(rm - 1);
+        left_node.processed = false, right_node.processed  = false;
+        info.n_children = merge_size1 + merge_size2;
+      } else {
+        // Inherit cluster identity
+        cl_tracker.at(lm - 1) = cid,  cl_tracker.at(rm - 1) = cid;
+      }
+    }
+  }
+
+  // The tree has not been divisely split into a simplified hierarchy, but now again,
+  // to create an 'hclust' object, the hierarchical structure must be built agglomeratively.
+  IntegerVector from = IntegerVector(), to = IntegerVector(), level_idx = IntegerVector();
+  NumericVector height = NumericVector();
+  std::map<std::pair<int, int>, int> parent_map = std::map<std::pair<int, int>, int>(); // need to record the parents of pairwise children
+  List cl_hierarchy = List();
+  genSimMerges(0, cl, from, to, level_idx, height, parent_map, cl_hierarchy, 0);
+
+  return(List::create(_["from"] = from, _["to"] = to, _["level_idx"] = level_idx, _["height"] = height,
+                      _["cl_hierarchy"] = cl_hierarchy));
+  // // Normalize the indices
+  // IntegerVector all_ids = Rcpp::unique(combine(from, to)); // original leaf ids
+  // IntegerVector norm_from = match(from, all_ids) - 1; // 0-based
+  // IntegerVector norm_to = match(to, all_ids) - 1; // 0-based
+  //
+  // // Use the mst to generate an hclust object
+  // const int n_mst = all_ids.size();
+  // NumericMatrix mst = no_init_matrix(n_mst - 1, 3);
+  // mst(_, 0) = as<NumericVector>(norm_from);
+  // mst(_, 1) = as<NumericVector>(norm_to);
+  // mst(_, 2) = as<NumericVector>(height);
+  // List simple_hclust = mstToHclust(mst, n_mst);
+
+
+  // // Step 1 to point simplification: Record the singleton points in a new list
+  // List point_idx = List(all_ids.size());
+  // int i = 1;
+  // for (IntegerVector::iterator id = all_ids.begin(); id != all_ids.end(); ++id, ++i){
+  //   point_idx[patch::to_string(i)] = cl[*id].contains; // save the points corresponding to each cluster
+  // }
+  //
+  // // Step 2 to point simplification: One more agglomerative pass...
+  // // Need to map the new non-singleton normalized component indices to the points they contain
+  // IntegerMatrix norm_merge = simple_hclust["merge"];
+  // const int nrow_merge = norm_merge.nrow();
+  // IntegerMatrix orig_merge = IntegerMatrix(nrow_merge, 2);
+  // std::vector<int> comp_map = std::vector<int>(nrow_merge); // map from merge step to the original parent idx
+  // for (int row_i = 0; row_i < nrow_merge; ++row_i){
+  //   IntegerVector pt_ids = norm_merge(row_i, _);
+  //   if (all(pt_ids < 0).is_true()){
+  //     int orig_left = all_ids.at((-pt_ids.at(0))-1), orig_right = all_ids.at((-pt_ids.at(1))-1);
+  //     Rcout << "Case 0: (" << orig_left << ", " << orig_right << ")\n";
+  //     orig_merge(row_i, _) = IntegerVector::create(-orig_left, -orig_right);
+  //     std::pair<int, int> key = std::minmax(orig_left, orig_right);
+  //     if (parent_map.find(key) != parent_map.end()){
+  //       int orig_parent_idx = parent_map.at(key);
+  //       comp_map[row_i] = orig_parent_idx;
+  //     }
+  //   } else if (any(pt_ids < 0).is_true()){
+  //     int orig_leaf = pt_ids.at(0) < 0 ? all_ids.at((-pt_ids.at(0))-1) : all_ids.at((-pt_ids.at(1))-1);
+  //     int orig_comp = pt_ids.at(0) < 0 ? comp_map.at(pt_ids.at(1) - 1) : comp_map.at(pt_ids.at(0) - 1);
+  //     Rcout << "Case 1: (" << orig_leaf << ", " << orig_comp << ")\n";
+  //     orig_merge(row_i, _) = IntegerVector::create(-orig_leaf, orig_comp);
+  //     std::pair<int, int> key = std::minmax(orig_leaf, orig_comp);
+  //     if (parent_map.find(key) != parent_map.end()){
+  //       int orig_parent_idx = parent_map.at(key);
+  //       comp_map[row_i] = orig_parent_idx;
+  //     }
+  //   } else {
+  //     int orig_left = comp_map.at(pt_ids.at(0) - 1);
+  //     int orig_right = comp_map.at(pt_ids.at(1) - 1);
+  //     orig_merge(row_i, _) = IntegerVector::create(orig_left, orig_right);
+  //     Rcout << "Case 2: (" << orig_left << ", " << orig_right << ")\n";
+  //     std::pair<int, int> key = std::minmax(orig_left, orig_right);
+  //     if (parent_map.find(key) != parent_map.end()){
+  //       int orig_parent_idx = parent_map.at(key);
+  //       comp_map[row_i] = orig_parent_idx;
+  //     }
+  //   }
+  // }
+  //
+  // for (std::map<std::pair<int, int>, int>::iterator it = parent_map.begin(); it != parent_map.end(); ++it){
+  //   Rcout << "(" << it->first.first << ", " << it->first.second << ") ==> " << it->second << std::endl;
+  // }
+  //
+
+  // Add the original point indices to the hclust object, and prepend "simplified_hclust" to
+  // the S3 class name
+  // simple_hclust["leaf_idx"] = point_idx;
+  // std::vector<std::string> class_names = std::vector<std::string>(2);
+  // class_names[0] = "simplified_hclust"; // Prefer simplified S3 methods
+  // class_names[1] = "hclust"; // It still IS-A valid hclust object
+  // simple_hclust.attr("class") = wrap(class_names);
+  // return List::create(simple_hclust, _["parents"] = wrap(comp_map), _["leaves"] = all_ids, _["orig_merge"] = orig_merge,
+  //                     _["cl_hierarchy"] = cl_hierarchy,
+  //                     _["mst"] = mst);
+}
+
+// leaves <- unname(unlist(sapply(sapply(sapply(ls(what$cl_hierarchy), function(key) { cand <- what$cl_hierarchy[key]; Filter(f = function(x) ! x %in% ls(what$cl_hierarchy), cand)}), unlist), unname)))
+
 // [[Rcpp::export]]
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095,
                  const int type = 0) {
@@ -280,3 +536,5 @@ List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int 
   List res = mstToHclust(mst, n);
   return (res);
 }
+
+
