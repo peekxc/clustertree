@@ -17,6 +17,10 @@ mstToHclust <- function(mst, n) {
     .Call('_clustertree_mstToHclust', PACKAGE = 'clustertree', mst, n)
 }
 
+cut_simplified_hclust <- function(hcl, cl_in, big_n) {
+    .Call('_clustertree_cut_simplified_hclust', PACKAGE = 'clustertree', hcl, cl_in, big_n)
+}
+
 simplified_hclust <- function(hcl, min_sz) {
     .Call('_clustertree_simplified_hclust', PACKAGE = 'clustertree', hcl, min_sz)
 }

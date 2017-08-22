@@ -288,13 +288,23 @@ struct cl_info{
 };
 
 
+// void normalizeIndices(std::unordered_map<int, cl_info>& cl, NumericMatrix& merge_heights){
+//   NumericVector height = merge_heights.column(2);
+//   NumericMatrix merge = merge_heights(_, Range(0,1));
+//   IntegerVector merge_order = order_(height);
+//
+//   for (int i = 0; i < merge_heights.nrow(); ++i){
+//     NumericMatrix::Row m_idx = merge.row(i);
+//
+//   }
+//
+// }
+
 // Populate the from, to, and height vectors needed to make a hierarchy
 int genSimMerges(int cid, std::unordered_map<int, cl_info>& cl,
                  IntegerVector& from, // from indices
                  IntegerVector& to, // to indices
                  IntegerVector& level_idx, // record the comp index from and to merged into
-                 IntegerVector& comp, // record the comp index from and to merged into
-                 NumericVector& height, // Height of the tree
                  NumericVector& height, // Height of the tree
                  std::map<std::pair<int, int>, int>& parent_map, // map of child pairs to parent id
                  List& cl_hierarchy,
@@ -313,12 +323,11 @@ int genSimMerges(int cid, std::unordered_map<int, cl_info>& cl,
     // Recursively go left and right
     int left_pt = genSimMerges(left_id, cl, from, to, level_idx, height, parent_map, cl_hierarchy, level+1);
     int right_pt = genSimMerges(right_id, cl, from, to, level_idx, height, parent_map, cl_hierarchy, level+1);
-    double cheight = std::min(cl[left_pt].eps_birth, cl[right_pt].eps_birth);
+    double cheight = std::max(cl[std::abs(left_pt)].eps_birth, cl[std::abs(right_pt)].eps_birth);
 
     from.push_back(left_pt);
     to.push_back(right_pt);
     level_idx.push_back(level);
-    comp.push_back(cid);
 
     // Trick
     // while(any(height == cheight).is_true()){
@@ -328,10 +337,58 @@ int genSimMerges(int cid, std::unordered_map<int, cl_info>& cl,
 
 
     // Return arbitrary point index; let the disjoint set handle the tracing of the indices later on
-    return left_pt;
+    return cid;
   }
 }
 
+// [[Rcpp::export]]
+IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big_n){
+  IntegerMatrix merge = hcl["merge"];
+  const int n = merge.nrow() +1;
+  List idx = hcl["idx"];
+
+  IntegerVector cl_out = Rcpp::no_init(big_n);
+  std::vector<int> cont = std::vector<int>(n-1, 0);
+  for (int i=0; i < n-1; ++i){
+    int lm = merge(i, 0), rm = merge(i, 1);
+    IntegerVector m = IntegerVector::create(lm, rm);
+
+    if (all(m < 0).is_true()){
+      int left_cid = cl_in[(-lm)-1], right_cid = cl_in[(-rm)-1];
+      IntegerVector left_ids = idx[patch::to_string(lm)];
+      IntegerVector right_ids = idx[patch::to_string(rm)];
+      cl_out[left_ids - 1] = left_cid;
+      cl_out[right_ids - 1] = right_cid;
+      cont[i] = left_cid == right_cid ? left_cid : 0;
+    } else if (any(m < 0).is_true()){
+      int leaf = m.at(0) < 0 ? m.at(0) : m.at(1);
+      int comp = m.at(0) < 0 ? m.at(1) : m.at(0);
+      int leaf_cid = cl_in[(-leaf)-1];
+      IntegerVector leaf_ids = idx[patch::to_string(leaf)];
+      cl_out[leaf_ids -1] = leaf_cid;
+      IntegerVector comp_ids = idx[patch::to_string(comp)];
+      if (cont[comp-1] == leaf_cid){
+        cl_out[comp_ids-1] = leaf_cid;
+        cont[i] = leaf_cid;
+      } else {
+        cl_out[comp_ids-1] = 0;
+        cont[i] = 0; // Mark this component as noise
+      }
+    } else {
+      int left_cid = cont[m.at(0) - 1], right_cid = cont[m.at(1) - 1];
+      IntegerVector left_ids = idx[patch::to_string(m.at(0))];
+      IntegerVector right_ids = idx[patch::to_string(m.at(1))];
+      cl_out[left_ids-1] = left_cid;
+      cl_out[right_ids-1] = right_cid;
+      if (left_cid == right_cid){
+        cont[i] = left_cid;
+      } else {
+        cont[i] = 0;
+      }
+    }
+  }
+  return(cl_out);
+}
 
 
 // Given an hclust object and a minimum cluster size, traverse the tree divisely to create a
@@ -424,6 +481,9 @@ List simplified_hclust(List hcl, const int min_sz) {
     }
   }
 
+  // Point ids of original observations
+  List point_idx = List();
+
   // The tree has not been divisely split into a simplified hierarchy, but now again,
   // to create an 'hclust' object, the hierarchical structure must be built agglomeratively.
   IntegerVector from = IntegerVector(), to = IntegerVector(), level_idx = IntegerVector();
@@ -432,8 +492,74 @@ List simplified_hclust(List hcl, const int min_sz) {
   List cl_hierarchy = List();
   genSimMerges(0, cl, from, to, level_idx, height, parent_map, cl_hierarchy, 0);
 
-  return(List::create(_["from"] = from, _["to"] = to, _["level_idx"] = level_idx, _["height"] = height,
-                      _["cl_hierarchy"] = cl_hierarchy));
+  // Create a map from original cluster ids to normalized ones
+  IntegerVector leaf_from = as<IntegerVector>(from[from < 0]), leaf_to = as<IntegerVector>(to[to < 0]);
+  IntegerVector all_ids = unique(combine(leaf_from, leaf_to)); // original leaf ids
+  std::transform(all_ids.begin(), all_ids.end(), all_ids.begin(), ::abs);
+  std::unordered_map<int, int> singleton_map = std::unordered_map<int, int>();
+  int i = 1;
+  for (IntegerVector::iterator it = all_ids.begin(); it != all_ids.end(); ++it, ++i){
+    singleton_map[*it] = i;
+    point_idx[patch::to_string(-singleton_map[*it])] = cl[*it].contains;
+  }
+
+  // Reorder the indices by height
+  IntegerVector merge_order = order_(height) - 1; // 0-based indices
+  NumericVector o_height = height[merge_order];
+  IntegerVector o_from = from[merge_order], o_to = to[merge_order];
+
+
+  // Get index of the true (original) component indices formed at every merge level
+  const int merge_sz = o_height.size();
+  std::vector<int> comp_idx = std::vector<int>(merge_sz);
+  std::unordered_map<int, int> comp_idx2 = std::unordered_map<int, int>(merge_sz);
+  IntegerMatrix new_merge = IntegerMatrix(merge_sz, 2);
+  for(i = 0; i < merge_sz; ++i){
+    IntegerVector pt_ids = IntegerVector::create(o_from.at(i), o_to.at(i));
+    if (all(pt_ids < 0).is_true()){
+      int left = singleton_map[-pt_ids.at(0)];
+      int right = singleton_map[-pt_ids.at(1)];
+      new_merge(i, _) = NumericVector::create(-left, -right);
+      int orig_comp = parent_map.at(std::minmax(-pt_ids.at(0), -pt_ids.at(1)));
+      comp_idx[i] = orig_comp;
+      comp_idx2[orig_comp] = i;
+      point_idx[patch::to_string(i)] = cl[orig_comp].contains;
+    } else if (any(pt_ids < 0).is_true()){
+      int leaf = pt_ids.at(0) < 0 ? -pt_ids.at(0) : -pt_ids.at(1);
+      int comp = pt_ids.at(0) < 0 ? pt_ids.at(1) : pt_ids.at(0);
+      int orig_comp = parent_map.at(std::minmax(leaf, comp));
+      comp_idx[i] = orig_comp;
+      comp_idx2[orig_comp] = i;
+      new_merge(i, _) = NumericVector::create(-singleton_map[leaf], comp_idx2[comp]+1);
+      point_idx[patch::to_string(i)] = cl[orig_comp].contains;
+    } else {
+      int orig_comp = parent_map.at(std::minmax(pt_ids.at(0), pt_ids.at(1)));
+      comp_idx[i] = orig_comp;
+      comp_idx2[orig_comp] = i;
+      new_merge(i, _) = NumericVector::create(comp_idx2[pt_ids.at(0)]+1, comp_idx2[pt_ids.at(1)]+1);
+      point_idx[patch::to_string(i)] = cl[orig_comp].contains;
+    }
+  }
+
+  List simple_hclust = List::create(
+    _["merge"] = new_merge,
+    _["height"] = o_height,
+    _["order"] = extractOrder(new_merge),
+    _["labels"] = R_NilValue
+    //_["mst"] = mst
+  );
+  simple_hclust["idx"] = point_idx;
+
+  // Prepend "simplified_hclust" to the S3 class name and return
+  std::vector<std::string> class_names = std::vector<std::string>(2);
+  class_names[0] = "simplified_hclust"; // Prefer simplified S3 methods
+  class_names[1] = "hclust"; // It still IS-A valid hclust object
+  simple_hclust.attr("class") = wrap(class_names);
+  return(simple_hclust);
+
+  // return(List::create(_["from"] = o_from, _["to"] = o_to, _["level_idx"] = level_idx, _["height"] = o_height,
+  //                     _["comp_idx"] = comp_idx, _["cl_hierarchy"] = cl_hierarchy,
+  //                     _["new_merge"] = new_merge, _["comp_idx2"] = comp_idx2));
   // // Normalize the indices
   // IntegerVector all_ids = Rcpp::unique(combine(from, to)); // original leaf ids
   // IntegerVector norm_from = match(from, all_ids) - 1; // 0-based

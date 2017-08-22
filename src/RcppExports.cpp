@@ -54,6 +54,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cut_simplified_hclust
+IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big_n);
+RcppExport SEXP _clustertree_cut_simplified_hclust(SEXP hclSEXP, SEXP cl_inSEXP, SEXP big_nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type hcl(hclSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cl_in(cl_inSEXP);
+    Rcpp::traits::input_parameter< const int >::type big_n(big_nSEXP);
+    rcpp_result_gen = Rcpp::wrap(cut_simplified_hclust(hcl, cl_in, big_n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // simplified_hclust
 List simplified_hclust(List hcl, const int min_sz);
 RcppExport SEXP _clustertree_simplified_hclust(SEXP hclSEXP, SEXP min_szSEXP) {
@@ -126,6 +139,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
+    {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},
     {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
     {"_clustertree_clusterTree", (DL_FUNC) &_clustertree_clusterTree, 5},
     {"_clustertree_naive_clustertree", (DL_FUNC) &_clustertree_naive_clustertree, 4},

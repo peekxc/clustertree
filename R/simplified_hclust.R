@@ -6,3 +6,18 @@
 plot.simplified_hclust <- function(x){
 
 }
+
+
+# cutree <- function(x) UseMethod("cutree")
+
+#' @export
+cut.simplified_hclust <- function(x, k = NULL, h = NULL){
+
+  # Rely on cutrees testing of inputs first
+  cl <- cutree(x, k=k, h=h)
+
+  n <- sum(sapply(ls(what$idx), function(key) length(what$idx[[key]])))
+  cl_out <- vector(mode = "integer", length = n)
+  idx
+  print("hello")
+}

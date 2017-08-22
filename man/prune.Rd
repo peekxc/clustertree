@@ -4,12 +4,12 @@
 \alias{prune}
 \title{Prune an empirical cluster tree}
 \usage{
-prune(C_n, eps, delta)
+prune(C_n, delta, eps = 1/sqrt(C_n$k))
 }
 \arguments{
-\item{eps}{A tuning parameter (> 0) representing how aggressively to prune.}
-
 \item{delta}{The (1-δ) probability}
+
+\item{eps}{A tuning parameter (> 0) representing how aggressively to prune.}
 }
 \description{
 Implementation of Chaudhuri et. al's consistent pruning procedure for the cluster tree. By "pruning" the tree,
