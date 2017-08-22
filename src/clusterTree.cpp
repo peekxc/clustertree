@@ -349,12 +349,14 @@ IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big
 
   IntegerVector cl_out = Rcpp::no_init(big_n);
   std::vector<int> cont = std::vector<int>(n-1, 0);
+  int left_cid =0, right_cid = 0;
+
   for (int i=0; i < n-1; ++i){
     int lm = merge(i, 0), rm = merge(i, 1);
     IntegerVector m = IntegerVector::create(lm, rm);
 
     if (all(m < 0).is_true()){
-      int left_cid = cl_in[(-lm)-1], right_cid = cl_in[(-rm)-1];
+      left_cid = cl_in[(-lm)-1], right_cid = cl_in[(-rm)-1];
       IntegerVector left_ids = idx[patch::to_string(lm)];
       IntegerVector right_ids = idx[patch::to_string(rm)];
       cl_out[left_ids - 1] = left_cid;
@@ -367,6 +369,7 @@ IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big
       IntegerVector leaf_ids = idx[patch::to_string(leaf)];
       cl_out[leaf_ids -1] = leaf_cid;
       IntegerVector comp_ids = idx[patch::to_string(comp)];
+      left_cid = right_cid = leaf_cid;
       if (cont[comp-1] == leaf_cid){
         cl_out[comp_ids-1] = leaf_cid;
         cont[i] = leaf_cid;
@@ -375,7 +378,7 @@ IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big
         cont[i] = 0; // Mark this component as noise
       }
     } else {
-      int left_cid = cont[m.at(0) - 1], right_cid = cont[m.at(1) - 1];
+      left_cid = cont[m.at(0) - 1], right_cid = cont[m.at(1) - 1];
       IntegerVector left_ids = idx[patch::to_string(m.at(0))];
       IntegerVector right_ids = idx[patch::to_string(m.at(1))];
       cl_out[left_ids-1] = left_cid;
@@ -387,6 +390,15 @@ IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big
       }
     }
   }
+  // Last step: compare most recent left and right clusters to determine what root labels
+  IntegerVector root_ids = idx["0"];
+  //Rcout << "root ids: " << root_ids.at(0) << std::endl;
+  if (left_cid == right_cid){
+    cl_out[root_ids - 1] = left_cid;
+  } else {
+    cl_out[root_ids - 1] = 0;
+  }
+
   return(cl_out);
 }
 

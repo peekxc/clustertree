@@ -13,7 +13,7 @@ plot.clustertree <- function(x){
 
 
 
-# TODO: Check for dimensionality
+# TODO: Check for dimensionality, store the mst in the clustertree object
 spanplot <- function(X_n, C_n, h = NULL){
   if (!any(c("clustertree") %in% class(C_n))) stop("spanplot expects a 'clustertree' object")
   hc <- ifelse(is(C_n, "clustertree"), C_n$hc, C_n)

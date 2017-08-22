@@ -1,12 +1,12 @@
-#' @title Prune an empirical cluster tree
-#' @name prune
+#' @title Consistently prune the empirical cluster tree
+#' @name cons_prune
 #' @description Implementation of Chaudhuri et. al's consistent pruning procedure for the cluster tree. By "pruning" the tree,
 #' spurious clusters are removed while salient clusters are recovered.
 #' @param eps A tuning parameter (> 0) representing how aggressively to prune.
 #' @param delta The (1-δ) probability
 #' @references See KC and SD (2014).
 #' @export
-prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
+cons_prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
   n <- length(C_n$hc$height) + 1
   d <- ifelse(is.null(C_n[["d"]]), 1, C_n[["d"]])
   k <- C_n$k
@@ -26,10 +26,10 @@ prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
   }
 
   # Given a lambda, generate the appropriate r
-  r_ <- function(lambda) { ((k/n + const)/(clustertree:::vol_nSphere(d)*lambda))^(1/d) }
+  r_ <- function(lambda) { ((k/n + const)/(vol_nSphere(d)*lambda))^(1/d) }
 
   # Upper bound of the universal constant
-  prune_lvls <- sapply(C_n$hc$height, function(r){ (1/clustertree:::vol_nSphere(d) * r^(1/d)) * comp })
+  prune_lvls <- sapply(C_n$hc$height, function(r){ (1/vol_nSphere(d) * r^(1/d)) * comp })
 
   # Get the lambda values for which to
   valid_r <- which((prune_lvls - eps) > 0)
@@ -37,12 +37,4 @@ prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
   r <- C_n$hc$height[valid_r]
 
 }
-
-
-
-
-
-# plot(get_del, from = 0, to = 1)
-
-
 
