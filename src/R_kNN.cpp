@@ -1,15 +1,13 @@
-//----------------------------------------------------------------------
-//                  Find the k Nearest Neighbors
-// File:                    kNNdist.cpp
-//----------------------------------------------------------------------
-// Copyright (c) 2015 Michael Hahsler. All Rights Reserved.
-//
-// This software is provided under the provisions of the
-// GNU General Public License (GPL) Version 3
-// (see: http://www.gnu.org/licenses/gpl-3.0.en.html)
+// R_kNN.cpp
+// R-facing code to perform k-nearest neighbor.
+// Single tree kNN function copied with permission from Michael Hahsler's code in the 'dbscan' package (GPLv3).
+#include <Rcpp.h>
+using namespace Rcpp;
 
-// Note: does not return self-matches!
-
+#include <utilities.h> // R_INFO, profiling mode, etc. must include first
+#include <DT/KNN/dt_knn.h> // Dual Tree KNN implementation
+#include "R_kdtree.h" // R Interface to ANN KD trees
+#include <ANN/ANN_util.h>
 #include "R_kNN.h"
 
 using namespace Rcpp;
@@ -79,3 +77,70 @@ List kNN_int(NumericMatrix data, int k,
   ret["k"] = k;
   return ret;
 }
+
+// R-facing API for the KNN-focused dual tree traversal
+// TODO: approx unused right now
+// [[Rcpp::export]]
+List dt_kNN_int(NumericMatrix q_x, const int k, int bucketSize, int splitRule, SEXP metric_ptr, // The user-specified metric to use
+                NumericMatrix r_x = NumericMatrix() // reference set (optional)
+                ) {
+
+  // If only query points are given, or q_x and r_x point to the same memory,
+  // only one tree needs to be constructed
+  bool identical_qr = r_x.size() <= 1 ? true : (&q_x) == (&r_x);
+  ANNkd_tree* kd_treeQ, *kd_treeR;
+
+  // Copy data over to ANN point array
+  ANNpointArray qx_ann = matrixToANNpointArray(q_x);
+
+  // Construct the dual tree KNN instance
+  Metric& metric = getMetric(metric_ptr);
+  DualTreeKNN dt_knn = DualTreeKNN(true, q_x.ncol(), metric);
+
+  // Construct the tree(s)
+  if (identical_qr){
+    r_x = q_x; // Ensure r_x and q_x are identical incase r_x was NULL
+    kd_treeQ = dt_knn.ConstructTree(qx_ann, q_x.nrow(), q_x.ncol(), bucketSize, (ANNsplitRule) splitRule);
+    kd_treeR = kd_treeQ;
+  } else {
+    ANNpointArray rx_ann = matrixToANNpointArray(r_x);
+    kd_treeQ = dt_knn.ConstructTree(qx_ann, q_x.nrow(), q_x.ncol(), bucketSize, (ANNsplitRule) splitRule);
+    kd_treeR = dt_knn.ConstructTree(rx_ann, r_x.nrow(), r_x.ncol(), bucketSize, (ANNsplitRule) splitRule);
+  }
+
+  // With the tree(s) created, setup KNN-specific bounds
+  dt_knn.setup(kd_treeQ, kd_treeR);
+
+  // Note: the search also returns the point itself (as the first hit)!
+  // So we have to look for k+1 points.
+  List res = dt_knn.KNN(k+1);
+
+  // Return results
+  return(res);
+}
+
+// Performance profiling
+// void perf_test(){
+//   List res;
+// #ifdef PROFILING
+//   annResetStats(r_x.nrow());
+//
+//   // Regular kdtree search
+//   List ann_kdtree = kdtree(r_x, bucketSize); // create regular kdtree with the same bucket size
+//   BEGIN_PROFILE()
+//     List res1 = kd_knn(q_x, (SEXP) ann_kdtree["kdtree_ptr"], k, false);
+//   REPORT_TIME("Regular KNN search")
+//
+//     // Print statistics
+//     Rcout << "Regular KDtree search performance: " << std::endl;
+//   annPrintStats((ANNbool) false);
+//
+//   // Dual tree equivalent
+//   Rcout << "DualTree search performance: " << std::endl;
+//   annResetStats(r_x.nrow());
+//   annResetCounts();	// reset stats for a set of queries
+//   BEGIN_PROFILE()
+// }
+
+
+

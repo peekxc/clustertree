@@ -96,13 +96,13 @@ NumericMatrix primsMST(const NumericVector dist_x){
 }
 
 // [[Rcpp::export]]
-List dtb(NumericMatrix x, const int bkt_size = 30, bool prune = true) {
+List dtb(NumericMatrix x, SEXP metric_type, const int bkt_size = 30, bool prune = true) {
   // Copy data over to ANN point array
   ANNkd_tree* kd_treeQ, *kd_treeR;
   ANNpointArray x_ann = matrixToANNpointArray(x);
 
   // Construct the dual tree KNN instance
-  L_2 metric = L_2(x.ncol());
+  Metric& metric = (Metric&) metric_type;
   DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow(), metric);
 
   // Construct the tree

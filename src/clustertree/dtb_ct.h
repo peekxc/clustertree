@@ -8,10 +8,11 @@ using namespace Rcpp;
 #include <DT/MST/dtb.h> // Dual Tree Borvuka definitions
 #include <metrics.h> // metric definitions
 
-class DTB_CT : DualTreeBoruvka {
+class DTB_CT : public DualTreeBoruvka {
+public:
   NumericVector r_k; // contains vector of radii
   double alpha; // extends the connection radius
-  DTB_CT(const bool prune, const int dim, const int n, Metric& m, NumericVector& _r_k, const double _alpha);
+  DTB_CT(const bool prune, const int dim, const int n, Metric& m, const NumericVector& _r_k, const double _alpha);
 
   // Override the istance calculation to bound the connection radii
   ANNdist computeDistance(const int q_idx, const int r_idx,

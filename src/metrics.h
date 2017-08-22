@@ -23,10 +23,19 @@ using namespace Rcpp;
  *  square root calculation until all distances have been computed for euclidean distance, or reserving a unit-conversion
  *  operation for previously normalized coordinate distances (e.g. converting from normalized to WGS84 coordinates). If
  *  not needed, can simply inherit the parent metric class and do nothing.
+ *
+ *  To allow dynamically choosing the metric from a calling function, a static function is given that returns a Metric&
+ *  type. Note that this implies two requirements:
+ *  1) There must be a default constructor available for every metric class. It is up to the calling function to
+ *  initialize any auxiliary member variables needed by the distance function (operator()). Optionally, a more organized
+ *  way would be to add an 'init' member function.
+ *  2) All metrics must be handled BY REFERENCE to avoid slicing. It is not required that a derived metric have the
+ *  same size as the parent base class.
  */
 
 // Generic metric abstract class to allow polymorphism
 struct Metric {
+  virtual inline void init(List config) = 0;
   virtual inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j) = 0;
   virtual inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j, const int i, ANNdist dist) = 0;
   virtual inline void finalize(Rcpp::NumericVector& dist_x) = 0;
@@ -39,8 +48,10 @@ struct Metric {
 
 // L_2 norm (squared)
 struct L_2 : Metric {
-  const unsigned int d; // dimension of the space
-  L_2(const int _d) : d(_d) { }
+  unsigned int d; // dimension of the space
+  L_2(){ }
+  ~L_2(){ d = 0; }
+  void init(List config){ d = (unsigned int) config["d"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist += (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]); }
@@ -59,8 +70,10 @@ struct L_2 : Metric {
 
 // L_1 norm
 struct L_1 : Metric {
-  const unsigned int d; // dimension of the space
-  L_1(const int _d) : d(_d) { }
+  unsigned int d; // dimension of the space
+  L_1(){ }
+  ~L_1(){ d = 0; }
+  void init(List config){ d = (unsigned int) config["d"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist += std::abs(x_j[i] - x_i[i]); }
@@ -77,8 +90,10 @@ struct L_1 : Metric {
 
 // L_inf norm
 struct L_inf : Metric {
-  const unsigned int d; // dimension of the space
-  L_inf(const int _d) : d(_d) { }
+  unsigned int d; // dimension of the space
+  L_inf(){ }
+  ~L_inf(){ d = 0; }
+  void init(List config){ d = (unsigned int) config["d"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist = std::max(dist, std::abs(x_j[i]- x_i[i])); }
@@ -96,9 +111,11 @@ struct L_inf : Metric {
 
 // Lp norm
 struct L_p : Metric {
-  const unsigned int d; // dimension of the space
-  const unsigned int p; // p norm
-  L_p(const unsigned int _d, const unsigned int _p) : d(_d), p(_p) { }
+  unsigned int d; // dimension of the space
+  unsigned int p; // p norm
+  L_p(){ };
+  ~L_p(){ d = p = 0; };
+  void init(List config){ d = (unsigned int) config["d"]; p = (unsigned int) config["p"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist += std::pow(x_j[i] - x_i[i], p); }
@@ -117,41 +134,8 @@ struct L_p : Metric {
   }
 };
 
-
-// struct RSL : Metric {
-//   const unsigned int d;
-//   const double alpha;
-//   NumericVector r_k;
-//   RSL(const int _d, const double _alpha, NumericVector& _r_k) : d(_d), alpha(_alpha), r_k(_r_k) { }
-//   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
-//     ANNdist dist = 0, r_xi = r_k ;
-//     for (int i = 0; i < d; ++i) { dist += (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]); }
-//     std::max(dist / alpha, std::max(radius_i, radius_j)
-//     return dist;
-//   }
-//   // Allow dimension-specific distance calculation for incremental distance updates
-//   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j, const int i, ANNdist dist){
-//     return dist + ((x_j[i] - x_i[i]) * (x_j[i] - x_i[i]));
-//   }
-//
-//   // Finalize by taking the square root
-//   inline void finalize(Rcpp::NumericVector& dist_x){
-//     std::transform(dist_x.begin(), dist_x.end(), dist_x.begin(), ::sqrt);
-//   }
-// };
-
-
-// List metric_chooser(std::string metric_name, List options){
-//   Rcpp::Function pmatch = Function("pmatch");
-//   StringVector metrics = StringVector();
-//   metrics.push_back("euclidean");
-//   metrics.push_back("manhattan");
-//   metrics.push_back("maximum");
-//   metrics.push_back("minkowski");
-//   const int metric_idx = pmatch(metric_name, metrics);
-//   switch(metric_idx){
-//
-//   }
-// }
+// Assume the error handling is done in R
+SEXP chooseMetric(std::string metric_name);
+Metric& getMetric(SEXP metric_ptr);
 
 #endif

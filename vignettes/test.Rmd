@@ -1,0 +1,21 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+X_n <- as.matrix(iris[, 1:4])
+n <- row(X_n)
+r_k <- apply(dbscan::kNNdist(X_n, k = 5), 1, max)
+test <- clustertree:::getMetric_int("euclidean", list(d=4))
+
+clustertree:::dtbRSL(X_n, r_k = r_k, alpha = sqrt(2), type=0, metric_ptr = test)
+clustertree:::dt_kNN_int(X_n, k = 5, bucketSize = 2, splitRule = 5L, metric_ptr = test)
+#r_k <- clustertree:::dt_kNN_int(q_x = test, k = 5, bucketSize = 1, metric_ptr = test, splitRule = 5)
+
+
+
+
+```

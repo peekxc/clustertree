@@ -168,7 +168,7 @@ inline ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
 // }
 //
 
-List DualTreeBoruvka::DTB(NumericMatrix& x){
+List DualTreeBoruvka::DTB(const NumericMatrix& x){
 
   // Necessary data structures for the DTB
   const int n = x.nrow();
@@ -195,9 +195,11 @@ List DualTreeBoruvka::DTB(NumericMatrix& x){
   NumericMatrix mst_el = NumericMatrix(n - 1, 3);
   if (use_pruning) {
     int c_i = 0;
-    while(!fully_connected()){
+    IntegerVector old_CC = CC.getCC(), new_CC;
+    do {
     //for (int j = 0; j < 1; ++j){
       Rcpp::checkUserInterrupt();
+
 
       // Run pruning traversal
       pDFS(rtree->root, qtree->root);
@@ -222,11 +224,14 @@ List DualTreeBoruvka::DTB(NumericMatrix& x){
       resetBaseCases(); // Reset base cases: distances need to be recomputed
 
       // Informative output
-      IntegerVector components = CC.getCC();
-      R_INFO("Current CCs: ")
-      for (int j = 0; j < n; ++j){ R_INFO(CC.Find(j)); }
-      R_INFO("\n")
-    }
+      new_CC = CC.getCC();
+      // R_INFO("Current CCs: ")
+      // for (int j = 0; j < n; ++j){ R_INFO(CC.Find(j)); }
+      // R_INFO("\n")
+    // Continue until either fully connected, implying a true, spanning tree or until one of the boruvka
+    // steps does not change the component structure, implying the underlying graph was not fully connected
+    // to begin with.
+    } while(!fully_connected() || all(old_CC == new_CC).is_true());
   } // use_pruning
 
   IntegerMatrix bc = getBaseCases();

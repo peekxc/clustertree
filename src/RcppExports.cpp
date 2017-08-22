@@ -5,6 +5,33 @@
 
 using namespace Rcpp;
 
+// chooseMetric
+SEXP chooseMetric(std::string metric_name, List config);
+RcppExport SEXP _clustertree_chooseMetric(SEXP metric_nameSEXP, SEXP configSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type metric_name(metric_nameSEXP);
+    Rcpp::traits::input_parameter< List >::type config(configSEXP);
+    rcpp_result_gen = Rcpp::wrap(chooseMetric(metric_name, config));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dtbRSL
+List dtbRSL(const NumericMatrix& x, const NumericVector& r_k, const double alpha, const int type, SEXP metric_ptr);
+RcppExport SEXP _clustertree_dtbRSL(SEXP xSEXP, SEXP r_kSEXP, SEXP alphaSEXP, SEXP typeSEXP, SEXP metric_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type r_k(r_kSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type metric_ptr(metric_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(dtbRSL(x, r_k, alpha, type, metric_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
 // clusterTree
 List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha, const int type);
 RcppExport SEXP _clustertree_clusterTree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
@@ -17,21 +44,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
     rcpp_result_gen = Rcpp::wrap(clusterTree(dist_x, r_k, k, alpha, type));
-    return rcpp_result_gen;
-END_RCPP
-}
-// dt_knn
-List dt_knn(NumericMatrix q_x, const int k, NumericMatrix r_x, const int bkt_size, bool prune);
-RcppExport SEXP _clustertree_dt_knn(SEXP q_xSEXP, SEXP kSEXP, SEXP r_xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type q_x(q_xSEXP);
-    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type r_x(r_xSEXP);
-    Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
-    Rcpp::traits::input_parameter< bool >::type prune(pruneSEXP);
-    rcpp_result_gen = Rcpp::wrap(dt_knn(q_x, k, r_x, bkt_size, prune));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -58,6 +70,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
     Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(kdtree(x, bkt_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dt_kNN_int
+List dt_kNN_int(NumericMatrix q_x, const int k, int bucketSize, int splitRule, SEXP metric_ptr, NumericMatrix r_x);
+RcppExport SEXP _clustertree_dt_kNN_int(SEXP q_xSEXP, SEXP kSEXP, SEXP bucketSizeSEXP, SEXP splitRuleSEXP, SEXP metric_ptrSEXP, SEXP r_xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type q_x(q_xSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type bucketSize(bucketSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type splitRule(splitRuleSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type metric_ptr(metric_ptrSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type r_x(r_xSEXP);
+    rcpp_result_gen = Rcpp::wrap(dt_kNN_int(q_x, k, bucketSize, splitRule, metric_ptr, r_x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -100,28 +128,31 @@ BEGIN_RCPP
 END_RCPP
 }
 // dtb
-List dtb(NumericMatrix x, const int bkt_size, bool prune);
-RcppExport SEXP _clustertree_dtb(SEXP xSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
+List dtb(NumericMatrix x, SEXP metric_type, const int bkt_size, bool prune);
+RcppExport SEXP _clustertree_dtb(SEXP xSEXP, SEXP metric_typeSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type metric_type(metric_typeSEXP);
     Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
     Rcpp::traits::input_parameter< bool >::type prune(pruneSEXP);
-    rcpp_result_gen = Rcpp::wrap(dtb(x, bkt_size, prune));
+    rcpp_result_gen = Rcpp::wrap(dtb(x, metric_type, bkt_size, prune));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_clustertree_chooseMetric", (DL_FUNC) &_clustertree_chooseMetric, 2},
+    {"_clustertree_dtbRSL", (DL_FUNC) &_clustertree_dtbRSL, 5},
     {"_clustertree_clusterTree", (DL_FUNC) &_clustertree_clusterTree, 5},
-    {"_clustertree_dt_knn", (DL_FUNC) &_clustertree_dt_knn, 5},
     {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
     {"_clustertree_kdtree", (DL_FUNC) &_clustertree_kdtree, 2},
+    {"_clustertree_dt_kNN_int", (DL_FUNC) &_clustertree_dt_kNN_int, 6},
     {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 6},
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
-    {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 3},
+    {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 4},
     {NULL, NULL, 0}
 };
 

@@ -47,6 +47,9 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   res
 }
 
+## The metrics supported by the various dual tree extensions
+.supported_metrics <- c("euclidean", "manhattan", "maximum", "minkowski")
+
 .onUnload <- function (libpath) {
   library.dynam.unload("clustertree", libpath)
 }

@@ -1,7 +1,7 @@
 #include "dtb_ct.h" // Dual Tree Borvuka definitions
 
 // use default constructor
-DTB_CT::DTB_CT(const bool prune, const int dim, const int n, Metric& m, NumericVector& _r_k, const double _alpha)
+DTB_CT::DTB_CT(const bool prune, const int dim, const int n, Metric& m, const NumericVector& _r_k, const double _alpha)
   : DualTreeBoruvka(prune, dim, n, m), alpha(_alpha), r_k(_r_k) {
   N_q_par = N_r_par = NULL;
   if (prune){ bnd_knn = new std::unordered_map<ANNkd_node*, BoundKNN& >(); }

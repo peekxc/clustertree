@@ -6,7 +6,7 @@ using namespace Rcpp;
 #include <ANN/kd_tree/kd_split.h> // ANNsplitRule
 
 // Constructor initializes the bounds map (if pruning is enabled), and base case map
-DualTree::DualTree(const bool prune, const int dim, Metric& m): use_pruning(prune), d(dim), m_dist(m) {
+DualTree::DualTree(const bool prune, const int dim, Metric& m): m_dist(m), d(dim), use_pruning(prune) {
   if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
   BC_check = new std::map< std::pair<int, int>, candidate_pair>();
 }

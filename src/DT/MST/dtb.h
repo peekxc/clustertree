@@ -40,7 +40,7 @@ public:
   void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
 
   // New methods for the derived class
-  List DTB(NumericMatrix& x);
+  List DTB(const NumericMatrix& x);
 
   // Overridden Base case and score functions
   ANNdist BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) override;

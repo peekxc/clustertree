@@ -50,34 +50,6 @@ IntegerVector extractOrder(IntegerMatrix merge){
   return(order);
 }
 
-
-List dtbRSL(const NumericMatrix x, const NumericVector r_k, const double alpha, const int type){
-  const int d = x.ncol();
-  const int n = x.nrow();
-
-  // Copy data over to ANN point array
-  ANNkd_tree* kd_treeQ, *kd_treeR;
-  ANNpointArray x_ann = matrixToANNpointArray(x);
-
-  // Construct the dual tree KNN instance
-  L_2 metric = L_2(x.ncol());
-  DTB_CT dtb_setup = DTB_CT(true, d, n, metric, r_k, alpha);
-
-  // Construct the tree
-  ANNkd_tree* kd_tree = dtb_setup.ConstructTree(x_ann, x.nrow(), x.ncol(), 30, ANN_KD_SUGGEST);
-
-  // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
-  dtb_setup.setup(kd_tree, kd_tree);
-
-  // Debug mode: Print the tree
-  // UTIL(dtb.PrintTree((ANNbool) true, true))
-
-  // Run the dual tree boruvka algorithm (w/ augmented distance function)
-  List mst = dtb_setup.DTB(x);
-
-  return mst;
-}
-
 /*
 * Compute MST using variant of Prim's, constrained by the radius of the Balls around each x_i.
 * Requires several array-type or indicator variables, namely:
