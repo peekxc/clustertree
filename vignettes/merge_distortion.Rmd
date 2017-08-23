@@ -1,0 +1,8 @@
+---
+title: "Merge Distortion"
+output: html_notebook
+---
+
+```{r}
+plot(cars)
+```

@@ -12,19 +12,13 @@
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mKnn")){
+clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mutual knn"),
+                        warn_parameter_settings = FALSE){
   if (is(x, "dist")){
-    if (attr(x, "method") != "euclidean")
+    if (attr(x, "method") != "euclidean" && warn_parameter_settings)
       warning("Robust Single Linkage expects euclidean distances. See ?clustertree for more details.")
     dist_x <- x
     k <- ifelse(missing(k), log(nrow(dist_x)), k)
-
-    # original_symbol <- as.character(attr(dist_x, "call")[["x"]])
-    ## Attempt to retrieve original data set and thus dimensionality
-    # if (original_symbol %in% ls(parent.frame(1))){
-    #   x <- as.matrix(eval(original_symbol, envir = parent.frame(1)))
-    #   k <- ifelse(missing(k),  ncol(x) * log(nrow(x)), k)
-    # } else { k <- ifelse(missing(k), log(nrow(x)), k) }
   } else {
     x <- as.matrix(x)
     dist_x <- dist(x, method = "euclidean")
@@ -35,13 +29,14 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   ## Choose estimator
-  type <- ifelse(missing(estimator), 0, pmatch(estimator, c("RSL", "knn", "mKnn")))
+  possible_estimators <- c("RSL", "knn", "mutual knn")
+  type <- ifelse(missing(estimator), 0, pmatch(estimator, possible_estimators) - 1L)
   if (is.na(type)){
-    stop(paste0("Unknown estimator supplied. Please use one of: [", paste0(c("RSL", "knn", "mKnn"), collapse = ", "), "]"))
+    stop(paste0("Unknown estimator supplied. Please use one of: [", paste(possible_estimators, collapse = ", "), "]"))
   }
 
   ## Warn about parameter settings yielding unknown results
-  if (k < floor(ncol(x) * log(nrow(x))))
+  if (k < floor(ncol(x) * log(nrow(x))) && warn_parameter_settings)
     warning("Existing analysis on RSL rely on alpha being at least sqrt(2) and k being at least as large as d*logn.")
 
   r_k <- dbscan::kNNdist(x, k = k - 1)
@@ -51,4 +46,14 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   res$k <- k
   res$alpha <- alpha
   res
+}
+
+## The metrics supported by the various dual tree extensions
+.supported_metrics <- c("euclidean", "manhattan", "maximum", "minkowski")
+
+## The various splitting routines for the ANN kd trees
+.ANNsplitRule <- c("STD", "MIDPT", "FAIR", "SL_MIDPT", "SL_FAIR", "SUGGEST")
+
+.onUnload <- function (libpath) {
+  library.dynam.unload("clustertree", libpath)
 }

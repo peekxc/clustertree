@@ -45,3 +45,22 @@ const int UnionFind::Find(const int x)
     parent[x] = Find(parent[x]);
   return(parent[x]);
 }
+
+// Return new integer vector representing the connected components
+IntegerVector UnionFind::getCC(){
+  IntegerVector cc = Rcpp::no_init(size);
+  for (unsigned int i = 0; i < size; ++i){ cc[i] = Find(i); }
+  return(cc);
+}
+
+// Comparison operators. Note that due to path compression, can't use const references
+bool UnionFind::operator==(UnionFind& other_cc){
+  bool matches = true;
+  for (unsigned int i = 0; matches && i < size; ++i){
+    matches = this->Find(i) == other_cc.Find(i);
+  }
+  return(matches);
+};
+bool UnionFind::operator!=(UnionFind& other_cc){
+  return(!(*this == other_cc));
+};
