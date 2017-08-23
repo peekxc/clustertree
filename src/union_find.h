@@ -24,4 +24,14 @@ public:
   ~UnionFind();
   void Union(const int x, const int y);
   const int Find(const int x);
+
+  // Retrieve the full integer vector representing component membership
+  IntegerVector getCC();
+
+  // Equality comparison operators to simplify finding distinct components
+  bool operator==(UnionFind& other_cc);
+  bool operator!=(UnionFind& other_cc);
+
+  // Overload equality/assignment
+  void merge(UnionFind &other_cc, LogicalVector& admitted);
 }; // class UnionFind

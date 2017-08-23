@@ -1,0 +1,153 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+
+```{r setup, include=FALSE}
+library("data.table")
+```
+
+```{r}
+# Create correlation matrices
+Sigma_corr1 <- matrix(c(1, 0.65, 0.65, 1), byrow = T, ncol = 2)
+Sigma_corr2 <- matrix(c(1, 0, 0, 1), byrow = T, ncol = 2)
+Sigma_corr3 <- matrix(c(1, -0.6, -0.6, 1), byrow = T, ncol = 2)
+
+# Standard deviations of each variable:
+# 1: keep unit x, but stretch the y dimension
+# 2: stretch x, shrink y
+# 3: strecth y, shrink x
+sd_xy = list(c(1, 2), c(3, 0.75), c(2, 3))
+
+# Covariance matrix
+Sigma1 <- diag(sd_xy[[1]]) %*% Sigma_corr1 %*% diag(sd_xy[[1]])
+Sigma2 <- diag(sd_xy[[2]]) %*% Sigma_corr2 %*% diag(sd_xy[[2]])
+Sigma3 <- diag(sd_xy[[3]]) %*% Sigma_corr3 %*% diag(sd_xy[[3]])
+
+# # Generate samples
+# gauss1 <- MASS::mvrnorm(n = n, mu = c(10, 7), Sigma = Sigma1)
+# gauss2 <- MASS::mvrnorm(n = n, mu = c(0, 1), Sigma = Sigma2)
+# gauss3 <- MASS::mvrnorm(n = n, mu = c(-5, 8), Sigma = Sigma3)
+# three_gauss <- rbind(gauss1, gauss2, gauss3)
+# 
+# # Add random uniform noise
+# #x_noise <- runif(500, min = min(three_gauss[, 1]), max = max(three_gauss[, 1]))
+# #y_noise <- runif(500, min = min(three_gauss[, 2]), max = max(three_gauss[, 2]))
+# 
+# # Organize into one matrix
+# all_data <- list(gauss1, gauss2, gauss3)#, cbind(x_noise, y_noise))
+# test_data <- data.table::rbindlist(lapply(all_data, as.data.frame), idcol = TRUE)
+# plot(test_data[, .(V1, V2)], asp = 1)
+```
+
+```{r}
+# cluster tree
+C_n <- clustertree::clustertree(as.matrix(test_data[, .(V1, V2)]), k = 50L)
+```
+
+
+```{r}
+plot(C_n$hc)
+abline(h = 5.49, col = "red")
+```
+
+```{r}
+cut_with_noise <- function(hc, h){
+  cl <- cutree(hc, h = h)
+  cl_freq <- table(cl)
+  for (cl_idx in names(cl_freq[cl_freq <= 1])){ cl[which(cl == cl_idx)] <- 0 }
+  return(match(cl, sort(unique(cl)))-1)
+}
+```
+
+```{r}
+H <- function(x, base = 2){ -sum(table(x)/length(x) * log(table(x)/length(x), base = base)) }
+
+mix1 <- function(n) { MASS::mvrnorm(n = n, mu = c(10, 7), Sigma = Sigma1) } 
+mix2 <- function(n) { MASS::mvrnorm(n = n, mu = c(0, 1), Sigma = Sigma2) } 
+mix3 <- function(n) { MASS::mvrnorm(n = n, mu = c(-5, 8), Sigma = Sigma3) } 
+
+# Simple mixture model sampling function 
+sample_mix <- function(n, f_list, mix_weights = rep(1/length(f_list), length(f_list))){
+  I <- sample(1:length(f_list), size = n, replace = T, prob = mix_weights)
+  X_n <- mapply(function(i, n_i) cbind(f_list[[i]](n_i), i), as.integer(names(table(I))), table(I))
+  do.call(rbind, X_n)
+}
+```
+
+## Animations
+
+
+```{r ARI}
+ARI <- function(X, Y){
+  n <- length(X)
+  cross <- unname(as.matrix(table(X, Y)))
+  { a <- apply(cross, 1, sum); b <- apply(cross, 2, sum) }
+  index <- sum(choose(cross, 2))
+  exp_idx <- (sum(choose(a, 2)) * sum(choose(b, 2)))/choose(n, 2)
+  max_idx <- 0.5 * (sum(choose(a, 2)) + sum(choose(b, 2)))
+  return ((index - exp_idx) / (max_idx - exp_idx))
+}
+```
+
+```{r}
+S <- sample_mix(150, f_list = list(mix1, mix2, mix3))
+X_n <- S[, 1:2]
+I <- S[, 3]
+
+# Find the optimal cut 
+C_n <- clustertree::clustertree(X_n)
+
+m <- diag(nrow(X_n))
+m_con <- mapply(function(x, y) { ifelse(I[x] == I[y], 1, -1) }, row(m), col(m), SIMPLIFY = T)
+constraints <- matrix(m_con, nrow = nrow(X_n), byrow = F)
+
+ARI_scores <- sapply(C_n$hc$height, function(h) ARI(cut_with_noise(C_n$hc, h+.Machine$double.eps), I))
+
+opt_ext <- dbscan::extractFOSC(C_n$hc, constraints = constraints, alpha = 0)
+ARI(, I)
+plot(X_n, col = cut_with_noise(C_n$hc, h = C_n$hc$height[which.max(ARI_scores)]) + 1)
+plot(X_n, col = opt_ext$cluster+1)
+
+
+# Create map between true labels and majority label of each cluster 
+sapply(unique(I), function(class_label) as.integer(names(which.max(table(cl[which(I == class_label)])))))
+
+table(cl[which(I == 1)])
+
+animation::saveGIF({
+  for (hat_h in rev(quantile(C_n$hc$height, probs = seq(0.025, 1, by = 0.025)))){
+    plot(test_data[, .(V1, V2)], col = cut_with_noise(C_n$hc, h = hat_h) + 1)
+  }
+}, movie.name = "rsl.gif", interval = 0.2)
+
+
+```
+
+
+
+
+
+
+```{r}
+delta <- 0.99
+get_del <- function(k){
+  n <- length(C_n$hc$height) + 1
+  d <- ifelse(is.null(C_n[["d"]]), 1, C_n[["d"]])
+  beta_n <- sqrt((4/n) * ((d * log(2*n)) + log(8 / delta)))
+  tmp <- d*log(n) + log(1/delta)
+  C_o <- n * ((beta_n^2 + beta_n * sqrt(C_n$k/n))/(tmp + sqrt(C_n$k * tmp)))
+  C_del <- 2 * C_o * log(2/delta)
+  (k/n) - ((C_del/n) * sqrt(k * d * log(n)))
+}
+
+possible_k <- (1:n)[sapply(1:n, get_del) > 0]
+plot(get_del, from = 2, to = n)
+abline(a = c(1, 1), b = c(n, n), col = "red")
+```
+

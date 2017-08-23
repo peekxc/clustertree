@@ -12,19 +12,13 @@
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL", "knn", "mKnn")){
+clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
+                        estimator = c("RSL", "knn", "mutual knn"),
+                        warn = FALSE){
   if (is(x, "dist")){
-    if (attr(x, "method") != "euclidean")
-      warning("Robust Single Linkage expects euclidean distances. See ?clustertree for more details.")
+    d <- ifelse(missing(d), NULL, d)
     dist_x <- x
     k <- ifelse(missing(k), log(nrow(dist_x)), k)
-
-    # original_symbol <- as.character(attr(dist_x, "call")[["x"]])
-    ## Attempt to retrieve original data set and thus dimensionality
-    # if (original_symbol %in% ls(parent.frame(1))){
-    #   x <- as.matrix(eval(original_symbol, envir = parent.frame(1)))
-    #   k <- ifelse(missing(k),  ncol(x) * log(nrow(x)), k)
-    # } else { k <- ifelse(missing(k), log(nrow(x)), k) }
   } else {
     x <- as.matrix(x)
     dist_x <- dist(x, method = "euclidean")
@@ -35,20 +29,38 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   ## Choose estimator
-  type <- ifelse(missing(estimator), 0, pmatch(estimator, c("RSL", "knn", "mKnn")))
+  possible_estimators <- c("RSL", "knn", "mutual knn")
+  type <- ifelse(missing(estimator), 0, pmatch(estimator, possible_estimators) - 1L)
   if (is.na(type)){
-    stop(paste0("Unknown estimator supplied. Please use one of: [", paste0(c("RSL", "knn", "mKnn"), collapse = ", "), "]"))
+    stop(paste0("Unknown estimator supplied. Please use one of: [", paste(possible_estimators, collapse = ", "), "]"))
   }
 
   ## Warn about parameter settings yielding unknown results
-  if (k < floor(ncol(x) * log(nrow(x))))
-    warning("Existing analysis on RSL rely on alpha being at least sqrt(2) and k being at least as large as d*logn.")
+  warn_message <- "Existing clustertree analysis relies on alpha being at least sqrt(2) and k being at least as large as d*log(n)."
+  if (k < ceiling(ncol(x) * log(nrow(x))) && warn) warning(warn_message)
 
   r_k <- dbscan::kNNdist(x, k = k - 1)
-  res <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
-  res$call <- match.call()
-  res$method <- "robust single linkage"
-  res$k <- k
-  res$alpha <- alpha
-  res
+  hc <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
+  hc$call <- match.call()
+  hc$method <- possible_estimators[type+1]
+  res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree")
+  return(res)
 }
+
+#' @export
+print.clustertree <- function(C_n){
+  type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
+  est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
+  writeLines(c(
+    paste0("clustertree object estimated using: ", est_type),
+    sprintf("Parameters: k = %d, alpha = %.3f, dim = %d", C_n$k, C_n$alpha, C_n$d)
+  ))
+}
+
+#' @export
+plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
+
+}
+
+
+
