@@ -47,14 +47,7 @@ List DualTreeKNN::KNN(int k) {
   }
 
   // If pruning is enabled, use that one. Otherwise use regular DFS w/o computing extra bounds.
-  RESET_TRAVERSAL() // make sure traversal count is 0
   if (use_pruning){ pDFS(rtree->root, qtree->root); } else { DFS(rtree->root, qtree->root); }
-
-  // Copy over the distances and ids
-  #ifdef ANN_PERF
-    Rcout << "KNN took: " << n_traversals << " traversals\n. Copying to R memory\n";
-  #endif
-
 
   NumericMatrix dists(n, k - 1);   // Distance matrix of kNN distances
   IntegerMatrix id(n, k - 1);  // Id matrix of knn indices
@@ -71,7 +64,8 @@ List DualTreeKNN::KNN(int k) {
   }
 
   // Finalize results for R-end
-  id = id + 1;
+  m_dist.finalize(dists); // apply final transformation
+  id = id + 1; // switch to 1-based for R
 
   List res = List::create(_["dist"] = dists, _["id"] = id);
   // Cleanup deallocate closest point set

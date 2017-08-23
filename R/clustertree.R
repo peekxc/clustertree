@@ -50,6 +50,9 @@ clustertree <- function(x, k = "suggest", alpha = "suggest", estimator = c("RSL"
 ## The metrics supported by the various dual tree extensions
 .supported_metrics <- c("euclidean", "manhattan", "maximum", "minkowski")
 
+## The various splitting routines for the ANN kd trees
+.ANNsplitRule <- c("STD", "MIDPT", "FAIR", "SL_MIDPT", "SL_FAIR", "SUGGEST")
+
 .onUnload <- function (libpath) {
   library.dynam.unload("clustertree", libpath)
 }

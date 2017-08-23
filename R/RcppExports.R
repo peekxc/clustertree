@@ -9,6 +9,10 @@ dtbRSL <- function(x, r_k, alpha, type, metric_ptr) {
     .Call('_clustertree_dtbRSL', PACKAGE = 'clustertree', x, r_k, alpha, type, metric_ptr)
 }
 
+primsRSL <- function(r, r_k, n, alpha, type) {
+    .Call('_clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
+}
+
 clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L) {
     .Call('_clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
 }

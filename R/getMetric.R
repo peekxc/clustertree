@@ -1,4 +1,3 @@
-#' @export
 getMetric_int <- function(metric_name, ...){
   config <- as.list(...)
   # TODO: Test for the parameter settings
