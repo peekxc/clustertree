@@ -1,0 +1,60 @@
+## C++ compiler flags. Include '.' directory to use bracket include notation
+PKG_CPPFLAGS = -DANN_PERF -DPERF -I$(realpath .) -std=c++11
+
+## Import variables from R make configuration
+MkInclude = $(R_HOME)/etc${R_ARCH}/Makeconf
+
+## Source files
+ANN_SRC = $(wildcard ANN/*.cpp ANN/**/*.cpp)
+DT_SRC = $(wildcard DT/*.cpp DT/**/*.cpp)
+CT_SRC = $(wildcard clustertree/*.cpp)
+INT_SRC = $(wildcard *.cpp)
+
+## Object files (exported to clean later)
+ANN_OBJ := $(ANN_SRC:%.cpp=%.o)
+DT_OBJ := $(DT_SRC:%.cpp=%.o)
+CT_OBJ := $(CT_SRC:%.cpp=%.o)
+INT_OBJ := $(INT_SRC:%.cpp=%.o)
+
+## Phony targets to enable ordering the build process
+.PHONY = all ANN DT CT INT
+
+## Objects include: ANN library, Dual tree library, cluster tree files, and R interface files
+OBJECTS = $(ANN_OBJ) $(DT_OBJ) $(CT_OBJ) $(INT_OBJ)
+
+## Generate shared library form the R_interface
+all: $(SHLIB)
+$(SHLIB): INT
+
+## ANN compilation
+ANN: $(ANN_OBJ)
+$(ANN_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+
+## Dual tree compilation
+DT: $(DT_OBJ) ANN
+$(DT_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+
+## Cluster Tree compilation
+CT: $(CT_OBJ) ANN DT
+$(CT_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+
+## R Interface compilation
+INT: $(INT_OBJ) ANN DT CT
+$(INT_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+
+## Clean rule
+shlib-clean: clean
+clean:
+	@-rm -rf .libs _libs
+	@-rm -f $(SHLIB)
+	@-rm -f *.a
+	@-rm -f ANN/*.o
+	@-rm -f ANN/**/*.o
+	@-rm -f DT/*.o
+	@-rm -f DT/**/*.o
+	@-rm -f clustertree/*.o
+	@-rm -f *.o

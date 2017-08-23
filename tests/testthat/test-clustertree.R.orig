@@ -12,8 +12,13 @@ X_n <- StockDividends[, 2:12]
 
 ## Automatically detecting k ~ dlogn sets k around 39, more neighbors than records!
 test_that("Parameter detection works", {
+<<<<<<< HEAD
+    expect_error(clustertree::clustertree(X_n))
+    expect_warning(clustertree::clustertree(X_n, k = 5L, warn = T))
+=======
   expect_error(clustertree::clustertree(X_n))
   expect_warning(clustertree::clustertree(X_n, k = 5L, warn_parameter_settings = T))
+>>>>>>> 2562a500dd92d985303aa1b8fa364add831458bc
 })
 
 ## Make sure setup code at least works

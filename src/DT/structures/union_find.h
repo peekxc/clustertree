@@ -7,6 +7,9 @@
 // Class definition based off of data-structure described here:
 // https://en.wikipedia.org/wiki/Disjoint-set_data_structure
 
+#ifndef UNION_FIND_H
+#define UNION_FIND_H
+
 #include <Rcpp.h>
 using namespace Rcpp;
 
@@ -28,10 +31,9 @@ public:
   // Retrieve the full integer vector representing component membership
   IntegerVector getCC();
 
-  // Equality comparison operators to simplify finding distinct components
+  // Equality comparison operators to simplify comparing disjoint sets
   bool operator==(UnionFind& other_cc);
   bool operator!=(UnionFind& other_cc);
-
-  // Overload equality/assignment
-  void merge(UnionFind &other_cc, LogicalVector& admitted);
 }; // class UnionFind
+
+#endif

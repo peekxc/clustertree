@@ -47,6 +47,7 @@ clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
   return(res)
 }
 
+<<<<<<< HEAD
 #' @export
 print.clustertree <- function(C_n){
   type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
@@ -64,7 +65,7 @@ plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
 
 
 
-
+=======
 ## The metrics supported by the various dual tree extensions
 .supported_metrics <- c("euclidean", "manhattan", "maximum", "minkowski")
 
@@ -74,3 +75,4 @@ plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
 .onUnload <- function (libpath) {
   library.dynam.unload("clustertree", libpath)
 }
+>>>>>>> 2562a500dd92d985303aa1b8fa364add831458bc
