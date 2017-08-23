@@ -1,9 +1,37 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <clustertree/clustertree.h> // Auxiliary C++ extensions related to the clustertree
 #include <clustertree/dtb_ct.h> // Dual Tree Boruvka extensions for RSL
+#include <hclust_util.h> // Hclust extensions
+#include <ANN/ANN_util.h> // matrixToANNpointArray
 
+// Computes the connection radius, i.e. the linkage criterion
+double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type) {
+
+  // Only admit edges with finite weight if the neighborhood radii allow
+  // Note that RSL will always form a complete hierarchy, so returning the numerical
+  // limits maximum isn't necessary.
+  double R;
+  switch(type){
+  // Robust Single Linkage from 2010 paper
+  case 0:
+    return std::max(dist_ij / alpha, std::max(radius_i, radius_j));
+    break;
+    // kNN graph from Algorithm 2 from Luxburgs 2014 paper
+  case 1:
+    R = alpha * std::max(radius_i, radius_j);
+    return dist_ij <= R ? R : std::numeric_limits<double>::max();
+    break;
+    // mutual kNN graph from Algorithm 2 from Luxburgs 2014 paper
+  case 2:
+    R = alpha * std::min(radius_i, radius_j);
+    return dist_ij <= R ? R : std::numeric_limits<double>::max();
+    break;
+  default:
+    Rcpp::stop("Not a valid neighborhood query type");
+  }
+  return std::numeric_limits<double>::max();
+}
 
 // Use the dual tree boruvka approach to compute the cluster tree
 // [[Rcpp::export]]
@@ -12,7 +40,7 @@ List dtbRSL(const NumericMatrix& x, const NumericVector& r_k, const double alpha
   const int n = x.nrow();
 
   // Copy data over to ANN point array
-  ANNkd_tree* kd_treeQ, *kd_treeR;
+  // ANNkd_tree* kd_treeQ, *kd_treeR;
   ANNpointArray x_ann = matrixToANNpointArray(x);
 
   // Construct the dual tree KNN instance

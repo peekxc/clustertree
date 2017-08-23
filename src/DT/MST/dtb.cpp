@@ -28,12 +28,12 @@ inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_
   int q_idx, r_idx; // Indices ot query and reference points
   ANNdist min_dist_q, min_dist_r; // best distances of query and reference points
   ANNkd_leaf* N_q_leaf = AS_LEAF(N_q), *N_r_leaf = AS_LEAF(N_r); // type-checking done previously
-  int comp_index; // the component index of the query point
+  //int comp_index; // the component index of the query point
 
   bool all_same_comp = true; // All points in the same component? Assume positive case
   for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
     for (int r_i = 0; r_i < N_r_leaf->n_pts; ++r_i){
-      int q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
+      q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
 
       // Compute Base case, saving knn ids and distances along the way
       if (!hasBeenChecked(q_idx, r_idx)) { ANN_PTS(2) // Has this pair been considered before?
@@ -87,7 +87,7 @@ inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_
 }
 
 // Score function for DTB. Uses k=1 KNN type bound information.
-inline ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
+ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
   // if (N_q == N_r) return 0;
   ANNdist min_dist_qr = min_dist(N_q, N_r); // minimum distance between two bounding rectangles
   ANNdist best_bound = B(N_q); // "best" lower bound

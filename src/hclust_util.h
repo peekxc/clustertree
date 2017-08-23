@@ -1,36 +1,14 @@
-// Includes
-#include "clustertree.h"
+#ifndef HCLUST_UTIL_H
+#define HCLUST_UTIL_H
 
-// Computes the connection radius, i.e. the linkage criterion
-double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type) {
+#include <Rcpp.h>
+using namespace Rcpp;
 
-  // Only admit edges with finite weight if the neighborhood radii allow
-  // Note that RSL will always form a complete hierarchy, so returning the numerical
-  // limits maximum isn't necessary.
-  double R;
-  switch(type){
-    // Robust Single Linkage from 2010 paper
-    case 0:
-      return std::max(dist_ij / alpha, std::max(radius_i, radius_j));
-      break;
-    // kNN graph from Algorithm 2 from Luxburgs 2014 paper
-    case 1:
-      R = alpha * std::max(radius_i, radius_j);
-      return dist_ij <= R ? R : std::numeric_limits<double>::max();
-      break;
-    // mutual kNN graph from Algorithm 2 from Luxburgs 2014 paper
-    case 2:
-      R = alpha * std::min(radius_i, radius_j);
-      return dist_ij <= R ? R : std::numeric_limits<double>::max();
-      break;
-    default:
-      Rcpp::stop("Not a valid neighborhood query type");
-    }
-  return std::numeric_limits<double>::max();
-}
+#include <DT/structures/union_find.h>
+#include <utilities.h>
 
 // Recursively visit the merge matrix to extract an hclust sufficient ordering
-void visit(const IntegerMatrix& merge, IntegerVector& order, int i, int j, int& ind) {
+inline void visit(const IntegerMatrix& merge, IntegerVector& order, int i, int j, int& ind) {
   // base case
   if (merge(i, j) < 0) {
     order.at(ind++) = -merge(i, j);
@@ -42,7 +20,7 @@ void visit(const IntegerMatrix& merge, IntegerVector& order, int i, int j, int& 
 }
 
 // Build a visually compatible ordering
-IntegerVector extractOrder(IntegerMatrix merge){
+inline IntegerVector extractOrder(IntegerMatrix merge){
   IntegerVector order = IntegerVector(merge.nrow()+1);
   int ind = 0;
   visit(merge, order, merge.nrow() - 1, 0, ind);
@@ -52,11 +30,12 @@ IntegerVector extractOrder(IntegerMatrix merge){
 
 
 /* mstToHclust
- * Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), create a valid hclust object
- * using a disjoint-set structure to track components
- * Notes: expects 0-based mst indices, and that all edge indices are 0 <= i < n. Is unsafe otherwise!
- */
-List mstToHclust(NumericMatrix mst){
+* Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), create a valid hclust object
+* using a disjoint-set structure to track components
+* Notes: expects 0-based mst indices, and that all edge indices are 0 <= i < n. Is unsafe otherwise!
+*/
+// [[Rcpp::export]]
+inline List mstToHclust(NumericMatrix mst){
 
   // Extract merge heights and associated order of such heights
   const int n = mst.nrow() + 1;
@@ -110,3 +89,6 @@ List mstToHclust(NumericMatrix mst){
   res.attr("class") = "hclust";
   return(res);
 }
+
+
+#endif

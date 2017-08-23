@@ -5,6 +5,17 @@
 
 using namespace Rcpp;
 
+// mstToHclust
+inline List mstToHclust(NumericMatrix mst);
+RcppExport SEXP _clustertree_mstToHclust(SEXP mstSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type mst(mstSEXP);
+    rcpp_result_gen = Rcpp::wrap(mstToHclust(mst));
+    return rcpp_result_gen;
+END_RCPP
+}
 // chooseMetric
 SEXP chooseMetric(std::string metric_name, List config);
 RcppExport SEXP _clustertree_chooseMetric(SEXP metric_nameSEXP, SEXP configSEXP) {
@@ -156,8 +167,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cut_simplified_hclust
+IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big_n);
+RcppExport SEXP _clustertree_cut_simplified_hclust(SEXP hclSEXP, SEXP cl_inSEXP, SEXP big_nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type hcl(hclSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cl_in(cl_inSEXP);
+    Rcpp::traits::input_parameter< const int >::type big_n(big_nSEXP);
+    rcpp_result_gen = Rcpp::wrap(cut_simplified_hclust(hcl, cl_in, big_n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// simplified_hclust
+List simplified_hclust(List hcl, const int min_sz);
+RcppExport SEXP _clustertree_simplified_hclust(SEXP hclSEXP, SEXP min_szSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type hcl(hclSEXP);
+    Rcpp::traits::input_parameter< const int >::type min_sz(min_szSEXP);
+    rcpp_result_gen = Rcpp::wrap(simplified_hclust(hcl, min_sz));
+    return rcpp_result_gen;
+END_RCPP
+}
+// vol_nSphere
+double vol_nSphere(const int n, const double R);
+RcppExport SEXP _clustertree_vol_nSphere(SEXP nSEXP, SEXP RSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const double >::type R(RSEXP);
+    rcpp_result_gen = Rcpp::wrap(vol_nSphere(n, R));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 1},
     {"_clustertree_chooseMetric", (DL_FUNC) &_clustertree_chooseMetric, 2},
     {"_clustertree_dtbRSL", (DL_FUNC) &_clustertree_dtbRSL, 5},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
@@ -169,6 +218,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
     {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 4},
+    {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},
+    {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
+    {"_clustertree_vol_nSphere", (DL_FUNC) &_clustertree_vol_nSphere, 2},
     {NULL, NULL, 0}
 };
 

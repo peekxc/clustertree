@@ -149,6 +149,7 @@ ANNdist DualTreeKNN::updateBounds(ANNdist new_dist, ANNkd_node* N_q_leaf, ANNkd_
                << " (" << rbnd.knn_known << "/" << AS_LEAF(N_r_leaf)->n_pts << " known)"
                << " max_knn: " << rbnd.maxKNN(AS_LEAF(N_r_leaf)->n_pts)
                << " min_knn: " << rbnd.min_knn << "\n")
+  return(new_dist);
 }
 
 
@@ -311,7 +312,7 @@ inline ANNdist DualTreeKNN::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r){
 
   for (int q_i = 0; q_i < N_q_leaf->n_pts; ++q_i){
     for (int r_i = 0; r_i < N_r_leaf->n_pts; ++r_i){
-      int q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
+      q_idx = N_q_leaf->bkt[q_i], r_idx = N_r_leaf->bkt[r_i];
 
       // Compute Base case, saving knn ids and distances along the way
       if (!hasBeenChecked(q_idx, r_idx)) { ANN_PTS(2) // Has this pair been considered before?

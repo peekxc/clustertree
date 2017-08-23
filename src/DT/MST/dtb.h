@@ -37,14 +37,14 @@ protected:
 public:
   // Main constructors
   DualTreeBoruvka(const bool prune, const int dim, const int n, Metric& m); // default constructor
-  void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
+  void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) override;
 
   // New methods for the derived class
   List DTB(const NumericMatrix& x);
 
   // Overridden Base case and score functions
   ANNdist BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) override;
-  inline ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r) override;
+  ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r) override;
 
   // Base-class functions
   //ANNdist B(ANNkd_node* N_q);

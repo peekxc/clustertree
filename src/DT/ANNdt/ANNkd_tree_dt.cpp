@@ -48,7 +48,7 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   }
   R_INFO("Root created: " << root << "\n")
 
-  ANNdist tmp = ANN_DIST_INF;
+  //ANNdist tmp = ANN_DIST_INF;
   // for (int i = 0; i < n; ++i){
   //   ANNdist centroid_dist = annDist(dd, (ANNpoint) bnd.centroid, (ANNpoint) pa[pidx[i]]);
   //   tmp = centroid_dist < tmp ? centroid_dist : tmp;
