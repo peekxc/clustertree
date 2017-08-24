@@ -81,35 +81,14 @@ List kNN_int(NumericMatrix data, int k,
 // R-facing API for the KNN-focused dual tree traversal
 // TODO: approx unused right now
 // [[Rcpp::export]]
-List dt_kNN_int(NumericMatrix q_x, const int k, int bucketSize, int splitRule, SEXP metric_ptr, // The user-specified metric to use
-                NumericMatrix r_x = NumericMatrix() // reference set (optional)
-                ) {
-
-  // If only query points are given, or q_x and r_x point to the same memory,
-  // only one tree needs to be constructed
-  bool identical_qr = r_x.size() <= 1 ? true : (&q_x) == (&r_x);
-  ANNkd_tree* kd_treeQ, *kd_treeR;
-
-  // Copy data over to ANN point array
-  ANNpointArray qx_ann = matrixToANNpointArray(q_x);
+List dt_kNN_int(const NumericMatrix& q_x, const int k, int bucketSize, int splitRule, SEXP metric_ptr, // The user-specified metric to use
+                NumericMatrix r_x = NumericMatrix())
+  {
 
   // Construct the dual tree KNN instance
   Metric& metric = getMetric(metric_ptr);
-  DualTreeKNN dt_knn = DualTreeKNN(true, q_x.ncol(), metric);
-
-  // Construct the tree(s)
-  if (identical_qr){
-    r_x = q_x; // Ensure r_x and q_x are identical incase r_x was NULL
-    kd_treeQ = dt_knn.ConstructTree(qx_ann, q_x.nrow(), q_x.ncol(), bucketSize, (ANNsplitRule) splitRule);
-    kd_treeR = kd_treeQ;
-  } else {
-    ANNpointArray rx_ann = matrixToANNpointArray(r_x);
-    kd_treeQ = dt_knn.ConstructTree(qx_ann, q_x.nrow(), q_x.ncol(), bucketSize, (ANNsplitRule) splitRule);
-    kd_treeR = dt_knn.ConstructTree(rx_ann, r_x.nrow(), r_x.ncol(), bucketSize, (ANNsplitRule) splitRule);
-  }
-
-  // With the tree(s) created, setup KNN-specific bounds
-  dt_knn.setup(kd_treeQ, kd_treeR);
+  List config = List::create(_["bucketSize"] = bucketSize, _["splitRule"] = splitRule);
+  DualTreeKNN dt_knn = DualTreeKNN(q_x, metric, r_x, config);
 
   // Note: the search also returns the point itself (as the first hit)!
   // So we have to look for k+1 points.

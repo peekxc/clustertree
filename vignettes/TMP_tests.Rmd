@@ -6,6 +6,20 @@ output: html_notebook
 
 
 ```{r}
+load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
+X_n <- StockDividends[, 2:12]
+
+## Supply Variables/parameters
+{ n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
+
+
+# clustertree::knn(X_n, k = 5)
+
+clustertree::clustertree(X_n)
+
+
+
+
 X_n <- as.matrix(iris[, 1:4])
 n <- row(X_n)
 r_k <- apply(dbscan::kNNdist(X_n, k = 5), 1, max)

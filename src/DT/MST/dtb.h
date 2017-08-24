@@ -30,14 +30,9 @@ protected:
   // Are all descendent points of a given node in the same component?
   // -1 if no, o.w. stores the component index
   std::unordered_map<ANNkd_node*, int> ALL_CC_SAME;
-
-  //edge* knn;  // Map between point index and kNN priority queue (k = 1 in this case)
-  // std::unordered_map<unsigned int, double_edge> N; // Map from component index to shortest edge between components
-  // std::unordered_map<unsigned int, ANNdist> D; // Map from component index to shortest edge distance
 public:
   // Main constructors
-  DualTreeBoruvka(const bool prune, const int dim, const int n, Metric& m); // default constructor
-  void setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) override;
+  DualTreeBoruvka(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x = emptyMatrix, List& config = default_params);
 
   // New methods for the derived class
   List DTB(const NumericMatrix& x);
@@ -46,13 +41,8 @@ public:
   ANNdist BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) override;
   ANNdist Score(ANNkd_node* N_q, ANNkd_node* N_r) override;
 
-  // Base-class functions
-  //ANNdist B(ANNkd_node* N_q);
-  //void pDFS(ANNkd_node* N_q, ANNkd_node* N_r);
-  //void DFS(ANNkd_node* N_q, ANNkd_node* N_r){};
-
   // Simple check to see if the components are fully connected, indicating a spanning tree is complete
-  bool fully_connected(){
+  inline bool fully_connected(){
     bool is_fully_connected = true;
     for (int i = 0; i < CC.size - 1 && is_fully_connected; ++i){
       is_fully_connected = CC.Find(i) == CC.Find(i+1);

@@ -7,13 +7,16 @@ context("clustertree")
 load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
+X_n <- as.matrix(iris[1:15, 1:2])
+clustertree::clustertree(X_n)
+
 ## Supply Variables/parameters
 { n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
 
 ## Automatically detecting k ~ dlogn sets k around 39, more neighbors than records!
 test_that("Parameter detection works", {
   expect_error(clustertree::clustertree(X_n))
-  expect_warning(clustertree::clustertree(X_n, k = 5L, warn_parameter_settings = T))
+  expect_warning(clustertree::clustertree(X_n, k = 5L, warn = T))
 })
 
 ## Make sure setup code at least works

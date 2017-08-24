@@ -9,16 +9,12 @@ chooseMetric <- function(metric_name, config) {
     .Call('_clustertree_chooseMetric', PACKAGE = 'clustertree', metric_name, config)
 }
 
-dtbRSL <- function(x, r_k, alpha, type, metric_ptr) {
-    .Call('_clustertree_dtbRSL', PACKAGE = 'clustertree', x, r_k, alpha, type, metric_ptr)
-}
-
 primsRSL <- function(r, r_k, n, alpha, type) {
     .Call('_clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
 }
 
-clusterTree <- function(dist_x, r_k, k, alpha = 1.414213562373095, type = 0L) {
-    .Call('_clustertree_clusterTree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
+clusterTree_int <- function(x, k, alpha = 1.414213562373095, type = 0L) {
+    .Call('_clustertree_clusterTree_int', PACKAGE = 'clustertree', x, k, alpha, type)
 }
 
 kd_knn <- function(query_x, tree_ptr, k, priority) {

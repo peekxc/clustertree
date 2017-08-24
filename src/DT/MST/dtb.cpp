@@ -4,22 +4,9 @@ using namespace Rcpp;
 #include "dtb.h"
 
 
-DualTreeBoruvka::DualTreeBoruvka(const bool prune, const int dim, const int n, Metric& m)
-  : DualTreeKNN(prune, dim, m), CC(UnionFind(n)) {
-  N_q_par = N_r_par = NULL;
-  if (prune){
-    R_INFO("Allocating KNN bound map\n")
-    bnd_knn = new std::unordered_map<ANNkd_node*, BoundKNN& >();
-  }
-}
-
-void DualTreeBoruvka::setup(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR) {
-  setTrees(kd_treeQ, kd_treeR);  // Call parent class setup to assign trees
-  if (use_pruning){
-    for (std::unordered_map<ANNkd_node*, const Bound& >::iterator bnd = bounds->begin(); bnd != bounds->end(); ++bnd){
-      bnd_knn->insert(std::pair<ANNkd_node*, BoundKNN& >(bnd->first, (BoundKNN&) *new BoundKNN()));
-    }
-  }
+DualTreeBoruvka::DualTreeBoruvka(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List& config)
+  : DualTreeKNN(q_x, m, r_x, config), CC(UnionFind(q_x.nrow())) {
+  // No initialization to do beyond this
 }
 
 // Base case for DTB (when the query and reference sets are identical)
@@ -37,8 +24,8 @@ inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_
 
       // Compute Base case, saving knn ids and distances along the way
       if (!hasBeenChecked(q_idx, r_idx)) { ANN_PTS(2) // Has this pair been considered before?
-        min_dist_q = (*knn->at(q_idx)).max_key(); // k-th smallest distance so far (query)
-        min_dist_r = (*knn->at(r_idx)).max_key(); // k-th smallest distance so far (reference)
+        min_dist_q = (knn.at(q_idx))->max_key(); // k-th smallest distance so far (query)
+        min_dist_r = (knn.at(r_idx))->max_key(); // k-th smallest distance so far (reference)
         dist = q_idx == r_idx ? 0 : computeDistance(q_idx, r_idx, min_dist_q, min_dist_r);
         R_PRINTF("q: %d <--> r: %d = %f", q_idx, r_idx, dist)
         R_INFO(", qknn dist: " << min_dist_q << ", rknn dist: " << min_dist_r << "\n")
@@ -47,15 +34,15 @@ inline ANNdist DualTreeBoruvka::BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_
         bool add_query_known = false, add_ref_known = false;
         if (dist < min_dist_q){
           R_PRINTF("Adding r_idx: %d to q_idx: %d knn queue\n", r_idx, q_idx)
-          add_query_known = (*knn->at(q_idx)).insert(dist, r_idx); }
+          add_query_known = (knn.at(q_idx))->insert(dist, r_idx); }
         if (dist < min_dist_r && q_idx != r_idx){
           R_PRINTF("Adding q_idx: %d to r_idx: %d knn queue\n", q_idx, r_idx)
-          add_ref_known = (*knn->at(r_idx)).insert(dist, q_idx);
+          add_ref_known = (knn.at(r_idx))->insert(dist, q_idx);
         }
 
         // Update the kth smallest distances
-        min_dist_q = (*knn->at(q_idx)).max_key(); // updated k-th smallest distance so far (query)
-        min_dist_r = (*knn->at(r_idx)).max_key(); // updated k-th smallest distance so far (reference)
+        min_dist_q = (knn.at(q_idx))->max_key(); // updated k-th smallest distance so far (query)
+        min_dist_r = (knn.at(r_idx))->max_key(); // updated k-th smallest distance so far (reference)
         updateBounds(dist, N_q_leaf, N_r_leaf, min_dist_q, min_dist_r, add_query_known, add_ref_known); // Upda
 
         // Main DTB step: update the shortest edge to the nearest component
@@ -176,17 +163,17 @@ List DualTreeBoruvka::DTB(const NumericMatrix& x){
   D = std::vector<ANNdist>(n, ANN_DIST_INF); // one distance per component
 
   // Initialize knn structure with k = 2 (1 neighbor outside of identity)
-  knn = new std::unordered_map<ANNidx, ANNmin_k*>();
-  knn->reserve(n); // reserve enough buckets to hold at least n_pts items
+  knn = std::unordered_map<ANNidx, ANNmin_k*>();
+  knn.reserve(n); // reserve enough buckets to hold at least n_pts items
   for (int i = 0; i < n; ++i) {
-    knn->insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(2)));
+    knn.insert(std::pair<ANNidx, ANNmin_k*>(qtree->pidx[i], new ANNmin_k(2)));
   }
 
   // Initialize the components as all false
   ALL_CC_SAME = std::unordered_map<ANNkd_node*, int>();
   ALL_CC_SAME.reserve(n);
   if (use_pruning){
-    for (std::unordered_map<ANNkd_node*, const Bound& >::iterator bnd = bounds->begin(); bnd != bounds->end(); ++bnd){
+    for (std::unordered_map<ANNkd_node*, const Bound& >::iterator bnd = bounds.begin(); bnd != bounds.end(); ++bnd){
       ALL_CC_SAME.insert(std::make_pair(bnd->first, -1));
     }
   }

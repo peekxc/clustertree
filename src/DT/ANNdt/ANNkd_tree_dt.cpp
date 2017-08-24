@@ -5,9 +5,9 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   int					n,				// number of points
   int					dd,				// dimension
   Metric& m,            // The metric distance to build the tree on
+  std::unordered_map<ANNkd_node*, const Bound& >& bounds, // bounds
   int					bs,				// bucket size
-  ANNsplitRule		split, // splitting method
-  std::unordered_map<ANNkd_node*, const Bound& >* bounds // bounds
+  ANNsplitRule		split // splitting method
   )
 {
   R_PRINTF("Dimension of trees: %d\n", dd);
@@ -59,8 +59,15 @@ ANNkd_tree_dt::ANNkd_tree_dt(					// construct from point array
   bnd.rho = bnd.lambda; // also upper bound
 
   // Insert root as final key
-  bounds->insert(std::pair< ANNkd_ptr, const Bound& >(root, bnd));
+  bounds.insert(std::pair< ANNkd_ptr, const Bound& >(root, bnd));
 }
+
+ANNkd_tree_dt::~ANNkd_tree_dt(){
+  if (root != NULL) delete root;
+  if (pidx != NULL) delete [] pidx;
+  if (bnd_box_lo != NULL) annDeallocPt(bnd_box_lo);
+  if (bnd_box_hi != NULL) annDeallocPt(bnd_box_hi);
+};
 
 // Recursive procedure to actually create the tree
 ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
@@ -72,7 +79,7 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     int					bsp,			// bucket space
     ANNorthRect			&bnd_box,		// bounding box for current node
     ANNkd_splitter		splitter, // splitting routine
-    std::unordered_map<ANNkd_node*, const Bound& >* bounds // bounds map
+    std::unordered_map<ANNkd_node*, const Bound& >& bounds // bounds map
   )
 {
   if (n <= bsp) {						// n small, make a leaf node
@@ -91,7 +98,7 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
       // };
       leaf_bnd.lambda = tmp; // max desc. distance -- upper bound
       leaf_bnd.rho = tmp; // maxi child distance -- upper bound
-      bounds->insert(std::pair< ANNkd_ptr, const Bound& >(new_leaf, leaf_bnd));
+      bounds.insert(std::pair< ANNkd_ptr, const Bound& >(new_leaf, leaf_bnd));
       return new_leaf;
     }
   }
@@ -133,7 +140,7 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     node_bnds.rho = node_bnds.lambda; // use same bound
 
     // Save bounding information in the hash map
-    bounds->insert(std::pair< ANNkd_ptr, const Bound& >(ptr, node_bnds));
+    bounds.insert(std::pair< ANNkd_ptr, const Bound& >(ptr, node_bnds));
     return ptr; // return pointer to this node
   }
 }

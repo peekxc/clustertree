@@ -96,23 +96,11 @@ NumericMatrix primsMST(const NumericVector dist_x){
 }
 
 // [[Rcpp::export]]
-List dtb(NumericMatrix x, SEXP metric_type, const int bkt_size = 30, bool prune = true) {
-  // Copy data over to ANN point array
-  ANNkd_tree* kd_treeQ, *kd_treeR;
-  ANNpointArray x_ann = matrixToANNpointArray(x);
+List dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size = 30, bool prune = true) {
 
   // Construct the dual tree KNN instance
   Metric& metric = (Metric&) metric_type;
-  DualTreeBoruvka dtb = DualTreeBoruvka(prune, x.ncol(), x.nrow(), metric);
-
-  // Construct the tree
-  ANNkd_tree* kd_tree = dtb.ConstructTree(x_ann, x.nrow(), x.ncol(), bkt_size, ANN_KD_SUGGEST);
-
-  // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
-  dtb.setup(kd_tree, kd_tree);
-
-  // Debug mode: Print the tree
-  UTIL(dtb.PrintTree((ANNbool) true, true))
+  DualTreeBoruvka dtb = DualTreeBoruvka(x, metric);
 
   // Run the dual tree boruvka algorithm
   List mst = dtb.DTB(x);

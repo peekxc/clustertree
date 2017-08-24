@@ -6,10 +6,11 @@ using namespace Rcpp;
 
 // ANN library + dual tree extensions
 #include <ANN/ANN.h>
-#include "ANNdt/ANNkd_tree_dt.h"
-#include "net_sort.h" // 2, 3, and 4 size sorting networks
+#include <ANN/kd_tree/kd_split.h> // ANNsplitRule
+#include <DT/ANNdt/ANNkd_tree_dt.h>
 
 // Utilities
+#include "net_sort.h" // 2, 3, and 4 size sorting networks
 #include <utilities.h> // R_INFO, profiling mode, etc.
 #include <metrics.h> // different metrics
 
@@ -36,28 +37,30 @@ struct candidate_pair {
   candidate_pair() : beenChecked(false), eps(ANN_DIST_INF) {}
 };
 
+// To use as a default parameter
+static NumericMatrix emptyMatrix = NumericMatrix();
+static List default_params = Rcpp::List::create(Rcpp::Named("bucketSize") = 10,
+                                                Rcpp::Named("splitRule") = 5);
+
 // ---- DualTree class definition ----
 class DualTree {
 public:
   Metric& m_dist;
-  const bool use_pruning; // whether to use a pruning-based approach
-  const int d; // dimension
+  bool use_pruning; // whether to use a pruning-based approach
+  int d; // dimension
   ANNkd_tree* qtree, *rtree; // query and reference tree pointers; could also be pointers to derived ANNkd_tree_dt types
-  std::unordered_map<ANNkd_node*, const Bound& >* bounds; // Various bounds per-node to fill in (node_ptr -> bounds)
-  std::map< std::pair<int, int>, candidate_pair>* BC_check; // Base Case point pair check: should default to false if no key found!
+  std::unordered_map<ANNkd_node*, const Bound& > bounds; // Various bounds per-node to fill in (node_ptr -> bounds)
+  std::map< std::pair<int, int>, candidate_pair> BC_check; // Base Case point pair check: should default to false if no key found!
 
   #ifdef NDEBUG
     std::map<ANNkd_node*, char> node_labels; // in debug mode the nodes are labeled with characters
   #endif
 
-  DualTree(const bool prune, const int dim, Metric& m);
-  virtual void setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR);
-  virtual void setRefTree(ANNkd_tree* ref_tree) { rtree = ref_tree; };
-  virtual void setQueryTree(ANNkd_tree* query_tree) { qtree = query_tree; };
+  // Setup everything in the constructor!
+  DualTree(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x = emptyMatrix, List& config = default_params);
 
   // Constructs one ANNkd_tree object. If pruning is set in the constructor, additional bounds are computed.
-  virtual ANNkd_tree* ConstructTree(ANNpointArray x, const int nrow, const int ncol,
-                                    const int bkt_sz = 15, ANNsplitRule = ANN_KD_SUGGEST);
+  virtual ANNkd_tree* ConstructTree(const NumericMatrix& x, const int bkt_sz = 15, ANNsplitRule = ANN_KD_SUGGEST);
 
   // Utility
   void PrintTree(ANNbool with_pts, bool);
@@ -96,24 +99,24 @@ public:
   // combinations from being scored multiple times.
   inline const bool hasBeenChecked(const ANNidx q_idx, const ANNidx r_idx){
     // inserts new entry (w/ value false) if the value didn't exist
-    const bool pair_visited = (*BC_check)[std::minmax(q_idx, r_idx)].beenChecked;
+    const bool pair_visited = BC_check[std::minmax(q_idx, r_idx)].beenChecked;
     if (!pair_visited) {
       R_INFO("== Calling base case for: q = " << q_idx << ", r = " << r_idx << "\n")
-      (*BC_check)[std::minmax(q_idx, r_idx)].beenChecked = true; // Update knowledge known about the nodes
+      BC_check[std::minmax(q_idx, r_idx)].beenChecked = true; // Update knowledge known about the nodes
     }
     return pair_visited;
   }
 
   // Reset whether the base cases have been compared before
   void resetBaseCases(){
-    for(std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check->begin(); it != BC_check->end(); ++it){
-      (*BC_check)[it->first].beenChecked = false;
+    for(std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check.begin(); it != BC_check.end(); ++it){
+      BC_check[it->first].beenChecked = false;
     }
   }
 
   // Future work
   inline const void updateEps(const ANNidx q_idx, const ANNidx r_idx, ANNdist eps){
-    (*BC_check)[std::minmax(q_idx, r_idx)].eps = eps;
+    BC_check[std::minmax(q_idx, r_idx)].eps = eps;
   }
 
   inline ANNdist min_dist(ANNkd_node* N_q, ANNkd_node* N_r){// assume query and reference
@@ -123,8 +126,8 @@ public:
     assert(bounds->find(N_q) != bounds->end() && bounds->find(N_r) != bounds->end());
 
     // Retrieve the bounds
-    const Bound& nq_bound = (*bounds)[N_q];
-    const Bound& nr_bound = (*bounds)[N_r];
+    const Bound& nq_bound = bounds[N_q];
+    const Bound& nr_bound = bounds[N_r];
 
     // Compute the minimum box distance
     // TODO: Move to other metrics, save result in cache

@@ -4,6 +4,7 @@ using namespace Rcpp;
 #include <clustertree/dtb_ct.h> // Dual Tree Boruvka extensions for RSL
 #include <hclust_util.h> // Hclust extensions
 #include <ANN/ANN_util.h> // matrixToANNpointArray
+#include <metrics.h>
 
 // Computes the connection radius, i.e. the linkage criterion
 double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type) {
@@ -33,34 +34,31 @@ double getConnectionRadius(double dist_ij, double radius_i, double radius_j, dou
   return std::numeric_limits<double>::max();
 }
 
-// Use the dual tree boruvka approach to compute the cluster tree
-// [[Rcpp::export]]
-List dtbRSL(const NumericMatrix& x, const NumericVector& r_k, const double alpha, const int type, SEXP metric_ptr){
-  const int d = x.ncol();
-  const int n = x.nrow();
-
-  // Copy data over to ANN point array
-  // ANNkd_tree* kd_treeQ, *kd_treeR;
-  ANNpointArray x_ann = matrixToANNpointArray(x);
-
-  // Construct the dual tree KNN instance
-  Metric& metric = getMetric(metric_ptr);
-  DTB_CT dtb_setup = DTB_CT(true, d, n, metric, r_k, alpha);
-
-  // Construct the tree
-  ANNkd_tree* kd_tree = dtb_setup.ConstructTree(x_ann, x.nrow(), x.ncol(), 30, ANN_KD_SUGGEST);
-
-  // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
-  dtb_setup.setup(kd_tree, kd_tree);
-
-  // Debug mode: Print the tree
-  UTIL(dtb.PrintTree((ANNbool) true, true))
-
-  // Run the dual tree boruvka algorithm (w/ augmented distance function)
-  List mst = dtb_setup.DTB(x);
-
-  return mst;
-}
+// // Use the dual tree boruvka approach to compute the cluster tree
+// List dtbRSL(const NumericMatrix& x, const NumericVector& r_k, const double alpha, const int type, SEXP metric_ptr){
+//   const int d = x.ncol();
+//   const int n = x.nrow();
+//
+//   // Copy data over to ANN point array
+//   // ANNkd_tree* kd_treeQ, *kd_treeR;
+//   ANNpointArray x_ann = matrixToANNpointArray(x);
+//
+//   // Construct the dual tree KNN instance
+//   Metric& metric = getMetric(metric_ptr);
+//   const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x = emptyMatrix, List config = List::create()
+//   DTB_CT dtb_setup = DTB_CT(x, metric, emptyMatrix, alpha);
+//
+//   // Construct the tree
+//   ANNkd_tree* kd_tree = dtb_setup.ConstructTree(x_ann, x.nrow(), x.ncol(), 30, ANN_KD_SUGGEST);
+//
+//   // With the tree(s) created, setup DTB-specific bounds, assign trees, etc.
+//   dtb_setup.setup(kd_tree, kd_tree);
+//
+//   // Run the dual tree boruvka algorithm (w/ augmented distance function)
+//   List mst = dtb_setup.DTB(x);
+//
+//   return mst;
+// }
 
 /*
  * Compute MST using variant of Prim's, constrained by the radius of the Balls around each x_i.
@@ -118,24 +116,42 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
 }
 
 // [[Rcpp::export]]
-List clusterTree(const NumericVector dist_x, const NumericVector r_k, const int k, const double alpha = 1.414213562373095,
-                 const int type = 0) {
-  std::string message = "clusterTree expects a 'dist' object.";
-  if (!dist_x.hasAttribute("class") || as<std::string>(dist_x.attr("class")) != "dist") { stop(message); }
-  if (!dist_x.hasAttribute("method")) { stop(message); }
-  if (!dist_x.hasAttribute("Size")){ stop(message); }
-  if (as<std::string>(dist_x.attr("method")) != "euclidean") { warning("RSL expects euclidean distances.");}
+List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.414213562373095, const int type = 0) {
 
   // Number of data points
-  const int n = as<int>(dist_x.attr("Size"));
+  //const int n = x.nrow();
+  const int d = x.ncol();
 
-  // Get ordered radii, use R order function to get consistent ordering
-  NumericVector r = Rcpp::clone(dist_x);
+  // Use euclidean distance
+  L_2 euc_metric = L_2();
+  euc_metric.d = d;
 
+
+  //Cretae dual tree
+  DualTreeKNN dt = DualTreeKNN(x, euc_metric);
+
+  return(List::create());
+
+  // Run the KNN to get the radii
+  //NumericMatrix r_x = Rcpp::no_init_matrix(0, 0);
+  // DualTreeKNN dt_knn = DualTreeKNN(x, euc_metric);
+  // List knn = dt_knn.KNN(k+1);
+  // NumericMatrix knn_dist = knn["dist"];
+  // NumericVector r_k = knn_dist.column(k - 1);
+  //
+  // return (knn);
+  // Get the
+  //DTB_CT dtb_ct = DTB_CT(true, d, n, euc_metric, r_k, alpha);
+
+  // Run the dual tree boruvka to get the MST
+  //List res = dtb_ct.DTB(x);
+
+  // cleanup
+  //delete euc_metric;
   // Run the MST with set parameters
-  NumericMatrix mst = primsRSL(r, r_k, n, alpha, type);
+  //NumericMatrix mst = primsRSL(r, r_k, n, alpha, type);
 
   // Convert to HCLUST object
-  List res = mstToHclust(mst);
-  return (res);
+  //List res = mstToHclust(mst);
+  //return (res);
 }

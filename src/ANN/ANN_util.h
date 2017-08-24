@@ -5,7 +5,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-static ANNpointArray matrixToANNpointArray(NumericMatrix x){
+static ANNpointArray matrixToANNpointArray(const NumericMatrix& x){
   // Copy data over to ANN point array
   int nrow = x.nrow(), ncol = x.ncol();
   ANNpointArray dataPts = annAllocPts(nrow, ncol);

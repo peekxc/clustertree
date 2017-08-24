@@ -1,10 +1,10 @@
 #include "dtb_ct.h" // Dual Tree Borvuka definitions
 
 // use default constructor
-DTB_CT::DTB_CT(const bool prune, const int dim, const int n, Metric& m, const NumericVector& _r_k, const double _alpha)
-  : DualTreeBoruvka(prune, dim, n, m), alpha(_alpha), r_k(_r_k) {
-  N_q_par = N_r_par = NULL;
-  if (prune){ bnd_knn = new std::unordered_map<ANNkd_node*, BoundKNN& >(); }
+DTB_CT::DTB_CT(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List& config) : DualTreeBoruvka(q_x, m, r_x, config)
+{
+  if (!config.containsElementNamed("alpha")) Rcpp::stop("Invalid parameters passed to Dual Tree Boruvka.");
+  alpha = (double) config["alpha"];
 }
 
 // Override the istance calculation to bound the connection radii

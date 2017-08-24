@@ -6,8 +6,8 @@
 \alias{knn}
 \title{Compute the Empirical Cluster Tree}
 \usage{
-clustertree(x, k = "suggest", alpha = "suggest", estimator = c("RSL",
-  "knn", "mutual knn"), warn_parameter_settings = FALSE)
+clustertree(x, d = ncol(x), k = "suggest", alpha = "suggest",
+  estimator = c("RSL", "knn", "mutual knn"), warn = FALSE)
 
 knn(x, k, r_x = NULL, metric = "euclidean", method = c("dual tree",
   "single tree"), bucketSize = 15L, splitRule = "suggest", ...)
@@ -17,7 +17,7 @@ knn(x, k, r_x = NULL, metric = "euclidean", method = c("dual tree",
 
 \item{k}{integer; smoothing parameter, controls the radius of the ball containing k points around each x_i.}
 
-\item{alpha}{float; regularity parameter determing when to connect points. See below for details.}
+\item{alpha}{float; regularity parameter that prevents excessive chaining. Can be safely kept on the default. See below for details.}
 
 \item{r_x}{the reference data set, if any. See details.}
 
@@ -35,16 +35,17 @@ knn(x, k, r_x = NULL, metric = "euclidean", method = c("dual tree",
 \item{k}{the number of neighbors to find.}
 }
 \description{
-More details coming soon...
+Implements various estimators for estimating the empirical cluster tree.
 
 More details coming soon...
 }
 \note{
 The default 'k' parameter will differ between if a 'dist' object is given vs. the original data set, as with
 the dist object the original dimensionality of the data is unknown (to which the default setting of k depends on).
+Chaudhuri et. al recommend keeping alpha as low as possible, subject to being no lower than sqrt(2).
 }
 \references{
-See KC and SD.
+See Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
 
 1. Mount, David M., and Sunil Arya. "ANN: library for approximate nearest neighbour searching." (1998).
 }

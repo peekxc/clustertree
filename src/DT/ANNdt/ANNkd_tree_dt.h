@@ -22,11 +22,11 @@ public:
     int					n,				// number of points
     int					dd,				// dimension
     Metric& m,            // The metric distance to build the tree on
+    std::unordered_map<ANNkd_node*, const Bound& >& bounds, // Map of the bounds to compute recursively in the tree construction
     int					bs = 1,				// bucket size
-    ANNsplitRule		split = ANN_KD_SUGGEST, // splitting method
-    std::unordered_map<ANNkd_node*, const Bound& >* bounds = NULL // Map of the bounds to compute recursively in the tree construction
+    ANNsplitRule		split = ANN_KD_SUGGEST // splitting method
     );
-  // ~ANNkd_tree_dt();						// tree destructor
+  ~ANNkd_tree_dt();						// tree destructor
 };
 
 //----------------------------------------------------------------------
@@ -41,7 +41,7 @@ ANNkd_ptr rkd_tree_pr(				// recursive construction of kd-tree
     int					bsp,			// bucket space
     ANNorthRect			&bnd_box,		// bounding box for current node
     ANNkd_splitter		splitter, 	// splitting routine
-    std::unordered_map<ANNkd_node*, const Bound& >* bounds // additional argument to store bound objects
+    std::unordered_map<ANNkd_node*, const Bound& >& bounds // additional argument to store bound objects
 );
 
 #endif

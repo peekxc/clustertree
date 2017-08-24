@@ -3,27 +3,46 @@ using namespace Rcpp;
 
 // Local header includes
 #include "dt.h"
-#include <ANN/kd_tree/kd_split.h> // ANNsplitRule
+#include <ANN/ANN_util.h>
 
 // Constructor initializes the bounds map (if pruning is enabled), and base case map
-DualTree::DualTree(const bool prune, const int dim, Metric& m): m_dist(m), use_pruning(prune), d(dim) {
-  if (use_pruning){ bounds = new std::unordered_map<ANNkd_node*, const Bound& >(); }
-  BC_check = new std::map< std::pair<int, int>, candidate_pair>();
-}
+DualTree::DualTree(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List& config): m_dist(m) {
 
-// Derivable setup function
-void DualTree::setTrees(ANNkd_tree* kd_treeQ, ANNkd_tree* kd_treeR){
-  // Check dimensionality, then assign trees if the same
-  if (kd_treeR->theDim() != kd_treeQ->theDim() || kd_treeR->theDim() != d){ stop("Dimensionality of the query set does not match the reference set."); }
-  // R_PRINTF("Setting up dual trees for %d dimensions\n", d)
-  rtree = kd_treeR;
-  qtree = kd_treeQ;
+  d = q_x.ncol(); // Dimensionality of the data set
+  use_pruning = true;// todo: change this to allow non-pruning option
+
+  // Construct bounds map to record various bounding information computed during
+  // tree construction time
+  if (use_pruning){ bounds = std::unordered_map<ANNkd_node*, const Bound& >(); }
+
+  // Base cases: one for every pairwise combination
+  BC_check = std::map< std::pair<int, int>, candidate_pair>();
+
+  // Construct the tree(s)
+  Rcout << "Bucket Size: " << ((int) as<int>(config["bucketSize"])) << std::endl;
+  Rcout << "Split Rule: " << ((int) config["splitRule"]) << std::endl;
+  if (!config.containsElementNamed("bucketSize")){ Rcpp::stop("Invalid tree parameters passed in."); }
+  if (!config.containsElementNamed("splitRule")){ Rcpp::stop("Invalid tree parameters passed in."); }
+  int bucketSize = config["bucketSize"];
+  int splitRule = config["splitRule"];
+
+  ANNkd_tree* kd_treeQ, *kd_treeR;
+
+  if (r_x.size() <= 1){
+    r_x = q_x; // Ensure r_x and q_x are identical incase r_x was NULL
+    qtree = ConstructTree(q_x, bucketSize, (ANNsplitRule) splitRule);
+    rtree = qtree;
+  } else {
+    qtree = ConstructTree(q_x, bucketSize, (ANNsplitRule) splitRule);
+    rtree = ConstructTree(r_x, bucketSize, (ANNsplitRule) splitRule);
+  }
+  if (qtree->theDim() != rtree->theDim() || rtree->theDim() != d){ stop("Dimensionality of the query set does not match the reference set."); }
 }
 
 // Use specialized base cases based on whether the trees are identical
 // (Identical implying they were built on the same data set, and with the same
 // splitting criteria)
-inline ANNdist DualTree::BaseCase(ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf){
+ANNdist DualTree::BaseCase(ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf){
   if(qtree == rtree){ return BaseCaseIdentity(N_q_leaf, N_r_leaf); }
   else { return BaseCaseNonIdentity(N_q_leaf, N_r_leaf); }
 }
@@ -163,28 +182,29 @@ void DualTree::PrintTree(ANNbool with_pts, bool ref_tree){
 
 // Returns the base cases checked
 IntegerMatrix DualTree::getBaseCases(){
-  IntegerMatrix basecases = IntegerMatrix(BC_check->size(), 2);
+  IntegerMatrix basecases = IntegerMatrix(BC_check.size(), 2);
   int i = 0;
-  for (std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check->begin(); it != BC_check->end(); ++it, ++i){
+  for (std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check.begin(); it != BC_check.end(); ++it, ++i){
     basecases(i, _) = IntegerVector::create(it->first.first, it->first.first);
   }
   return basecases;
 }
 
-ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int ncol, const int bkt_sz, ANNsplitRule split_rule){
+ANNkd_tree* DualTree::ConstructTree(const NumericMatrix& x, const int bkt_sz, ANNsplitRule split_rule){
   // Create kd tree, either a dual tree version with bounds or a regular ANN kd tree
   ANNkd_tree* kdTree;
+  ANNpointArray x_ann = matrixToANNpointArray(x);
   if (use_pruning){
-    kdTree = new ANNkd_tree_dt(x, nrow, ncol, m_dist, bkt_sz, ANN_KD_SUGGEST, bounds); // use bound base class
-    R_INFO("Bounds computed at tree construction: " << bounds->size() << "\n")
+    kdTree = new ANNkd_tree_dt(x_ann, x.nrow(), x.ncol(), m_dist, bounds, bkt_sz, ANN_KD_SUGGEST); // use bound base class
+    R_INFO("Bounds computed at tree construction: " << bounds.size() << "\n")
     #ifdef NDEBUG
       node_labels = *new std::map<ANNkd_node*, char>();
       char letter='A';
-      for (std::unordered_map<ANNkd_node*, const Bound& >::iterator it = bounds->begin(); it != bounds->end(); ++it){
+      for (std::unordered_map<ANNkd_node*, const Bound& >::iterator it = bounds.begin(); it != bounds.end(); ++it){
         const Bound& c_bnd = it->second;
         node_labels.insert(std::make_pair(it->first, letter));
         Rcout << "Node: " << letter << ", Centroid: (";
-        for (int i = 0; i < ncol; ++i){ Rcout << c_bnd.centroid[i] << ", "; }
+        for (int i = 0; i < x.ncol(); ++i){ Rcout << c_bnd.centroid[i] << ", "; }
         Rcout << "), Lambda: " << c_bnd.lambda << ", Rho: " << c_bnd.rho << "\n";
         // Rcout << " Bnd Box: ";
         //for (int i = 0; i < ncol; ++i){ Rcout <<  << ", "; }
@@ -192,7 +212,7 @@ ANNkd_tree* DualTree::ConstructTree(ANNpointArray x, const int nrow, const int n
       }
     #endif
   } else {
-    kdTree = new ANNkd_tree(x, nrow, ncol, bkt_sz, ANN_KD_SUGGEST);
+    kdTree = new ANNkd_tree(x_ann, x.nrow(), x.ncol(), bkt_sz, ANN_KD_SUGGEST);
   }
   return kdTree;
 }

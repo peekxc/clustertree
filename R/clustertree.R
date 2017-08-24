@@ -15,17 +15,10 @@
 clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
                         estimator = c("RSL", "knn", "mutual knn"),
                         warn = FALSE){
-  if (is(x, "dist")){
-    d <- ifelse(missing(d), NULL, d)
-    dist_x <- x
-    k <- ifelse(missing(k), log(nrow(dist_x)), k)
-  } else {
-    x <- as.matrix(x)
-    dist_x <- dist(x, method = "euclidean")
-    k <- ifelse(missing(k), ncol(x) * log(nrow(x)), k)
-    if (!is.matrix(x)) stop("clustertree expects the data to be either matrix-convertible or a dist-object.")
-  }
-  k <- as.integer(k)
+  if (is.null(dim(x))) stop("'clustertree' expects x to be a matrix-coercible object.")
+  x <- as.matrix(x)
+  if (!storage.mode(x) %in% c("double", "integer")) stop("'clustertree' expects x to be numeric or integer only.")
+  k <- as.integer(ifelse(missing(k), ncol(x) * log(nrow(x)), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   ## Choose estimator
@@ -39,15 +32,15 @@ clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
   warn_message <- "Existing clustertree analysis relies on alpha being at least sqrt(2) and k being at least as large as d*log(n)."
   if (k < ceiling(ncol(x) * log(nrow(x))) && warn) warning(warn_message)
 
-  r_k <- dbscan::kNNdist(x, k = k - 1)
-  hc <- clusterTree(dist_x = dist_x, r_k = apply(r_k, 1, max), k = k, alpha = alpha, type = type)
+  ## Call the cluster tree function
+  # r_k <- knn(x, k = k - 1)
+  hc <- clusterTree_int(x = x, k = k, alpha = alpha, type = type)
   hc$call <- match.call()
   hc$method <- possible_estimators[type+1]
   res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree")
   return(res)
 }
 
-#' @export
 print.clustertree <- function(C_n){
   type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
