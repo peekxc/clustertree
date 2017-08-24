@@ -138,16 +138,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // dtb
-List dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size, bool prune);
-RcppExport SEXP _clustertree_dtb(SEXP xSEXP, SEXP metric_typeSEXP, SEXP bkt_sizeSEXP, SEXP pruneSEXP) {
+NumericMatrix dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size);
+RcppExport SEXP _clustertree_dtb(SEXP xSEXP, SEXP metric_typeSEXP, SEXP bkt_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
     Rcpp::traits::input_parameter< SEXP >::type metric_type(metric_typeSEXP);
     Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
-    Rcpp::traits::input_parameter< bool >::type prune(pruneSEXP);
-    rcpp_result_gen = Rcpp::wrap(dtb(x, metric_type, bkt_size, prune));
+    rcpp_result_gen = Rcpp::wrap(dtb(x, metric_type, bkt_size));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -200,7 +199,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 6},
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
-    {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 4},
+    {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 3},
     {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},
     {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
     {"_clustertree_vol_nSphere", (DL_FUNC) &_clustertree_vol_nSphere, 2},

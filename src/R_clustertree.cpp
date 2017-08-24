@@ -108,7 +108,7 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
       }
     }
     // Rcout << "Adding edge: (" << min_id << ", " << c_i << ") [" << min << "]" << std::endl;
-    mst(n_edges, _) = NumericVector::create(min_id, c_i, type == 0 ? min * alpha : min);
+    mst(n_edges, _) = NumericVector::create(min_id, c_i, min);
     v_selected[c_i] = 1;
     c_i = min_id;
   }
@@ -126,22 +126,24 @@ List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.
   L_2 euc_metric = L_2();
   euc_metric.d = d;
 
-
-  //Cretae dual tree
+  // Create the radii dual tree
   DualTreeKNN dt = DualTreeKNN(x, euc_metric);
+  List knn = dt.KNN(k+1, false); // +1 to account for self-matches, false to not apply the final unary operation (sqrt for l_2)
+  NumericMatrix knn_dist = knn["dist"];
+  NumericVector r_k = knn_dist.column(k-1); // radius to kth-nearest neighbor
 
-  return(List::create());
+  // Create a configuration for the tree and the cluster tree DTB
+  List clustertree_config = List::create(_["alpha"] = alpha,
+                                         _["k"] = k,
+                                         _["R"] = r_k, // Minimum connection radius
+                                         _["bucketSize"] = 10,
+                                         _["splitRule"] = 5);
+  DTB_CT dtb_ct = DTB_CT(x, euc_metric, emptyMatrix, clustertree_config);
+  NumericMatrix mst = dtb_ct.DTB(x);
 
-  // Run the KNN to get the radii
-  //NumericMatrix r_x = Rcpp::no_init_matrix(0, 0);
-  // DualTreeKNN dt_knn = DualTreeKNN(x, euc_metric);
-  // List knn = dt_knn.KNN(k+1);
-  // NumericMatrix knn_dist = knn["dist"];
-  // NumericVector r_k = knn_dist.column(k - 1);
-  //
-  // return (knn);
-  // Get the
-  //DTB_CT dtb_ct = DTB_CT(true, d, n, euc_metric, r_k, alpha);
+  // Convert to HCLUST object
+  List res = mstToHclust(mst);
+  return(res);
 
   // Run the dual tree boruvka to get the MST
   //List res = dtb_ct.DTB(x);
@@ -151,7 +153,6 @@ List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.
   // Run the MST with set parameters
   //NumericMatrix mst = primsRSL(r, r_k, n, alpha, type);
 
-  // Convert to HCLUST object
-  //List res = mstToHclust(mst);
+
   //return (res);
 }

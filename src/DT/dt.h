@@ -91,18 +91,15 @@ public:
   virtual ANNdist BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) = 0;
   virtual ANNdist BaseCaseNonIdentity(ANNkd_node* N_q, ANNkd_node* N_r) = 0;
 
-  // Accessors to allow sub classes to access kd tree internals
-  //ANNkd_node* getRoot(TREE_TYPE type) { return type == QUERY_TREE ? qtree->root : rtree->root; };
-
-
   // With every dual tree traversal, pairs of points need to be scored. This method prevents equivalent
   // combinations from being scored multiple times.
   inline const bool hasBeenChecked(const ANNidx q_idx, const ANNidx r_idx){
     // inserts new entry (w/ value false) if the value didn't exist
-    const bool pair_visited = BC_check[std::minmax(q_idx, r_idx)].beenChecked;
+    std::pair<int, int> key = std::minmax(q_idx, r_idx);
+    const bool pair_visited = BC_check[key].beenChecked;
     if (!pair_visited) {
       R_INFO("== Calling base case for: q = " << q_idx << ", r = " << r_idx << "\n")
-      BC_check[std::minmax(q_idx, r_idx)].beenChecked = true; // Update knowledge known about the nodes
+      BC_check[key].beenChecked = true; // Update knowledge known about the nodes
     }
     return pair_visited;
   }

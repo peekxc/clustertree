@@ -32,7 +32,7 @@ public:
   ~DualTreeKNN();
 
   // New methods for the derived class
-  List KNN(int k);
+  List KNN(int k, bool finalize = true);
   ANNdist max_knn(ANNkd_node* N_q);
 
   // Base-class functions replaced for KNN

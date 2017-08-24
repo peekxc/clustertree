@@ -12,13 +12,14 @@
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
+clustertree <- function(x, k = "suggest", alpha = "suggest",
                         estimator = c("RSL", "knn", "mutual knn"),
                         warn = FALSE){
   if (is.null(dim(x))) stop("'clustertree' expects x to be a matrix-coercible object.")
   x <- as.matrix(x)
   if (!storage.mode(x) %in% c("double", "integer")) stop("'clustertree' expects x to be numeric or integer only.")
-  k <- as.integer(ifelse(missing(k), ncol(x) * log(nrow(x)), k)) # dim should work now
+  d <- ncol(x)
+  k <- as.integer(ifelse(missing(k), d * log(nrow(x)), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   ## Choose estimator
@@ -30,7 +31,7 @@ clustertree <- function(x, d = ncol(x), k = "suggest", alpha = "suggest",
 
   ## Warn about parameter settings yielding unknown results
   warn_message <- "Existing clustertree analysis relies on alpha being at least sqrt(2) and k being at least as large as d*log(n)."
-  if (k < ceiling(ncol(x) * log(nrow(x))) && warn) warning(warn_message)
+  if (k < ceiling(d * log(nrow(x))) && warn) warning(warn_message)
 
   ## Call the cluster tree function
   # r_k <- knn(x, k = k - 1)

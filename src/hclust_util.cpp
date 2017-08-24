@@ -30,8 +30,17 @@ IntegerVector extractOrder(IntegerMatrix merge){
 // [[Rcpp::export]]
 List mstToHclust(NumericMatrix mst){
 
-  // Extract merge heights and associated order of such heights
+  // Check to make sure the indices are proper
   const int n = mst.nrow() + 1;
+  const NumericVector& from_ids = mst.column(0);
+  const NumericVector& to_ids = mst.column(1);
+  int min_id = std::min((int) min(from_ids), (int) min(to_ids));
+  int max_id = std::max((int) max(from_ids), (int) max(to_ids));
+  if (min_id != 0 || max_id != (n - 1)){
+    Rcpp::stop("Improper MST passed in to hclust conversion. Make sure mst is 0-based indices.");
+  }
+
+  // Extract merge heights and associated order of such heights
   NumericVector dist = mst.column(2);
   IntegerVector height_order = order_(dist) - 1;
 

@@ -19,15 +19,12 @@ DualTree::DualTree(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List
   BC_check = std::map< std::pair<int, int>, candidate_pair>();
 
   // Construct the tree(s)
-  Rcout << "Bucket Size: " << ((int) as<int>(config["bucketSize"])) << std::endl;
-  Rcout << "Split Rule: " << ((int) config["splitRule"]) << std::endl;
-  if (!config.containsElementNamed("bucketSize")){ Rcpp::stop("Invalid tree parameters passed in."); }
-  if (!config.containsElementNamed("splitRule")){ Rcpp::stop("Invalid tree parameters passed in."); }
+  if (!config.containsElementNamed("bucketSize")){ Rcpp::stop("Invalid tree parameters passed into DualTree constructor."); }
+  if (!config.containsElementNamed("splitRule")){ Rcpp::stop("Invalid tree parameters passed into DualTree constructor."); }
   int bucketSize = config["bucketSize"];
   int splitRule = config["splitRule"];
 
-  ANNkd_tree* kd_treeQ, *kd_treeR;
-
+  // Assign the trees
   if (r_x.size() <= 1){
     r_x = q_x; // Ensure r_x and q_x are identical incase r_x was NULL
     qtree = ConstructTree(q_x, bucketSize, (ANNsplitRule) splitRule);
@@ -36,7 +33,11 @@ DualTree::DualTree(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List
     qtree = ConstructTree(q_x, bucketSize, (ANNsplitRule) splitRule);
     rtree = ConstructTree(r_x, bucketSize, (ANNsplitRule) splitRule);
   }
-  if (qtree->theDim() != rtree->theDim() || rtree->theDim() != d){ stop("Dimensionality of the query set does not match the reference set."); }
+  if (qtree->theDim() != rtree->theDim() || qtree->theDim() != d){
+    int q_d = qtree->theDim(), r_d = rtree->theDim();
+    std::string message = std::string("Dimensionality of the query set (") + patch::to_string(q_d) + ") does not match the reference set (" + patch::to_string(r_d) + ").";
+    stop(message);
+  }
 }
 
 // Use specialized base cases based on whether the trees are identical
@@ -185,7 +186,7 @@ IntegerMatrix DualTree::getBaseCases(){
   IntegerMatrix basecases = IntegerMatrix(BC_check.size(), 2);
   int i = 0;
   for (std::map< std::pair<int, int>, candidate_pair>::iterator it = BC_check.begin(); it != BC_check.end(); ++it, ++i){
-    basecases(i, _) = IntegerVector::create(it->first.first, it->first.first);
+    basecases(i, _) = IntegerVector::create(it->first.first, it->first.second);
   }
   return basecases;
 }

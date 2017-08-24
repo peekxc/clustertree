@@ -41,8 +41,8 @@ primsMST <- function(dist_x) {
     .Call('_clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
 }
 
-dtb <- function(x, metric_type, bkt_size = 30L, prune = TRUE) {
-    .Call('_clustertree_dtb', PACKAGE = 'clustertree', x, metric_type, bkt_size, prune)
+dtb <- function(x, metric_type, bkt_size = 30L) {
+    .Call('_clustertree_dtb', PACKAGE = 'clustertree', x, metric_type, bkt_size)
 }
 
 cut_simplified_hclust <- function(hcl, cl_in, big_n) {

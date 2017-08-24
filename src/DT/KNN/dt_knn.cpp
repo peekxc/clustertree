@@ -28,7 +28,7 @@ DualTreeKNN::~DualTreeKNN(){
 }
 
 // Entry function to start the KNN process. Stores results by reference in dists and ids
-List DualTreeKNN::KNN(int k) {
+List DualTreeKNN::KNN(int k, bool finalize) {
   this->k = k; // set k value
   const int n = qtree->n_pts; // number of query points
 
@@ -58,8 +58,10 @@ List DualTreeKNN::KNN(int k) {
   }
 
   // Finalize results for R-end
-  m_dist.finalize(dists); // apply final transformation
-  id = id + 1; // switch to 1-based for R
+  if (finalize){
+    m_dist.finalize(dists); // apply final transformation
+    id = id + 1; // switch to 1-based for R
+  }
 
   // Cleanup KNN stuff
   std::unordered_map<ANNidx, ANNmin_k*> empty_knn;

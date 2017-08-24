@@ -8,7 +8,8 @@ load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
 X_n <- as.matrix(iris[1:15, 1:2])
-clustertree::clustertree(X_n)
+ct_res <- clustertree::clustertree(X_n)
+sort(unique(ct_res[[1]]$mst[, 1], ct_res[[1]]$mst[, 2]))+1
 
 ## Supply Variables/parameters
 { n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }

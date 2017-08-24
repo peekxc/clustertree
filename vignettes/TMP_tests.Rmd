@@ -14,10 +14,15 @@ X_n <- StockDividends[, 2:12]
 
 
 # clustertree::knn(X_n, k = 5)
+sort(unique(c(ct_res[[1]]$mst[, 1], ct_res[[1]]$mst[, 2])))
+ct_res <- clustertree::clustertree(X_n, k = 25)
 
-clustertree::clustertree(X_n)
+r_k <- apply(dbscan::kNNdist(X_n, k = 3), 1, max)
+test_truth <- clustertree:::primsRSL(dist(as.matrix(X_n)), r_k = r_k, n = nrow(X_n), alpha = sqrt(2), type = 0)
 
+ct_rsl_dtb <- clustertree::clustertree(X_n, k = 3L, alpha = sqrt(2))
 
+sum(test_truth[, 3]) == sum(ct_rsl_dtb$hc$height) 
 
 
 X_n <- as.matrix(iris[, 1:4])
@@ -37,6 +42,52 @@ all(truth_knn$dist == sqrt(test_knn$dist))
 #r_k <- clustertree:::dt_kNN_int(q_x = test, k = 5, bucketSize = 1, metric_ptr = test, splitRule = 5)
 
 
-
-
 ```
+
+```{r}
+## Generate data
+g1 <- cbind(rnorm(5, mean = 2, sd = 0.45), rnorm(5, mean = 2, sd = 0.45))
+g2 <- cbind(rnorm(5, mean = 5, sd = 0.45), rnorm(5, mean = 2, sd = 0.45))
+g3 <- cbind(rnorm(5, mean = 3, sd = 0.15), rnorm(5, mean = 5, sd =  0.15))
+g4 <- cbind(rnorm(5, mean = 4, sd =  0.15), rnorm(5, mean = 5, sd =  0.15))
+g5 <- cbind(rnorm(5, mean = 3.5, sd =  0.15), rnorm(5, mean = 7, sd =  0.15))
+X_n <- do.call(rbind, list(g1, g2, g3, g4, g5))
+I <- sapply(1:5, function(i) rep(i, 5))
+
+# Get single linkage dendrogram 
+sl <- hclust(dist(X_n), method = "single")
+
+# Plot 
+n <- nrow(X_n)
+layout(matrix(c(1, 2), nrow = 1, ncol = 2))
+{ plot(X_n, col = I); text(X_n, labels = 1:n, pos = 3) }
+plot(sl, hang = -1)
+```
+
+```{r}
+sl_simple <- clustertree:::simplified_hclust(sl, 5)
+plot(sl_simple, hang = -1)
+```
+
+They create the same partitions. But one is much easier to visualize and understand.  
+```{r}
+simple_cut <- cut(sl_simple, h = 1.5)
+original_cut <- cutree(sl, h = 1.5)
+all(match(simple_cut, unique(simple_cut)) == match(original_cut, unique(original_cut)))
+```
+
+
+
+```{r}
+k_cuts <- 1:nrow(sl$merge)
+possible_cl <- cutree(sl, k = k_cuts)
+
+filter_noise <- function(cl){
+  cl_freq <- table(cl)
+  cl_ids <- as.character(cl)
+  unname(ifelse(cl_freq[cl_ids] >= 2, as.integer(names(cl_freq[cl_ids])), 0))
+}
+
+apply(apply(possible_cl, 2, filter_noise), 2, function(cl) cl[sl$order])
+```
+
