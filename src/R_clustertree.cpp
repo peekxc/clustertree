@@ -138,6 +138,7 @@ List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.
                                          _["R"] = r_k, // Minimum connection radius
                                          _["bucketSize"] = 10,
                                          _["splitRule"] = 5);
+  // Rcout << "Ref size: " << emptyMatrix.size() << std::endl;
   DTB_CT dtb_ct = DTB_CT(x, euc_metric, emptyMatrix, clustertree_config);
   NumericMatrix mst = dtb_ct.DTB(x);
 

@@ -76,6 +76,7 @@ original_cut <- cutree(sl, h = 1.5)
 all(match(simple_cut, unique(simple_cut)) == match(original_cut, unique(original_cut)))
 ```
 
+If the cut point(s) 
 
 
 ```{r}

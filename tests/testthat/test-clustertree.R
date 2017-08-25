@@ -7,8 +7,8 @@ context("clustertree")
 load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
-X_n <- as.matrix(iris[1:15, 1:2])
-ct_res <- clustertree::clustertree(X_n)
+X_n <- as.matrix(iris[, 1:4])
+ct_res <- clustertree::clustertree(X_n, k = 15)
 sort(unique(ct_res[[1]]$mst[, 1], ct_res[[1]]$mst[, 2]))+1
 
 ## Supply Variables/parameters

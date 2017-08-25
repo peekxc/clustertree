@@ -47,7 +47,7 @@ print.clustertree <- function(C_n){
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
   writeLines(c(
     paste0("clustertree object estimated using: ", est_type),
-    sprintf("Parameters: k = %d, alpha = %.3f, dim = %d", C_n$k, C_n$alpha, C_n$d)
+    sprintf("Parameters: k = %d, alpha = %.4f, dim = %d", C_n$k, C_n$alpha, C_n$d)
   ))
 }
 

@@ -14,7 +14,6 @@ plot.simplified_hclust <- function(x){
 cut.simplified_hclust <- function(x, k = NULL, h = NULL){
   if (!is(x, "simplified_hclust")){ stop("'cut.simplified_hclust' expects a simplified hclust object with branch labels."); }
   if (!is(x, "hclust")){ stop("'cut.simplified_hclust' expect the simplified hclust object is a valid hclust object."); }
-  # if (is.null(x[["idx"]]))
   # Rely on cutrees testing of inputs first
   cl <- cutree(x, k=k, h=h)
   n <- sum(sapply(ls(x$idx), function(key) length(x$idx[[key]])))

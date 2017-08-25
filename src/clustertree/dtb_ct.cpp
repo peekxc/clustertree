@@ -11,7 +11,7 @@ DTB_CT::DTB_CT(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List& co
 
 // Override the istance calculation to bound the connection radii
 ANNdist DTB_CT::computeDistance(const int q_idx, const int r_idx, ANNdist eps1, ANNdist eps2){
-  Rcout << "computing radii-constrained distance" << std::endl;
+  R_INFO("Computing radii-constrained distance\n");
   ANNcoord* qq = qtree->pts[q_idx];     // first coord of query point
   ANNcoord* pp = rtree->pts[r_idx];			// first coord of reference point
   ANNdist dist = m_dist(qq, pp);        // Compute (full) metric distance

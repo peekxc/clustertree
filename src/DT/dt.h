@@ -38,7 +38,7 @@ struct candidate_pair {
 };
 
 // To use as a default parameter
-static NumericMatrix emptyMatrix = NumericMatrix();
+static NumericMatrix emptyMatrix = NumericMatrix(0, 0);
 static List default_params = Rcpp::List::create(Rcpp::Named("bucketSize") = 10,
                                                 Rcpp::Named("splitRule") = 5);
 
@@ -116,11 +116,12 @@ public:
     BC_check[std::minmax(q_idx, r_idx)].eps = eps;
   }
 
+  // The minimum distance between two nodes. If the convex subsets / rectangular subset they effectively
+  // represent overlap, they'll have a negative distance, so return 0. Otherwise, the minimum distance
+  // is defined as the distance between the centroids of each box, minus the maximum descendent distance
+  // from centroid.
   inline ANNdist min_dist(ANNkd_node* N_q, ANNkd_node* N_r){// assume query and reference
     if (N_q == N_r) return 0; //equivalent nodes conatin the same points
-
-    // Assert they exist
-    assert(bounds->find(N_q) != bounds->end() && bounds->find(N_r) != bounds->end());
 
     // Retrieve the bounds
     const Bound& nq_bound = bounds[N_q];

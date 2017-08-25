@@ -26,7 +26,6 @@ DualTree::DualTree(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x, List
 
   // Assign the trees
   if (r_x.size() <= 1){
-    r_x = q_x; // Ensure r_x and q_x are identical incase r_x was NULL
     qtree = ConstructTree(q_x, bucketSize, (ANNsplitRule) splitRule);
     rtree = qtree;
   } else {
