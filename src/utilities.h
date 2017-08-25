@@ -5,8 +5,8 @@
 using namespace Rcpp;
 // [[Rcpp::plugins(cpp11)]]
 
-#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
-//#undef NDEBUG // <-- for 'production' mode, will remove IO
+//#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
+#undef NDEBUG // <-- for 'production' mode, will remove IO
 //#define PROFILING // <-- for 'profile' mode, will give timings of every function being profiled
 
 // Allows indexing lower triangular (dist objects)

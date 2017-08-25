@@ -2,6 +2,7 @@
 
 S3method(cut,simplified_hclust)
 S3method(plot,clustertree)
+S3method(print,clustertree)
 export(clustertree)
 export(cons_prune)
 export(knn)

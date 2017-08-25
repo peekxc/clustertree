@@ -9,11 +9,13 @@ output: html_notebook
 load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
+what <- clustertree::clustertree(X_n, 2, estimator = "mutual knn")
+
 ## Supply Variables/parameters
 { n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
 
 
- what <- clustertree::clustertree(X_n, 5, estimator = "mutual knn")
+
  
 # clustertree::knn(X_n, k = 5)
 sort(unique(c(ct_res[[1]]$mst[, 1], ct_res[[1]]$mst[, 2])))
@@ -58,7 +60,7 @@ I <- sapply(1:5, function(i) rep(i, 5))
 ```
 
 ```{r}
-what <- clustertree::clustertree(X_n, k = 5)
+what <- clustertree::clustertree(X_n, k = 5, estimator = "mutual knn")
 ```
 
 ```{r}

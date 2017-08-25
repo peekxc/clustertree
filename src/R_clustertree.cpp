@@ -156,28 +156,34 @@ List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.
   } else {
   // Otherwise, need to convert each CC into a separate hierarchy
     IntegerVector cc_ids = unique(CCs), from = mst.column(0), to = mst.column(1);
-    List all_hclusts = List(cc_ids.size());
+    List all_hclusts = List();
     int i = 0;
     for (IntegerVector::iterator cc_id = cc_ids.begin(); cc_id != cc_ids.end(); ++cc_id){
 
       // Subset the original data set for each disjoint hierarchy
       IntegerVector idx = which_cpp(CCs, *cc_id); // 0-based
-      IntegerVector mst_idx = IntegerVector();
+      IntegerVector mst_idx = IntegerVector(), mst_subset = IntegerVector();
       for (IntegerVector::iterator id = idx.begin(); id != idx.end(); ++id){
-        IntegerVector mst_subset = Rcpp::union_(which_cpp(from == *id, true), which_cpp(to == *id, true));
+        mst_subset = Rcpp::union_(which_cpp(from == *id, true), which_cpp(to == *id, true));
         mst_idx = Rcpp::union_(mst_idx, mst_subset);
       }
 
-      // Cretae the new hierarchy from the subset
-      IntegerMatrix new_mst = subset_rows(mst, mst_idx);
-      List hcl = mstToHclust(new_mst, height[mst_idx]);
-      hcl["idx"] = clone(mst_idx);
-      hcl.attr("class")= "hclust"; // double-check
+      // Handle singletons
+      if (idx.size() <= 1){
+        all_hclusts.push_back(clone(idx));
+      } else {
+      // Create the new hierarchy from the subset
+        IntegerMatrix new_mst = subset_rows(mst, mst_idx);
+        List hcl = mstToHclust(new_mst, height[mst_idx]);
+        hcl["idx"] = clone(idx);
+        hcl.attr("class")= "hclust"; // double-check
 
-      // Save it
-      all_hclusts[i++] = hcl;// indices of MST
+        // Save it
+        all_hclusts.push_back(hcl);// indices of MST
+      }
+
     }
-    // all_hclusts["mst"] = mst;
+    all_hclusts["mst"] = mst;
     return (all_hclusts);
   }
 

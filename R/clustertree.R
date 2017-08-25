@@ -24,7 +24,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 
   ## Choose estimator
   possible_estimators <- c("RSL", "knn", "mutual knn")
-  type <- ifelse(missing(estimator), 0, pmatch(estimator, possible_estimators) - 1L)
+  type <- ifelse(missing(estimator), 0, pmatch(toupper(estimator), toupper(possible_estimators)) - 1L)
   if (is.na(type)){
     stop(paste0("Unknown estimator supplied. Please use one of: [", paste(possible_estimators, collapse = ", "), "]"))
   }
@@ -39,20 +39,28 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   ## If it's a list, dealing with a minimum spanning forest
   if (is(hc, "list")){
     for(i in 1:length(hc)){
-      hc[[i]]$call <- match.call()
-      hc[[i]]$method <- possible_estimators[type+1]
+      if (is(hc[[i]], "hclust")){
+        hc[[i]]$call <- match.call()
+        hc[[i]]$method <- possible_estimators[type+1]
+      }
+      # Else do nothing - singleton
     }
   } else {
   ## Otherwise it's a fully connected tree
-    hc$call <- match.call()
-    hc$method <- possible_estimators[type+1]
+    if (is(hc, "hclust")){
+      hc$call <- match.call()
+      hc$method <- possible_estimators[type+1]
+    }
   }
   res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree", X_n = x)
-  return(res)
+  return(hc)
 }
 
+#' print.clustertree
+#' @method print clustertree
+#' @export
 print.clustertree <- function(C_n){
-  type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
+  type <- pmatch(toupper(C_n$hc$method), toupper(c("RSL", "knn", "mutual knn")))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
   writeLines(c(
     paste0("Cluster tree object of: ", nrow(attr(C_n, "X_n")), " objects."),
@@ -71,10 +79,17 @@ print.clustertree <- function(C_n){
 #' @export
 plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
   X_n <- attr(C_n, "X_n")
-  dev.interactive()
-  layout(matrix(c(1, 2), nrow = 1, ncol = 2))
-  plot(C_n$hc, hang = -1)
-  spanplot(X_n, C_n)
+  # dev.interactive()
+  if (is(C_n$hc, "hclust")){
+    layout(matrix(c(1, 2), nrow = 1, ncol = 2))
+    plot(C_n$hc, hang = -1)
+    spanplot(X_n, C_n)
+  } else if (is(C_n$hc, "list") && length(C_n$hc) > 1){
+    layout(matrix(c(1, 1:length(C_n$hc) +1), nrow = 1, ncol = length(C_n$hc)+1),
+           widths = c(rep(0.5/length(C_n$hc), length(C_n$hc)), 0.5))
+    for (hcl in C_n$hc){ plot(hcl, hang = -1) }
+    spanplot(X_n, C_n)
+  }
 }
 
 

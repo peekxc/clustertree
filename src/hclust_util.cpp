@@ -43,6 +43,11 @@ List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist){
 
   // Check to make sure the indices are proper
   const int n = mst_.nrow() + 1;
+  if (n == 2){
+    // Trivial case
+    return List::create(_["merge"] = -mst_, _["height"] = dist, _["order"] = IntegerVector::create(1, 2),
+                        _["labels"] = R_NilValue, _["mst"] = mst_);
+  }
   const IntegerVector& from_ids = mst_.column(0);
   const IntegerVector& to_ids = mst_.column(1);
   int min_id = std::min((int) min(from_ids), (int) min(to_ids));
@@ -90,13 +95,19 @@ List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist){
     assigned.at(from) = assigned.at(to) = 1;
   }
 
+  // Create MST representation
+  NumericMatrix vis_mst = NumericMatrix(n - 1, 3);
+  vis_mst(_, 0) = as<NumericVector>(from_ids);
+  vis_mst(_, 1) = as<NumericVector>(to_ids);
+  vis_mst(_, 2) = as<NumericVector>(dist);
+
   // Extractor merge order and return
   List res = List::create(
     _["merge"] = merge,
     _["height"] = dist[height_order],
     _["order"] = extractOrder(merge), // the check at the beginning of the function should make this safe
     _["labels"] = R_NilValue,
-    _["mst"] = mst
+    _["mst"] = vis_mst
   );
   res.attr("class") = "hclust";
   return(res);
