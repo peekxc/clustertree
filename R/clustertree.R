@@ -34,11 +34,20 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   if (k < ceiling(d * log(nrow(x))) && warn) warning(warn_message)
 
   ## Call the cluster tree function
-  # r_k <- knn(x, k = k - 1)
   hc <- clusterTree_int(x = x, k = k, alpha = alpha, type = type)
-  hc$call <- match.call()
-  hc$method <- possible_estimators[type+1]
-  res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree")
+
+  ## If it's a list, dealing with a minimum spanning forest
+  if (is(hc, "list")){
+    for(i in 1:length(hc)){
+      hc[[i]]$call <- match.call()
+      hc[[i]]$method <- possible_estimators[type+1]
+    }
+  } else {
+  ## Otherwise it's a fully connected tree
+    hc$call <- match.call()
+    hc$method <- possible_estimators[type+1]
+  }
+  res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree", X_n = x)
   return(res)
 }
 
@@ -46,17 +55,27 @@ print.clustertree <- function(C_n){
   type <- pmatch(C_n$hc$method, c("RSL", "knn", "mutual knn"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
   writeLines(c(
-    paste0("clustertree object estimated using: ", est_type),
+    paste0("Cluster tree object of: ", nrow(attr(C_n, "X_n")), " objects."),
+    paste0("Estimator used: ", est_type),
     sprintf("Parameters: k = %d, alpha = %.4f, dim = %d", C_n$k, C_n$alpha, C_n$d)
   ))
 }
 
+#' @title Plot a given cluster tree
+#' @name plot.clustertree
+#' @description More details coming soon...
+#' @param x a 'clustertree' object.
+#' @references See KC and SD.
+#' @importFrom methods is
+#' @useDynLib clustertree
 #' @export
 plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
-
+  X_n <- attr(C_n, "X_n")
+  dev.interactive()
+  layout(matrix(c(1, 2), nrow = 1, ncol = 2))
+  plot(C_n$hc, hang = -1)
+  spanplot(X_n, C_n)
 }
-
-
 
 
 ## The metrics supported by the various dual tree extensions

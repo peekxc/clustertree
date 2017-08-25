@@ -35,7 +35,7 @@ public:
   DualTreeBoruvka(const NumericMatrix& q_x, Metric& m, NumericMatrix& r_x = emptyMatrix, List& config = default_params);
 
   // New methods for the derived class
-  NumericMatrix DTB(const NumericMatrix& x);
+  List DTB(const NumericMatrix& x);
 
   // Overridden Base case and score functions
   ANNdist BaseCaseIdentity(ANNkd_node* N_q, ANNkd_node* N_r) override;

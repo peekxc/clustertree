@@ -30,6 +30,7 @@ public:
 
   // Retrieve the full integer vector representing component membership
   IntegerVector getCC();
+  void printCC();
 
   // Equality comparison operators to simplify comparing disjoint sets
   bool operator==(UnionFind& other_cc);

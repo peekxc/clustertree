@@ -13,6 +13,8 @@ X_n <- StockDividends[, 2:12]
 { n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
 
 
+ what <- clustertree::clustertree(X_n, 5, estimator = "mutual knn")
+ 
 # clustertree::knn(X_n, k = 5)
 sort(unique(c(ct_res[[1]]$mst[, 1], ct_res[[1]]$mst[, 2])))
 ct_res <- clustertree::clustertree(X_n, k = 25)
@@ -53,7 +55,13 @@ g4 <- cbind(rnorm(5, mean = 4, sd =  0.15), rnorm(5, mean = 5, sd =  0.15))
 g5 <- cbind(rnorm(5, mean = 3.5, sd =  0.15), rnorm(5, mean = 7, sd =  0.15))
 X_n <- do.call(rbind, list(g1, g2, g3, g4, g5))
 I <- sapply(1:5, function(i) rep(i, 5))
+```
 
+```{r}
+what <- clustertree::clustertree(X_n, k = 5)
+```
+
+```{r}
 # Get single linkage dendrogram 
 sl <- hclust(dist(X_n), method = "single")
 

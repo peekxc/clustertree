@@ -136,24 +136,49 @@ List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.
   List clustertree_config = List::create(_["alpha"] = alpha,
                                          _["k"] = k,
                                          _["R"] = r_k, // Minimum connection radius
+                                         _["estimator"] = type, // estimator to use
                                          _["bucketSize"] = 10,
                                          _["splitRule"] = 5);
   // Rcout << "Ref size: " << emptyMatrix.size() << std::endl;
   DTB_CT dtb_ct = DTB_CT(x, euc_metric, emptyMatrix, clustertree_config);
-  NumericMatrix mst = dtb_ct.DTB(x);
+  List res = dtb_ct.DTB(x);
 
-  // Convert to HCLUST object
-  List res = mstToHclust(mst);
-  return(res);
+  IntegerMatrix mst = res["mst"];
+  IntegerVector CCs = res["CCs"];
+  NumericVector height = res["height"];
 
-  // Run the dual tree boruvka to get the MST
-  //List res = dtb_ct.DTB(x);
+  // If the spanning tree is a tree and not a forest (is fully connected)
+  // convert straight to hclust object
+  if (all(CCs == CCs.at(0)).is_true()){
+    List hcl = mstToHclust(mst, height);
+    hcl["mst"] = mst;
+    return(hcl);
+  } else {
+  // Otherwise, need to convert each CC into a separate hierarchy
+    IntegerVector cc_ids = unique(CCs), from = mst.column(0), to = mst.column(1);
+    List all_hclusts = List(cc_ids.size());
+    int i = 0;
+    for (IntegerVector::iterator cc_id = cc_ids.begin(); cc_id != cc_ids.end(); ++cc_id){
 
-  // cleanup
-  //delete euc_metric;
-  // Run the MST with set parameters
-  //NumericMatrix mst = primsRSL(r, r_k, n, alpha, type);
+      // Subset the original data set for each disjoint hierarchy
+      IntegerVector idx = which_cpp(CCs, *cc_id); // 0-based
+      IntegerVector mst_idx = IntegerVector();
+      for (IntegerVector::iterator id = idx.begin(); id != idx.end(); ++id){
+        IntegerVector mst_subset = Rcpp::union_(which_cpp(from == *id, true), which_cpp(to == *id, true));
+        mst_idx = Rcpp::union_(mst_idx, mst_subset);
+      }
 
+      // Cretae the new hierarchy from the subset
+      IntegerMatrix new_mst = subset_rows(mst, mst_idx);
+      List hcl = mstToHclust(new_mst, height[mst_idx]);
+      hcl["idx"] = clone(mst_idx);
+      hcl.attr("class")= "hclust"; // double-check
 
-  //return (res);
+      // Save it
+      all_hclusts[i++] = hcl;// indices of MST
+    }
+    // all_hclusts["mst"] = mst;
+    return (all_hclusts);
+  }
+
 }

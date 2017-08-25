@@ -22,26 +22,36 @@ IntegerVector extractOrder(IntegerMatrix merge){
 }
 
 
+// [[Rcpp::export]]
+IntegerMatrix normalizeIndices(const IntegerMatrix& mst){
+  IntegerMatrix new_mst = clone(mst);
+  IntegerVector from = new_mst.column(0);
+  IntegerVector to = new_mst.column(1);
+  IntegerVector ids = Rcpp::union_(from, to);
+  new_mst(_, 0) = Rcpp::match(from, ids) - 1; // 0-based
+  new_mst(_, 1) = Rcpp::match(to, ids) - 1; // 0-based
+  return(new_mst);
+}
+
 /* mstToHclust
 * Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), create a valid hclust object
 * using a disjoint-set structure to track components
-* Notes: expects 0-based mst indices, and that all edge indices are 0 <= i < n. Is unsafe otherwise!
+* Expects 0-based mst indices.
 */
 // [[Rcpp::export]]
-List mstToHclust(NumericMatrix mst){
+List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist){
 
   // Check to make sure the indices are proper
-  const int n = mst.nrow() + 1;
-  const NumericVector& from_ids = mst.column(0);
-  const NumericVector& to_ids = mst.column(1);
+  const int n = mst_.nrow() + 1;
+  const IntegerVector& from_ids = mst_.column(0);
+  const IntegerVector& to_ids = mst_.column(1);
   int min_id = std::min((int) min(from_ids), (int) min(to_ids));
   int max_id = std::max((int) max(from_ids), (int) max(to_ids));
-  if (min_id != 0 || max_id != (n - 1)){
-    Rcpp::stop("Improper MST passed in to hclust conversion. Make sure mst is 0-based indices.");
-  }
+  IntegerMatrix mst;
+  if (min_id != 0 || max_id != (n - 1)){ mst = normalizeIndices(mst_); }
+  else { mst = clone(mst_); }
 
   // Extract merge heights and associated order of such heights
-  NumericVector dist = mst.column(2);
   IntegerVector height_order = order_(dist) - 1;
 
   // Set up components
@@ -54,7 +64,7 @@ List mstToHclust(NumericMatrix mst){
   bool from_singleton, to_singleton;
   for (int i = 0; i < n - 1; ++i) {
     if (i % 1000 == 0) Rcpp::checkUserInterrupt();
-    NumericVector crow = mst.row(height_order.at(i));
+    IntegerVector crow = mst.row(height_order.at(i));
     int from = crow.at(0), to = crow.at(1);
     int from_comp = components.Find(from), to_comp = components.Find(to);
     components.Union(from, to);
@@ -84,7 +94,7 @@ List mstToHclust(NumericMatrix mst){
   List res = List::create(
     _["merge"] = merge,
     _["height"] = dist[height_order],
-    _["order"] = extractOrder(merge),
+    _["order"] = extractOrder(merge), // the check at the beginning of the function should make this safe
     _["labels"] = R_NilValue,
     _["mst"] = mst
   );

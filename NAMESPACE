@@ -2,11 +2,11 @@
 
 S3method(cut,simplified_hclust)
 S3method(plot,clustertree)
-S3method(print,clustertree)
 export(clustertree)
 export(cons_prune)
 export(knn)
 export(runt_prune)
+export(spanplot)
 import(dbscan)
 import(igraph)
 importFrom(methods,is)

@@ -53,6 +53,12 @@ IntegerVector UnionFind::getCC(){
   return(cc);
 }
 
+// Simple method to print the CCs on one line
+void UnionFind::printCC(){
+  for (int j = 0; j < size; ++j){ Rcout << Find(j) << " "; }
+  Rcout << std::endl;
+}
+
 // Comparison operators. Note that due to path compression, can't use const references
 bool UnionFind::operator==(UnionFind& other_cc){
   bool matches = true;

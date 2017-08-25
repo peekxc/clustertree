@@ -155,7 +155,7 @@ ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
 // }
 //
 
-NumericMatrix DualTreeBoruvka::DTB(const NumericMatrix& x){
+List DualTreeBoruvka::DTB(const NumericMatrix& x){
 
   // Necessary data structures for the DTB
   const int n = x.nrow();
@@ -179,10 +179,11 @@ NumericMatrix DualTreeBoruvka::DTB(const NumericMatrix& x){
   }
 
   // If pruning is enabled, use that one. Otherwise use regular DFS w/o computing extra bounds.
-  NumericMatrix mst_el = NumericMatrix(n - 1, 3);
+  IntegerMatrix mst_el = IntegerMatrix(n - 1, 2);
+  NumericVector height = NumericVector(n - 1);
+  int c_i = 0;
   if (use_pruning) {
-    int c_i = 0;
-    IntegerVector old_CC = CC.getCC(), new_CC;
+    IntegerVector old_CC, new_CC;
     do {
       Rcpp::checkUserInterrupt();
 
@@ -190,15 +191,20 @@ NumericMatrix DualTreeBoruvka::DTB(const NumericMatrix& x){
       pDFS(rtree->root, qtree->root);
 
       // Sort the distances
-      NumericVector nn_dist = wrap(D);
-      IntegerVector index = order_(nn_dist) - 1;
+      NumericVector nn_dist = wrap(D); // D is updated with the k=2 nearest neighbor distances from the boruvka step
+      IntegerVector index = order_(nn_dist) - 1; // Prepare to connect the small edges first
+
+      // Get the current set of connected components
+      old_CC = CC.getCC();
 
       // Merge components based on nearest edge
       for (IntegerVector::iterator i = index.begin(); i != index.end(); ++i){
         const int from = N.at(*i).from, to = N.at(*i).to;
         if (from != to && D.at(*i) != ANN_DIST_INF && CC.Find(from) != CC.Find(to)){
-          mst_el(c_i++, _) = NumericVector::create(from, to, sqrt(D.at(*i)));
-          CC.Union(from, to);
+          mst_el(c_i, _) = IntegerVector::create(from, to); // Record the point ids
+          height.at(c_i) = D.at(*i); // Record the (unfinalized!) distance
+          CC.Union(from, to); // Union the two points
+          c_i++;
         }
       }
 
@@ -208,22 +214,31 @@ NumericMatrix DualTreeBoruvka::DTB(const NumericMatrix& x){
       resetKNN(); // Reset K nearest neighbors priority queue
       resetBaseCases(); // Reset base cases: distances need to be recomputed
 
-      // Informative debugging output
+      // Get the new formed connected components
       new_CC = CC.getCC();
-      R_INFO("Current CCs: ")
+
+      // Debugging output
       #ifdef NDEBUG
-        for (int j = 0; j < n; ++j){ R_INFO(CC.Find(j)); }
-      #endif
+      R_INFO("Current CCs: ")
+      CC.printCC();
       R_INFO("\n")
+      #endif
 
     // Continue until either fully connected, implying a true, spanning tree or until one of the boruvka
     // steps does not change the component structure, implying the underlying graph was not fully connected
     // to begin with.
-    } while(!fully_connected() || all(old_CC == new_CC).is_true());
-    R_INFO("DTB: is fully connected? " << (bool) fully_connected() << ", old_cc == new_cc? " << (bool) all(old_CC == new_CC).is_true() << "\n")
-  } // use_pruning
+    } while(!fully_connected() && all(old_CC != new_CC).is_true());
 
-  return mst_el;
+    // Debugging output
+    #ifdef NDEBUG
+      R_INFO("Final CC: ");
+      CC.printCC();
+      R_INFO("DTB: is fully connected? " << (bool) fully_connected() << ", old_cc == new_cc? " << (bool) all(old_CC == new_CC).is_true() << "\n")
+    #endif
+
+  } // use_pruning
+  IntegerVector valid_idx = Rcpp::Range(0, c_i - 1);
+  return List::create(_["mst"] = mst_el(Rcpp::Range(0, c_i - 1), Rcpp::Range(0, 1)), _["height"] = height[valid_idx], _["CCs"] = CC.getCC());
 }
 
 

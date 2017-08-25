@@ -125,8 +125,6 @@ IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big
 }
 
 
-
-
 // Given an hclust object and a minimum cluster size, traverse the tree divisely to create a
 // simplified hclust object, where each leaf contains at least min_sz points
 // [[Rcpp::export]]

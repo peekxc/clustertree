@@ -1,19 +1,10 @@
-#' @title Plot a given cluster tree
-#' @name plot.clustertree
-#' @description More details coming soon...
-#' @param x a 'clustertree' object.
-#' @references See KC and SD.
+#' @title Plot a spanning tree
+#' @name spanplot
+#' @description Allows for visualizing a clustertree object as a spanning tree.
+#' @param X_n a matrix to plot as a scatter plot.
+#' @param C_n a 'clustertree' object
+#' @param h an optional height to cut the tree at. Colors the corresponding connected components.
 #' @importFrom methods is
-#' @useDynLib clustertree
-#' @export
-plot.clustertree <- function(x){
-
-}
-
-
-
-
-# TODO: Check for dimensionality, store the mst in the clustertree object
 #' @export
 spanplot <- function(X_n, C_n, h = NULL){
   if (!any(c("clustertree") %in% class(C_n))) stop("spanplot expects a 'clustertree' object")

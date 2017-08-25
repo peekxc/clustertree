@@ -6,8 +6,8 @@
 \alias{knn}
 \title{Compute the Empirical Cluster Tree}
 \usage{
-clustertree(x, d = ncol(x), k = "suggest", alpha = "suggest",
-  estimator = c("RSL", "knn", "mutual knn"), warn = FALSE)
+clustertree(x, k = "suggest", alpha = "suggest", estimator = c("RSL",
+  "knn", "mutual knn"), warn = FALSE)
 
 knn(x, k, r_x = NULL, metric = "euclidean", method = c("dual tree",
   "single tree"), bucketSize = 15L, splitRule = "suggest", ...)

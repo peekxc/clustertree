@@ -5,14 +5,26 @@
 
 using namespace Rcpp;
 
-// mstToHclust
-List mstToHclust(NumericMatrix mst);
-RcppExport SEXP _clustertree_mstToHclust(SEXP mstSEXP) {
+// normalizeIndices
+IntegerMatrix normalizeIndices(const IntegerMatrix& mst);
+RcppExport SEXP _clustertree_normalizeIndices(SEXP mstSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type mst(mstSEXP);
-    rcpp_result_gen = Rcpp::wrap(mstToHclust(mst));
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type mst(mstSEXP);
+    rcpp_result_gen = Rcpp::wrap(normalizeIndices(mst));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mstToHclust
+List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist);
+RcppExport SEXP _clustertree_mstToHclust(SEXP mst_SEXP, SEXP distSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type mst_(mst_SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type dist(distSEXP);
+    rcpp_result_gen = Rcpp::wrap(mstToHclust(mst_, dist));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -137,19 +149,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dtb
-NumericMatrix dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size);
-RcppExport SEXP _clustertree_dtb(SEXP xSEXP, SEXP metric_typeSEXP, SEXP bkt_sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type metric_type(metric_typeSEXP);
-    Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(dtb(x, metric_type, bkt_size));
-    return rcpp_result_gen;
-END_RCPP
-}
 // cut_simplified_hclust
 IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big_n);
 RcppExport SEXP _clustertree_cut_simplified_hclust(SEXP hclSEXP, SEXP cl_inSEXP, SEXP big_nSEXP) {
@@ -189,7 +188,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 1},
+    {"_clustertree_normalizeIndices", (DL_FUNC) &_clustertree_normalizeIndices, 1},
+    {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
     {"_clustertree_chooseMetric", (DL_FUNC) &_clustertree_chooseMetric, 2},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_clusterTree_int", (DL_FUNC) &_clustertree_clusterTree_int, 4},
@@ -199,7 +199,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 6},
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
-    {"_clustertree_dtb", (DL_FUNC) &_clustertree_dtb, 3},
     {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},
     {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
     {"_clustertree_vol_nSphere", (DL_FUNC) &_clustertree_vol_nSphere, 2},

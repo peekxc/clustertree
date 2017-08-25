@@ -10,7 +10,7 @@ using namespace Rcpp;
 // Recursively visit the merge matrix to extract an hclust sufficient ordering
 void visit(const IntegerMatrix& merge, IntegerVector& order, int i, int j, int& ind);
 IntegerVector extractOrder(IntegerMatrix merge);
-List mstToHclust(NumericMatrix mst);
+List mstToHclust(const IntegerMatrix& merge, const NumericVector& dist);
 
 
 #endif

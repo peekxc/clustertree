@@ -95,19 +95,18 @@ NumericMatrix primsMST(const NumericVector dist_x){
   return(mst);
 }
 
-// [[Rcpp::export]]
-NumericMatrix dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size = 30) {
-
-  // Construct the dual tree KNN instance
-  Metric& metric = (Metric&) metric_type;
-  DualTreeBoruvka dtb = DualTreeBoruvka(x, metric);
-
-  // Run the dual tree boruvka algorithm
-  NumericMatrix mst = dtb.DTB(x);
-
-  // Return the minimum spanning tree
-  return mst;
-}
+// NumericMatrix dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size = 30) {
+//
+//   // Construct the dual tree KNN instance
+//   Metric& metric = (Metric&) metric_type;
+//   DualTreeBoruvka dtb = DualTreeBoruvka(x, metric);
+//
+//   // Run the dual tree boruvka algorithm
+//   NumericMatrix mst = dtb.DTB(x);
+//
+//   // Return the minimum spanning tree
+//   return mst;
+// }
 
 
 /*** R

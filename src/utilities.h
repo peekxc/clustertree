@@ -5,8 +5,8 @@
 using namespace Rcpp;
 // [[Rcpp::plugins(cpp11)]]
 
-//#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
-#undef NDEBUG // <-- for 'production' mode, will remove IO
+#define NDEBUG 1 // <-- for 'debug' mode, will print out info to R session
+//#undef NDEBUG // <-- for 'production' mode, will remove IO
 //#define PROFILING // <-- for 'profile' mode, will give timings of every function being profiled
 
 // Allows indexing lower triangular (dist objects)
@@ -170,6 +170,16 @@ inline IntegerVector order_(NumericVector x) {
   NumericVector sorted = clone(x).sort();
   return match(sorted, x);
 }
+
+inline IntegerMatrix subset_rows(const IntegerMatrix& ref, IntegerVector idx){
+  IntegerMatrix new_mat = Rcpp::no_init_matrix(idx.size(), ref.ncol());
+  int i = 0;
+  for (IntegerVector::iterator ii = idx.begin(); ii != idx.end(); ++i, ++ii) {
+    new_mat(i, _) = ref(*ii, _);
+  }
+  return(new_mat);
+}
+
 
 
 // Structures to do priority queue
