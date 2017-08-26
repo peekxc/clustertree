@@ -142,49 +142,5 @@ List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.
   // Rcout << "Ref size: " << emptyMatrix.size() << std::endl;
   DTB_CT dtb_ct = DTB_CT(x, euc_metric, emptyMatrix, clustertree_config);
   List res = dtb_ct.DTB(x);
-
-  IntegerMatrix mst = res["mst"];
-  IntegerVector CCs = res["CCs"];
-  NumericVector height = res["height"];
-
-  // If the spanning tree is a tree and not a forest (is fully connected)
-  // convert straight to hclust object
-  if (all(CCs == CCs.at(0)).is_true()){
-    List hcl = mstToHclust(mst, height);
-    hcl["mst"] = mst;
-    return(hcl);
-  } else {
-  // Otherwise, need to convert each CC into a separate hierarchy
-    IntegerVector cc_ids = unique(CCs), from = mst.column(0), to = mst.column(1);
-    List all_hclusts = List();
-    int i = 0;
-    for (IntegerVector::iterator cc_id = cc_ids.begin(); cc_id != cc_ids.end(); ++cc_id){
-
-      // Subset the original data set for each disjoint hierarchy
-      IntegerVector idx = which_cpp(CCs, *cc_id); // 0-based
-      IntegerVector mst_idx = IntegerVector(), mst_subset = IntegerVector();
-      for (IntegerVector::iterator id = idx.begin(); id != idx.end(); ++id){
-        mst_subset = Rcpp::union_(which_cpp(from == *id, true), which_cpp(to == *id, true));
-        mst_idx = Rcpp::union_(mst_idx, mst_subset);
-      }
-
-      // Handle singletons
-      if (idx.size() <= 1){
-        all_hclusts.push_back(clone(idx));
-      } else {
-      // Create the new hierarchy from the subset
-        IntegerMatrix new_mst = subset_rows(mst, mst_idx);
-        List hcl = mstToHclust(new_mst, height[mst_idx]);
-        hcl["idx"] = clone(idx);
-        hcl.attr("class")= "hclust"; // double-check
-
-        // Save it
-        all_hclusts.push_back(hcl);// indices of MST
-      }
-
-    }
-    all_hclusts["mst"] = mst;
-    return (all_hclusts);
-  }
-
+  return (res);
 }

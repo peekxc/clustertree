@@ -10,7 +10,7 @@ load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
 
-r_k <- apply(dbscan:::kNNdist(X_n, k = 6), 1, max)
+r_k <- apply(dbscan:::kNNdist(X_n, k = 5), 1, max)
 sum(clustertree:::primsRSL(dist(X_n), r_k = r_k, n = nrow(X_n), alpha = sqrt(2), type = 0)[, 3])
 
 what <- clustertree::clustertree(X_n, k = 5, alpha = sqrt(2), estimator = "RSL")
@@ -20,8 +20,11 @@ what <- clustertree::clustertree(X_n, k = 5, alpha = sqrt(2), estimator = "RSL")
 
 
 cppFunction('bool double_max() {
-  return NA_REAL < std::numeric_limits<double>::infinity();
-}')
+  std::unordered_map<int*, bool> what = std::unordered_map<int*, bool>();
+  int* test = new int(1);
+  what[test] = true;
+  return what[test];
+}', plugin="cpp11")
 
 
  
