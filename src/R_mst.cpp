@@ -95,37 +95,17 @@ NumericMatrix primsMST(const NumericVector dist_x){
   return(mst);
 }
 
-// NumericMatrix dtb(const NumericMatrix& x, SEXP metric_type, const int bkt_size = 30) {
-//
-//   // Construct the dual tree KNN instance
-//   Metric& metric = (Metric&) metric_type;
-//   DualTreeBoruvka dtb = DualTreeBoruvka(x, metric);
-//
-//   // Run the dual tree boruvka algorithm
-//   NumericMatrix mst = dtb.DTB(x);
-//
-//   // Return the minimum spanning tree
-//   return mst;
-// }
+// [[Rcpp::export]]
+List dtb_int(const NumericMatrix& x, SEXP metric_ptr, const int bkt_size = 30) {
 
+  // Construct the dual tree boruvka instance
+  Metric& metric = getMetric(metric_ptr);
+  //List config = List::create(_["bucketSize"] = bucketSize, _["splitRule"] = splitRule);
 
-/*** R
-  data("iris")
-  X_n <- iris[, 1:4]
+  // Run the dual tree boruvka algorithm
+  DualTreeBoruvka dtb = DualTreeBoruvka(x, metric);
+  List mst = dtb.DTB(x);
 
-  # Make sure KNN works
-  # clustertree:::dt_knn(as.matrix(X_n), k = 5, bkt_size = 1)
-
-  what <- dbscan::kNN(as.matrix(X_n)[c(60:70, 101),], k = 1)
-  cbind(what$id - 1, what$dist)
-
-  # Dual Tree Borvuka MSt
-  test_set <- as.matrix(X_n) #c(60:70, 101)
-  dist_ts <- as.matrix(dist(test_set))
-  el <- matrix(mapply(function(i, j) c(i, j, dist_ts[i, j]), row(dist_ts), col(dist_ts)), ncol = 3, byrow = T)
-
-  sum(optrees::msTreePrim(1:nrow(test_set), el)$tree.arcs[, 3])
-  sum(clustertree:::dtb(as.matrix(X_n)[c(60:70, 101),], bkt_size = 1)[[1]][, 3])
-  */
-
-
+  // Return the minimum spanning tree
+  return mst;
+}

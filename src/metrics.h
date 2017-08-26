@@ -135,7 +135,7 @@ struct L_p : Metric {
 };
 
 // Assume the error handling is done in R
-SEXP chooseMetric(std::string metric_name);
+SEXP chooseMetric_int(std::string metric_name);
 Metric& getMetric(SEXP metric_ptr);
 
 #endif

@@ -28,15 +28,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// chooseMetric
-SEXP chooseMetric(std::string metric_name, List config);
-RcppExport SEXP _clustertree_chooseMetric(SEXP metric_nameSEXP, SEXP configSEXP) {
+// chooseMetric_int
+SEXP chooseMetric_int(std::string metric_name, List config);
+RcppExport SEXP _clustertree_chooseMetric_int(SEXP metric_nameSEXP, SEXP configSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type metric_name(metric_nameSEXP);
     Rcpp::traits::input_parameter< List >::type config(configSEXP);
-    rcpp_result_gen = Rcpp::wrap(chooseMetric(metric_name, config));
+    rcpp_result_gen = Rcpp::wrap(chooseMetric_int(metric_name, config));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -149,6 +149,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dtb_int
+List dtb_int(const NumericMatrix& x, SEXP metric_ptr, const int bkt_size);
+RcppExport SEXP _clustertree_dtb_int(SEXP xSEXP, SEXP metric_ptrSEXP, SEXP bkt_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type metric_ptr(metric_ptrSEXP);
+    Rcpp::traits::input_parameter< const int >::type bkt_size(bkt_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(dtb_int(x, metric_ptr, bkt_size));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cut_simplified_hclust
 IntegerVector cut_simplified_hclust(List hcl, IntegerVector cl_in, const int big_n);
 RcppExport SEXP _clustertree_cut_simplified_hclust(SEXP hclSEXP, SEXP cl_inSEXP, SEXP big_nSEXP) {
@@ -190,7 +203,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_normalizeIndices", (DL_FUNC) &_clustertree_normalizeIndices, 1},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
-    {"_clustertree_chooseMetric", (DL_FUNC) &_clustertree_chooseMetric, 2},
+    {"_clustertree_chooseMetric_int", (DL_FUNC) &_clustertree_chooseMetric_int, 2},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_clusterTree_int", (DL_FUNC) &_clustertree_clusterTree_int, 4},
     {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
@@ -199,6 +212,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 6},
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
+    {"_clustertree_dtb_int", (DL_FUNC) &_clustertree_dtb_int, 3},
     {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},
     {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
     {"_clustertree_vol_nSphere", (DL_FUNC) &_clustertree_vol_nSphere, 2},

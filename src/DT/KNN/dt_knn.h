@@ -37,10 +37,10 @@ public:
 
   // Base-class functions replaced for KNN
   // virtual ANNdist min_dist(ANNkd_node* N_i, ANNkd_node* N_j); // use tracked min_knn to recursively compute
-  virtual ANNdist B(ANNkd_node* N_q);
+  virtual ANNdist B(ANNkd_node* N_q) override;
   ANNdist max_knn_B(ANNkd_node* N_q);
-  virtual void pDFS(ANNkd_node* N_q, ANNkd_node* N_r);
-  virtual void DFS(ANNkd_node* N_q, ANNkd_node* N_r);
+  virtual void pDFS(ANNkd_node* N_q, ANNkd_node* N_r) override;
+  virtual void DFS(ANNkd_node* N_q, ANNkd_node* N_r) override;
 
   // Update various KNN-related bounds
   ANNdist updateBounds(ANNdist new_dist, ANNkd_node* N_q_leaf, ANNkd_node* N_r_leaf,

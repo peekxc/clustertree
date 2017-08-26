@@ -1,19 +1,14 @@
 library("clustertree")
 library("testthat")
 
-context("clustertree")
+context("mst")
+
+X_n <- as.matrix(iris[, 1:4])
+sl <- hclust(dist(X_n), method = "single")
+
+## The euclidean mininum spanning tree is equivalent to single linkage. Thus, the
+## sum of the edge weights from both should be the same
+euc_mst <- clustertree::mst(iris[, 1:4])
+testthat::expect_true(sum(sl$height) == sum(euc_mst$height))
 
 
-dist_x <- as.matrix(dist(iris[, 1:4]))
-edge_list <- t(mapply(function(i, j) c(i, j, dist_x[i, j]), row(dist_x), col(dist_x)))
-mst_truth <- optrees::msTreePrim(nodes = 1:nrow(iris), arcs = edge_list)
-
-## Test base prims algorithm
-iris_mst <- clustertree:::primsMST(dist(iris[, 1:4]))
-
-
-sum(mst_truth$tree.arcs[, 3])
-testthat::expect_equal(sum(mst_truth$tree.arcs[, 3]), sum(iris_mst[, 3]))
-
-
-clustertree:::dtb()

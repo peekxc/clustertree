@@ -9,8 +9,8 @@ mstToHclust <- function(mst_, dist) {
     .Call('_clustertree_mstToHclust', PACKAGE = 'clustertree', mst_, dist)
 }
 
-chooseMetric <- function(metric_name, config) {
-    .Call('_clustertree_chooseMetric', PACKAGE = 'clustertree', metric_name, config)
+chooseMetric_int <- function(metric_name, config) {
+    .Call('_clustertree_chooseMetric_int', PACKAGE = 'clustertree', metric_name, config)
 }
 
 primsRSL <- function(r, r_k, n, alpha, type) {
@@ -43,6 +43,10 @@ kruskalsMST <- function(dist_x) {
 
 primsMST <- function(dist_x) {
     .Call('_clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
+}
+
+dtb_int <- function(x, metric_ptr, bkt_size = 30L) {
+    .Call('_clustertree_dtb_int', PACKAGE = 'clustertree', x, metric_ptr, bkt_size)
 }
 
 cut_simplified_hclust <- function(hcl, cl_in, big_n) {

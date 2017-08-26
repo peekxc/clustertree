@@ -89,72 +89,7 @@ ANNdist DualTreeBoruvka::Score(ANNkd_node* N_q, ANNkd_node* N_r) {
   return ANN_DIST_INF; // Prune this branch
 }
 
-// void DualTreeBoruvka::pDFS(ANNkd_node* N_q, ANNkd_node* N_r){
-//   // KD Trees only store points in the leaves; Base case only needed if comparing two leaves
-//   if (IS_LEAF(N_q) && IS_LEAF(N_r)) {
-//     ANN_LEAF(2) // Update leaf counter
-//     BaseCaseIdentity(AS_LEAF(N_q), AS_LEAF(N_r));
-//     return; // If at the base case, don't recurse!
-//   }
-//
-//   // --------------- Begin prioritized recursive calls ---------------
-//   if (IS_LEAF(N_q) && !IS_LEAF(N_r)){ ANN_LEAF(1); ANN_SPL(1)
-//
-//     N_r_par = (ANNkd_node*) N_r; // set current reference node as parent, keep same query parent
-//     const ANNkd_split* nr_spl = AS_SPLIT(N_r);
-//
-//     // Sort and visit closer branches
-//     NodeScore scores[2] = { NodeScore(N_q, nr_spl->child[ANN_LO], Score(N_q, nr_spl->child[ANN_LO])),
-//                             NodeScore(N_q, nr_spl->child[ANN_HI], Score(N_q, nr_spl->child[ANN_HI])) };
-//     sort2_sn_stable(scores); // Sort by score using sorting network
-//     if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
-//     if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
-//
-//   } else if (!IS_LEAF(N_q) && IS_LEAF(N_r)){ ANN_SPL(1); ANN_LEAF(1)
-//     N_q_par = N_q; // set current query node as parent, keep same reference parent
-//     ANNkd_split *const nq_spl = AS_SPLIT(N_q);
-//
-//     // Sort closer branches
-//     NodeScore scores[2] = { NodeScore(nq_spl->child[ANN_LO], N_r, Score(nq_spl->child[ANN_LO], N_r)),
-//                             NodeScore(nq_spl->child[ANN_HI], N_r, Score(nq_spl->child[ANN_HI], N_r)) };
-//     sort2_sn_stable(scores); // Sort by score using sorting network
-//
-//     // Visit closer branches first, return at first sign of infinity
-//     if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
-//     if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
-//
-//   } else { ANN_SPL(2)
-//     N_q_par = N_q, N_r_par = N_r; // set parents as the current nodes
-//     ANNkd_split *const nq_spl = AS_SPLIT(N_q), *const nr_spl = AS_SPLIT(N_r);
-//     if (N_q != N_r){
-//       NodeScore scores[4] = { NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO])),
-//                               NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI])),
-//                               NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_LO])),
-//                               NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI])) };
-//       sort4_sn_stable(scores); // Sort by score using sorting network
-//
-//       // Visit closer branches first, return at first sign of infinity
-//       if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
-//       if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
-//       if (scores[2].score == ANN_DIST_INF) return; else pDFS(scores[2].lhs, scores[2].rhs);
-//       if (scores[3].score == ANN_DIST_INF) return; else pDFS(scores[3].lhs, scores[3].rhs);
-//     } else {
-//       // If the nodes are identical, it is unnecessary to score and recurse into both children
-//       NodeScore scores[3] = { NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_LO])),
-//                               NodeScore(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_LO], nr_spl->child[ANN_HI])),
-//                               NodeScore(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI], Score(nq_spl->child[ANN_HI], nr_spl->child[ANN_HI])) };
-//       sort3_sn_stable(scores); // Sort by score using sorting network
-//
-//       // Visit closer branches first, return at first sign of infinity
-//       if (scores[0].score == ANN_DIST_INF) return; else pDFS(scores[0].lhs, scores[0].rhs);
-//       if (scores[1].score == ANN_DIST_INF) return; else pDFS(scores[1].lhs, scores[1].rhs);
-//       if (scores[2].score == ANN_DIST_INF) return; else pDFS(scores[2].lhs, scores[2].rhs);
-//     }
-//   }
-//   return;
-// }
-//
-
+// Dual Tree Boruvka Main function
 List DualTreeBoruvka::DTB(const NumericMatrix& x){
 
   // Necessary data structures for the DTB
@@ -183,7 +118,7 @@ List DualTreeBoruvka::DTB(const NumericMatrix& x){
   NumericVector height = NumericVector(n - 1);
   int c_i = 0;
   if (use_pruning) {
-    IntegerVector old_CC, new_CC;
+    // IntegerVector old_CC, new_CC;
     do {
       Rcpp::checkUserInterrupt();
 
@@ -193,9 +128,6 @@ List DualTreeBoruvka::DTB(const NumericMatrix& x){
       // Sort the distances
       NumericVector nn_dist = wrap(D); // D is updated with the k=2 nearest neighbor distances from the boruvka step
       IntegerVector index = order_(nn_dist) - 1; // Prepare to connect the small edges first
-
-      // Get the current set of connected components
-      old_CC = CC.getCC();
 
       // Merge components based on nearest edge
       for (IntegerVector::iterator i = index.begin(); i != index.end(); ++i){
@@ -214,31 +146,27 @@ List DualTreeBoruvka::DTB(const NumericMatrix& x){
       resetKNN(); // Reset K nearest neighbors priority queue
       resetBaseCases(); // Reset base cases: distances need to be recomputed
 
-      // Get the new formed connected components
-      new_CC = CC.getCC();
-
-      // Debugging output
-      #ifdef NDEBUG
-      R_INFO("Current CCs: ")
-      CC.printCC();
-      R_INFO("\n")
-      #endif
-
-    // Continue until either fully connected, implying a true, spanning tree or until one of the boruvka
-    // steps does not change the component structure, implying the underlying graph was not fully connected
-    // to begin with.
-    } while(!fully_connected() && all(old_CC != new_CC).is_true());
+    // Continue until either fully connected or until the
+    } while(c_i != n && !fully_connected());
 
     // Debugging output
     #ifdef NDEBUG
-      R_INFO("Final CC: ");
-      CC.printCC();
-      R_INFO("DTB: is fully connected? " << (bool) fully_connected() << ", old_cc == new_cc? " << (bool) all(old_CC == new_CC).is_true() << "\n")
+        R_INFO("Final CC: ");
+        CC.printCC();
     #endif
 
   } // use_pruning
-  IntegerVector valid_idx = Rcpp::Range(0, c_i - 1);
-  return List::create(_["mst"] = mst_el(Rcpp::Range(0, c_i - 1), Rcpp::Range(0, 1)), _["height"] = height[valid_idx], _["CCs"] = CC.getCC());
+  // IntegerVector valid_idx = Rcpp::Range(0, c_i - 1);(Rcpp::Range(0, c_i - 1), Rcpp::Range(0, 1))
+
+
+  // Replace invalid-distances with NAs
+  for (int i = 0; i < n - 1; ++i){
+    if (height[i] == std::numeric_limits<ANNdist>::max()){
+      height[i] = NA_REAL;
+    }
+  }
+  m_dist.finalize(height); // apply final metric transformation
+  return List::create(_["mst"] = mst_el, _["height"] = height, _["CCs"] = CC.getCC());
 }
 
 

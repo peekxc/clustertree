@@ -1,7 +1,7 @@
 #include "metrics.h"
 
 // [[Rcpp::export]]
-SEXP chooseMetric(std::string metric_name, List config) {
+SEXP chooseMetric_int(std::string metric_name, List config) {
   if (metric_name == "euclidean")     {
     L_2* metric = new L_2();
     if (!config.containsElementNamed("d")){

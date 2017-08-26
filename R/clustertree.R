@@ -37,22 +37,22 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   hc <- clusterTree_int(x = x, k = k, alpha = alpha, type = type)
 
   ## If it's a list, dealing with a minimum spanning forest
-  if (is(hc, "list")){
-    for(i in 1:length(hc)){
-      if (is(hc[[i]], "hclust")){
-        hc[[i]]$call <- match.call()
-        hc[[i]]$method <- possible_estimators[type+1]
-      }
-      # Else do nothing - singleton
-    }
-  } else {
-  ## Otherwise it's a fully connected tree
-    if (is(hc, "hclust")){
-      hc$call <- match.call()
-      hc$method <- possible_estimators[type+1]
-    }
-  }
-  res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree", X_n = x)
+  # if (is(hc, "list")){
+  #   for(i in 1:length(hc)){
+  #     if (is(hc[[i]], "hclust")){
+  #       hc[[i]]$call <- match.call()
+  #       hc[[i]]$method <- possible_estimators[type+1]
+  #     }
+  #     # Else do nothing - singleton
+  #   }
+  # } else {
+  # ## Otherwise it's a fully connected tree
+  #   if (is(hc, "hclust")){
+  #     hc$call <- match.call()
+  #     hc$method <- possible_estimators[type+1]
+  #   }
+  # }
+  # res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree", X_n = x)
   return(hc)
 }
 
