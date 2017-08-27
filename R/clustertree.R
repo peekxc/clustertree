@@ -2,8 +2,9 @@
 #' @name clustertree
 #' @description Implements various algorithms for estimating the cluster tree.
 #' @param x a matrix-coercible data set, or a euclidean 'dist' object.
-#' @param k integer; smoothing parameter, controls the radius of the ball containing k points around each x_i.
-#' @param alpha float; regularity parameter that prevents excessive chaining. Can be safely kept on the default. See below for details.
+#' @param k integer; smoothing parameter controlling how 'dense' an object should be before being considered for
+#' linkage into the cluster tree hierarchy. See below for details.
+#' @param alpha float; regularity parameter used to prevent 'excessive chaining'. Can be safely kept on the default. See below for details.
 #' @param estimator Which estimator to choose from. Default is robust single linkage, see below for details.
 #' @param warn boolean; Whether to warn the user regarding the usage of the parameter settings. Defaults to false. See below for details.
 #' @note The default 'k' parameter will differ between if a 'dist' object is given vs. the original data set, as with
@@ -21,6 +22,7 @@
 #' 2. Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
 #' @seealso hclust
 #' @importFrom methods is
+#' @importFrom Rcpp evalCpp
 #' @useDynLib clustertree
 #' @export
 clustertree <- function(x, k = "suggest", alpha = "suggest",

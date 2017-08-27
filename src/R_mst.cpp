@@ -3,9 +3,7 @@ using namespace Rcpp;
 
 #include "utilities.h" // Indexing macros
 #include "ANN/ANN_util.h" // matrixToANNpointArray
-#include "DT/dt.h"
-#include "DT/MST/dtb.h"
-#include "DT/structures/union_find.h" // disjoint set data structure
+#include "union_find.h" // disjoint set data structure
 #include "metrics.h"
 
 /* kruskalsMST
@@ -93,19 +91,4 @@ NumericMatrix primsMST(const NumericVector dist_x){
     c_i = min_id;
   }
   return(mst);
-}
-
-// [[Rcpp::export]]
-List dtb_int(const NumericMatrix& x, SEXP metric_ptr, const int bkt_size = 30) {
-
-  // Construct the dual tree boruvka instance
-  Metric& metric = getMetric(metric_ptr);
-  //List config = List::create(_["bucketSize"] = bucketSize, _["splitRule"] = splitRule);
-
-  // Run the dual tree boruvka algorithm
-  DualTreeBoruvka dtb = DualTreeBoruvka(x, metric);
-  List mst = dtb.DTB(x);
-
-  // Return the minimum spanning tree
-  return mst;
 }

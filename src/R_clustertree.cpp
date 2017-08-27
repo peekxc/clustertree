@@ -1,7 +1,6 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <clustertree/dtb_ct.h> // Dual Tree Boruvka extensions for RSL
 #include <hclust_util.h> // Hclust extensions
 #include <ANN/ANN_util.h> // matrixToANNpointArray
 #include <metrics.h>
@@ -113,34 +112,4 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
     c_i = min_id;
   }
   return(mst);
-}
-
-// [[Rcpp::export]]
-List clusterTree_int(const NumericMatrix x, const int k, const double alpha = 1.414213562373095, const int type = 0) {
-
-  // Number of data points
-  //const int n = x.nrow();
-  const int d = x.ncol();
-
-  // Use euclidean distance
-  L_2 euc_metric = L_2();
-  euc_metric.d = d;
-
-  // Create the radii dual tree
-  DualTreeKNN dt = DualTreeKNN(x, euc_metric);
-  List knn = dt.KNN(k+1, false); // +1 to account for self-matches, false to not apply the final unary operation (sqrt for l_2)
-  NumericMatrix knn_dist = knn["dist"];
-  NumericVector r_k = knn_dist.column(k-1); // radius to kth-nearest neighbor
-
-  // Create a configuration for the tree and the cluster tree DTB
-  List clustertree_config = List::create(_["alpha"] = alpha,
-                                         _["k"] = k,
-                                         _["R"] = r_k, // Minimum connection radius
-                                         _["estimator"] = type, // estimator to use
-                                         _["bucketSize"] = 10,
-                                         _["splitRule"] = 5);
-  // Rcout << "Ref size: " << emptyMatrix.size() << std::endl;
-  DTB_CT dtb_ct = DTB_CT(x, euc_metric, emptyMatrix, clustertree_config);
-  List res = dtb_ct.DTB(x);
-  return (res);
 }

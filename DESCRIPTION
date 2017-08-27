@@ -7,8 +7,7 @@ Author: Matt Piekenbrock
 Maintainer: Matt Piekenbrock <matt.piekenbrock@gmail.com>
 Description: Contains a set of functions and extensions for estimating and visualizing the empirical cluster tree.
 License: MIT + file LICENSE 
-Imports: 
-  Rcpp (>= 0.12.9)
+Imports: Rcpp
 Suggests: 
   testthat
 LinkingTo: Rcpp

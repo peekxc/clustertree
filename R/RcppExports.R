@@ -21,10 +21,6 @@ primsRSL <- function(r, r_k, n, alpha, type) {
     .Call('_clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
 }
 
-clusterTree_int <- function(x, k, alpha = 1.414213562373095, type = 0L) {
-    .Call('_clustertree_clusterTree_int', PACKAGE = 'clustertree', x, k, alpha, type)
-}
-
 kd_knn <- function(query_x, tree_ptr, k, priority) {
     .Call('_clustertree_kd_knn', PACKAGE = 'clustertree', query_x, tree_ptr, k, priority)
 }
@@ -43,10 +39,6 @@ kruskalsMST <- function(dist_x) {
 
 primsMST <- function(dist_x) {
     .Call('_clustertree_primsMST', PACKAGE = 'clustertree', dist_x)
-}
-
-dtb_int <- function(x, metric_ptr, bkt_size = 30L) {
-    .Call('_clustertree_dtb_int', PACKAGE = 'clustertree', x, metric_ptr, bkt_size)
 }
 
 cut_simplified_hclust <- function(hcl, cl_in, big_n) {

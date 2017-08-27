@@ -4,7 +4,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <DT/structures/union_find.h>
+#include <union_find.h>
 #include <utilities.h>
 
 // Recursively visit the merge matrix to extract an hclust sufficient ordering

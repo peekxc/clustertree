@@ -39,7 +39,7 @@ IntegerMatrix normalizeIndices(const IntegerMatrix& mst){
 * a list of hierarchies / 'hclust' objects for each tree in the forest. Assumes the weights
 * on edges between disconnected components are either NA_REAL or absent from entirely. If
 */
-List splitConnected(const IntegerMatrix& mst_, const NumericVector& dist, const IntegerVector& CCs){
+void splitConnected(const IntegerMatrix& mst_, const NumericVector& dist, const IntegerVector& CCs){
 
   // IntegerMatrix mst = res["mst"];
   // IntegerVector CCs = res["CCs"];
@@ -102,7 +102,6 @@ IntegerVector mstToCC(const IntegerMatrix& mst, const NumericVector& dist){
       if (R_IsNA(link_weight) || link_weight == std::numeric_limits<double>::max()){
         continue;// Don't link special values indicating minimum spanning forests
       }
-      int from_comp = components.Find(from), to_comp = components.Find(to);
       components.Union(from, to);
     } else { stop("Please use a 0-based MST"); }
   }
