@@ -1,5 +1,5 @@
 CXX_STD = CXX11
-PKG_CPPFLAGS += -I$(realpath .) -std=c++11
+PKG_CPPFLAGS = -I../src
 ## ^^ C++ compiler flags. Use c++11. Extra include allows the use of bracket #include notation
 ## For CRAN releases, use -pedantic and -Wall beforehand
 

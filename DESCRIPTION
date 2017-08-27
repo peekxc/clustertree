@@ -1,18 +1,16 @@
 Package: clustertree
 Type: Package
 Title: Estimates The Empirical Cluster Tree
-Version: 0.1
+Version: 0.80
 Date: 2017-08-23
 Author: Matt Piekenbrock
 Maintainer: Matt Piekenbrock <matt.piekenbrock@gmail.com>
 Description: Contains a set of functions and extensions for estimating and visualizing the empirical cluster tree.
 License: MIT + file LICENSE 
-Imports: Rcpp
-Suggests: 
-  testthat
+Imports: Rcpp, methods, stats, graphics
+Suggests: testthat, knitr
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1
-Copyright: ANN library is copyright by University of Maryland, Sunil Arya and
-    David Mount. All other code is copyright by Michael Hahsler and Matthew Piekenbrock.
+Copyright: ANN library is copyright by University of Maryland, Sunil Arya and David Mount. All other code is copyright by Matthew Piekenbrock.
 SystemRequirements: C++11

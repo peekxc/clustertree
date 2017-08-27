@@ -1,0 +1,21 @@
+---
+title: "A Tour of the clustertree package"
+output: html_notebook
+---
+
+<Insert Introduction text> 
+
+```{r}
+  if (!require("GDAdata")) { install.packages("GDAdata"); library("GDAdata") } 
+  data("HRstars")
+```
+
+
+```{r}
+
+```
+
+
+
+
+<Insert Introduction text> 

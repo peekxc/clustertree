@@ -4,9 +4,20 @@
 \alias{mst}
 \title{Minimum spanning tree}
 \usage{
-mst(X_n, metric = "euclidean")
+mst(X_n)
+}
+\arguments{
+\item{X_n}{a 'dist' object or matrix of edge weights encoding an adjacency matrix.}
+}
+\value{
+a matrix containing the 'from' node indices (column 1), the 'to' node indices (column 2), and the weight of
+the edge between then (column 3).
 }
 \description{
-Given a data set, calculate the euclidean minimum spanning tree. Equivalent to single linkage, but
-avoids calculating the distance matrix.
+Minimum spanning tree
+}
+\details{
+Given a 'dist' object encoding the effective 'edge weights' between nodes, calculate the
+minimum spanning tree. Nonexistent edges can be represented as \code{NA} or \code{.Machine$double.xmax}. Only
+supports symmetric edge weights.
 }

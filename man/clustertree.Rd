@@ -10,9 +10,10 @@ clustertree(x, k = "suggest", alpha = "suggest", estimator = c("RSL",
 \arguments{
 \item{x}{a matrix-coercible data set, or a euclidean 'dist' object.}
 
-\item{k}{integer; smoothing parameter, controls the radius of the ball containing k points around each x_i.}
+\item{k}{integer; smoothing parameter controlling how 'dense' an object should be before being considered for
+linkage into the cluster tree hierarchy. See below for details.}
 
-\item{alpha}{float; regularity parameter that prevents excessive chaining. Can be safely kept on the default. See below for details.}
+\item{alpha}{float; regularity parameter used to prevent 'excessive chaining'. Can be safely kept on the default. See below for details.}
 
 \item{estimator}{Which estimator to choose from. Default is robust single linkage, see below for details.}
 

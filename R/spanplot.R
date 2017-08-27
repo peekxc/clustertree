@@ -5,6 +5,8 @@
 #' @param C_n a 'clustertree' object
 #' @param h an optional height to cut the tree at. Colors the corresponding connected components.
 #' @importFrom methods is
+#' @import stats
+#' @importFrom grDevices rainbow
 #' @export
 spanplot <- function(X_n, C_n, h = NULL){
   if (!any(c("clustertree") %in% class(C_n))) stop("spanplot expects a 'clustertree' object")
@@ -22,7 +24,7 @@ spanplot <- function(X_n, C_n, h = NULL){
     x_r2 <- X_n
   } else {
     ## Plot first two principle components
-    pr_comp <- stats::prcomp(as.matrix(X_n))
+    pr_comp <- prcomp(as.matrix(X_n))
     x_r2 <- pr_comp$x[, 1:2]
   }
   plot(x_r2, pch = 20)

@@ -104,7 +104,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 #' @method print clustertree
 #' @export
 print.clustertree <- function(C_n){
-  method <- ifelse(is(C_n$hc, "list"), what$hc[[1]]$method, C_n$hc$method)
+  method <- ifelse(is(C_n$hc, "list"), C_n$hc[[1]]$method, C_n$hc$method)
   type <- pmatch(toupper(method), c("RSL", "KNN", "MUTUAL KNN"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type]
   writeLines(c(
