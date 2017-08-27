@@ -3,10 +3,10 @@
 #' @description Implementation of Chaudhuri et. al's consistent pruning procedure for the cluster tree. By "pruning" the tree,
 #' spurious clusters are removed while salient clusters are recovered.
 #' @param eps A tuning parameter (> 0) representing how aggressively to prune.
-#' @param delta The (1-δ) probability
-#' @references See KC and SD (2014).
-#' @export
+#' @param delta The (1-δ) probability threshold associated with the pruning constant. See below for details.
+#' @references 1. Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
 cons_prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
+  if(delta <= 0 || delta > 1) stop("Invalid delta threshold. Probability threshold must be in the interval [0, 1).")
   n <- length(C_n$hc$height) + 1
   d <- ifelse(is.null(C_n[["d"]]), 1, C_n[["d"]])
   k <- C_n$k

@@ -4,9 +4,11 @@
 \alias{plot.clustertree}
 \title{Plot a given cluster tree}
 \usage{
-\method{plot}{clustertree}(C_n, type = c("both", "dendrogram", "span tree"))
+\method{plot}{clustertree}(C_n, which = 1, h = NULL, f = "scatter")
 }
 \arguments{
+\item{which}{if there are several hierarchies from the original data set, which one to plot?}
+
 \item{x}{a 'clustertree' object.}
 }
 \description{

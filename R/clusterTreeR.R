@@ -3,7 +3,7 @@
 #' @import igraph
 #' @importFrom stats dist
 #' @importFrom utils setTxtProgressBar txtProgressBar
-clustertree_ex <- function(x, k = 5L, alpha = sqrt(2)){
+clustertree_ex <- function(x, k = 5L, alpha = sqrt(2), type = 0){
   suppressMessages({ require("igraph"); require("FNN") })
 
   ## Initialize variables

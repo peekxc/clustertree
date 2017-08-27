@@ -7,30 +7,25 @@ context("clustertree")
 load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
-X_n <- as.matrix(iris[, 1:4])
-ct_res <- clustertree::clustertree(X_n, k = 15)
-sort(unique(ct_res[[1]]$mst[, 1], ct_res[[1]]$mst[, 2]))+1
-
 ## Supply Variables/parameters
 { n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
 
 ## Automatically detecting k ~ dlogn sets k around 39, more neighbors than records!
 test_that("Parameter detection works", {
-  expect_error(clustertree::clustertree(X_n))
-  expect_warning(clustertree::clustertree(X_n, k = 5L, warn = T))
+  expect_warning(clustertree(X_n, warn = T))
+  expect_warning(clustertree(X_n, k = 5L, warn = T))
 })
 
 ## Make sure setup code at least works
 test_that("Basic functionality works", {
-  testthat::expect_silent(clustertree::clustertree(X_n, k = 5L))
-  testthat::expect_silent(apply(dbscan::kNNdist(X_n, k = 5L - 1), 1, max))
+  expect_silent(clustertree(X_n, k = 5L))
 })
 
 ## RSL clustertree solution using brute-force/naive version
 test_that("RSL naive solution matches MST", {
   C_n_rsl <- clustertree::clustertree(X_n, k = 5L)
-  r_k <- apply(dbscan::kNNdist(X_n, k = C_n_rsl$k - 1), 1, max)
-  rsl_naive <- clustertree:::naive_clustertree(dist_x, r_k, C_n_rsl$alpha, type = 0)
+  r_k <- apply(clustertree::knn(X_n, k = C_n_rsl$k - 1)$dist, 1, max)
+  rsl_naive <- clustertree:::clustertree_ex(dist_x, r_k, C_n_rsl$alpha, type = 0)
 
   ## Do the run time lengths of each symbol match?
   expect_true(all(sapply(rsl_naive, function(cl) {

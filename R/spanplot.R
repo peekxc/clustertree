@@ -11,8 +11,8 @@ spanplot <- function(X_n, C_n, h = NULL){
   hc <- C_n$hc
   if (is.null(C_n[["mst"]])) stop("Cannot plot spanning tree. MST not detected in cluster tree.")
 
-  # Save plot settings
-  old.par <- par()
+  # Save default plot settings
+  .pardefault <- par(no.readonly = T)
 
   ## Scatter plot / nodes
   x_r2 <- list()
@@ -48,5 +48,5 @@ spanplot <- function(X_n, C_n, h = NULL){
     points(x_r2, pch = 20, col = cl_colors[cl])
   }
 
-  par(old.par) # restore
+  par(.pardefault) # restore
 }

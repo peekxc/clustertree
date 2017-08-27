@@ -1,14 +1,25 @@
 #' @title Compute the Empirical Cluster Tree
 #' @name clustertree
-#' @description Implements various estimators for estimating the empirical cluster tree.
+#' @description Implements various algorithms for estimating the cluster tree.
 #' @param x a matrix-coercible data set, or a euclidean 'dist' object.
 #' @param k integer; smoothing parameter, controls the radius of the ball containing k points around each x_i.
 #' @param alpha float; regularity parameter that prevents excessive chaining. Can be safely kept on the default. See below for details.
+#' @param estimator Which estimator to choose from. Default is robust single linkage, see below for details.
+#' @param warn boolean; Whether to warn the user regarding the usage of the parameter settings. Defaults to false. See below for details.
 #' @note The default 'k' parameter will differ between if a 'dist' object is given vs. the original data set, as with
 #' the dist object the original dimensionality of the data is unknown (to which the default setting of k depends on).
-#' Chaudhuri et. al recommend keeping alpha as low as possible, subject to being no lower than sqrt(2).
-#' @references See Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
-#' @import dbscan
+#' Chaudhuri et. al [1] recommend keeping alpha as low as possible, but recommended no lower than sqrt(2). If not estimator
+#' is specified, Robust Single Linkage (RSL) is used.
+#'
+#' The other two estimators are from Algorithm 2 in [2]. Note that in the case where the KNN or Mutual KNN graph estimators are used,
+#' the resulting 'tree' may actually be a disconnected forest. To handle this each connected component is made into its
+#' own hierarchy ('hclust' object), discarding singletons (if any). Because \code{hclust} objects require a representation
+#' where leaf indices start with 1, the indices of the original data set are stored in the \code{idx} member of each
+#' hierarchy.
+#' @references
+#' 1. Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
+#' 2. Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
+#' @seealso hclust
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
@@ -30,6 +41,12 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   k <- as.integer(ifelse(missing(k), d * log(nrow(x)), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
+  ## Make sure k is less than n
+  if (k > nrow(x) ){
+    if (warn) warning("Data set has either too few records or to high of a dimensionality to use recommended default parameters.")
+    k <- max(2, ceiling(log(nrow(X_n))))
+  }
+
   ## Choose estimator
   possible_estimators <- c("RSL", "knn", "mutual knn")
   type <- ifelse(missing(estimator), 0, pmatch(toupper(estimator), toupper(possible_estimators)) - 1L)
@@ -42,7 +59,8 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   if (warn && k < ceiling(d * log(nrow(x)))) warning(warn_message)
 
   ## Call the cluster tree augmented MST (using prioritized prims with delayed connections)
-  r_k <- knn(x, k = k, bucketSize = k * log(nrow(x)), splitRule = "SUGGEST")
+  ## Note: knn returns the k nearest, exclusively. Clustertree relies on k to be inclusive, so increase by 1.
+  r_k <- knn(x, k = k + 1, bucketSize = k * log(nrow(x)), splitRule = "SUGGEST")
   r_k <- apply(r_k$dist, 1, max)
   st <- primsRSL(x_dist, r_k = r_k, n = nrow(x), alpha = alpha, type = type)
 
@@ -80,7 +98,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   return(res)
 }
 
-#' @name print.clustertree
+#' print.clustertree
 #' @method print clustertree
 #' @export
 print.clustertree <- function(C_n){
@@ -98,26 +116,41 @@ print.clustertree <- function(C_n){
 #' @name plot.clustertree
 #' @description More details coming soon...
 #' @param x a 'clustertree' object.
+#' @param which if there are several hierarchies from the original data set, which one to plot?
 #' @references See KC and SD.
 #' @importFrom methods is
 #' @useDynLib clustertree
 #' @export
-plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
+plot.clustertree <- function(C_n, which = 1, h = NULL, f="scatter"){
   X_n <- attr(C_n, "X_n")
   # dev.interactive()
+  .pardefault <- par(no.readonly = T)
   if (is(C_n$hc, "hclust")){
     layout(matrix(c(1, 2), nrow = 1, ncol = 2))
     plot(C_n$hc, hang = -1)
     spanplot(X_n, C_n)
   } else if (is(C_n$hc, "list") && length(C_n$hc) > 0){
     n_hier <- length(C_n$hc)
-    layout(matrix(c(1, 1:n_hier +1), nrow = 1, ncol = n_hier+1),
-           widths = c(rep(0.5/n_hier,n_hier), 0.5))
-    for (hcl in C_n$hc){ plot(hcl, hang = -1) }
-    spanplot(X_n, C_n)
+    if (which > n_hier){
+      stop(sprintf("Cannot plot hierarchy (%d), there are only %d total hierarchies!", which, n_hier))
+    }
+    layout(matrix(c(1, 2), nrow = 1, ncol = 2))
+    # layout(matrix(c(1, 1:n_hier +1), nrow = 1, ncol = n_hier+1),
+    #        widths = c(rep(0.5/n_hier,n_hier), 0.5))
+    plot(C_n$hc[[which]], hang = -1)
+    if (f == "scatter" || missing(f)){
+      spanplot(X_n, C_n)
+    } else {
+      f(X_n, C_n)
+    }
   }
+  par(.pardefault)
 }
 
+# TODO
+# identify.clustertree <- function(C_n, which = 1, h = NULL, f="scatter"){
+#
+# }
 
 ## The metrics supported by the various dual tree extensions
 .supported_metrics <- c("euclidean", "manhattan", "maximum", "minkowski")

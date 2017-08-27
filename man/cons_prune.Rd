@@ -7,7 +7,7 @@
 cons_prune(C_n, delta, eps = 1/sqrt(C_n$k))
 }
 \arguments{
-\item{delta}{The (1-δ) probability}
+\item{delta}{The (1-δ) probability threshold associated with the pruning constant. See below for details.}
 
 \item{eps}{A tuning parameter (> 0) representing how aggressively to prune.}
 }
@@ -16,5 +16,5 @@ Implementation of Chaudhuri et. al's consistent pruning procedure for the cluste
 spurious clusters are removed while salient clusters are recovered.
 }
 \references{
-See KC and SD (2014).
+1. Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
 }

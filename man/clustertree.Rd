@@ -13,15 +13,27 @@ clustertree(x, k = "suggest", alpha = "suggest", estimator = c("RSL",
 \item{k}{integer; smoothing parameter, controls the radius of the ball containing k points around each x_i.}
 
 \item{alpha}{float; regularity parameter that prevents excessive chaining. Can be safely kept on the default. See below for details.}
+
+\item{estimator}{Which estimator to choose from. Default is robust single linkage, see below for details.}
+
+\item{warn}{boolean; Whether to warn the user regarding the usage of the parameter settings. Defaults to false. See below for details.}
 }
 \description{
-Implements various estimators for estimating the empirical cluster tree.
+Implements various algorithms for estimating the cluster tree.
 }
 \note{
 The default 'k' parameter will differ between if a 'dist' object is given vs. the original data set, as with
 the dist object the original dimensionality of the data is unknown (to which the default setting of k depends on).
-Chaudhuri et. al recommend keeping alpha as low as possible, subject to being no lower than sqrt(2).
+Chaudhuri et. al [1] recommend keeping alpha as low as possible, but recommended no lower than sqrt(2). If not estimator
+is specified, Robust Single Linkage (RSL) is used.
+
+The other two estimators are from Algorithm 2 in [2]. Note that in the case where the KNN or Mutual KNN graph estimators are used,
+the resulting 'tree' may actually be a disconnected forest. To handle this each connected component is made into its
+own hierarchy ('hclust' object), discarding singletons (if any). Because \code{hclust} objects require a representation
+where leaf indices start with 1, the indices of the original data set are stored in the \code{idx} member of each
+hierarchy.
 }
 \references{
-See Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
+1. Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
+2. Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
 }
