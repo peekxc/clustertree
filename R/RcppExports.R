@@ -5,6 +5,10 @@ normalizeIndices <- function(mst) {
     .Call('_clustertree_normalizeIndices', PACKAGE = 'clustertree', mst)
 }
 
+mstToCC <- function(mst, dist) {
+    .Call('_clustertree_mstToCC', PACKAGE = 'clustertree', mst, dist)
+}
+
 mstToHclust <- function(mst_, dist) {
     .Call('_clustertree_mstToHclust', PACKAGE = 'clustertree', mst_, dist)
 }
@@ -29,12 +33,8 @@ kdtree <- function(x, bkt_size) {
     .Call('_clustertree_kdtree', PACKAGE = 'clustertree', x, bkt_size)
 }
 
-dt_kNN_int <- function(q_x, k, bucketSize, splitRule, metric_ptr, r_x = matrix()) {
-    .Call('_clustertree_dt_kNN_int', PACKAGE = 'clustertree', q_x, k, bucketSize, splitRule, metric_ptr, r_x)
-}
-
-kNN_int <- function(data, k, type, bucketSize, splitRule, approx) {
-    .Call('_clustertree_kNN_int', PACKAGE = 'clustertree', data, k, type, bucketSize, splitRule, approx)
+kNN_int <- function(x, k, type, bucketSize, splitRule, approx, r_x) {
+    .Call('_clustertree_kNN_int', PACKAGE = 'clustertree', x, k, type, bucketSize, splitRule, approx, r_x)
 }
 
 kruskalsMST <- function(dist_x) {

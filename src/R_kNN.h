@@ -6,9 +6,12 @@
 
 using namespace Rcpp;
 
+static NumericMatrix emptyMatrix = NumericMatrix(0, 0);
+
 // returns knn + dist
 // [[Rcpp::export]]
-List kNN_int(NumericMatrix data, int k,
-             int type, int bucketSize, int splitRule, double approx);
+List kNN_int(const NumericMatrix& x, int k,
+             int type, int bucketSize, int splitRule, double approx,
+             NumericMatrix& r_x); // put default in impl.
 
 #endif

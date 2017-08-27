@@ -16,9 +16,17 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
                         estimator = c("RSL", "knn", "mutual knn"),
                         warn = FALSE){
   if (is.null(dim(x))) stop("'clustertree' expects x to be a matrix-coercible object.")
-  x <- as.matrix(x)
+  x <- as.matrix(x) ## Coerce to matrix
   if (!storage.mode(x) %in% c("double", "integer")) stop("'clustertree' expects x to be numeric or integer only.")
-  d <- ncol(x)
+  x_dist <- NULL
+  if (is(x, "dist")){
+    d <- 1L
+    if (warn && x$method != "euclidean"){ warning("Current estimators have only been studied under the euclidean metric.") }
+    x_dist <- x
+  } else {
+    d <- ncol(x)
+    x_dist <- dist(x, method = "euclidean")
+  }
   k <- as.integer(ifelse(missing(k), d * log(nrow(x)), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
@@ -31,37 +39,54 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 
   ## Warn about parameter settings yielding unknown results
   warn_message <- "Existing clustertree analysis relies on alpha being at least sqrt(2) and k being at least as large as d*log(n)."
-  if (k < ceiling(d * log(nrow(x))) && warn) warning(warn_message)
+  if (warn && k < ceiling(d * log(nrow(x)))) warning(warn_message)
 
-  ## Call the cluster tree function
-  hc <- clusterTree_int(x = x, k = k, alpha = alpha, type = type)
+  ## Call the cluster tree augmented MST (using prioritized prims with delayed connections)
+  r_k <- knn(x, k = k, bucketSize = k * log(nrow(x)), splitRule = "SUGGEST")
+  r_k <- apply(r_k$dist, 1, max)
+  st <- primsRSL(x_dist, r_k = r_k, n = nrow(x), alpha = alpha, type = type)
 
-  ## If it's a list, dealing with a minimum spanning forest
-  # if (is(hc, "list")){
-  #   for(i in 1:length(hc)){
-  #     if (is(hc[[i]], "hclust")){
-  #       hc[[i]]$call <- match.call()
-  #       hc[[i]]$method <- possible_estimators[type+1]
-  #     }
-  #     # Else do nothing - singleton
-  #   }
-  # } else {
-  # ## Otherwise it's a fully connected tree
-  #   if (is(hc, "hclust")){
-  #     hc$call <- match.call()
-  #     hc$method <- possible_estimators[type+1]
-  #   }
-  # }
-  # res <- structure(list(hc = hc, k = k, d = d, alpha = alpha), class = "clustertree", X_n = x)
-  return(hc)
+  ## If it's from estimators 1 or 2, it could be a minimum spanning forest
+  hclust_info <- list()
+  if (type > 0){
+    CCs <- mstToCC(st[, 1:2], st[, 3])
+    hclust_info <- vector(mode = "list", length = sum(table(CCs) >= 2))
+    i <- 1
+    for(cc in unique(CCs)){
+      ids <- which(CCs == cc) - 1 # Point ids in this connected component (0-based)
+      if (length(ids) >= 2){
+        mst_idx <- union(which(st[, 1] %in% ids), which(st[, 2] %in% ids)) # MST indices that make this CC
+        sub_st <- st[mst_idx, ] # spanning component subset
+        sub_st <- sub_st[order(sub_st[, 3]),] # ordered by height
+        sub_st <- sub_st[!sub_st[, 3] %in% c(.Machine$double.xmax, NA),] # discard special forest linkage flags
+        hc <- mstToHclust(sub_st[, 1:2], sub_st[, 3])
+        hc$call <- match.call()
+        hc$method <- possible_estimators[type+1]
+        hc$idx <- ids + 1 # original point indices from x used to create this hierarchy
+        hclust_info[[i]] <- structure(hc, class="hclust") # Enforce class
+        i <- i + 1
+      }
+      # Else do nothing - need at least two points to make a cluster
+    }
+  } else {
+  ## RSL creates a fully connected hierarchy, convert to an hclust object
+    hclust_info <- mstToHclust(st[, 1:2], st[, 3])
+    hclust_info$call <- match.call()
+    hclust_info$method <- possible_estimators[type+1]
+  }
+  mst <- st[order(st[, 3]),]
+  mst <- st[!st[, 3] %in% c(.Machine$double.xmax, NA),]
+  res <- structure(list(hc = hclust_info, k = k, d = d, alpha = alpha, mst = mst), class = "clustertree", X_n = x)
+  return(res)
 }
 
-#' print.clustertree
+#' @name print.clustertree
 #' @method print clustertree
 #' @export
 print.clustertree <- function(C_n){
-  type <- pmatch(toupper(C_n$hc$method), toupper(c("RSL", "knn", "mutual knn")))
-  est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type+1]
+  method <- ifelse(is(C_n$hc, "list"), what$hc[[1]]$method, C_n$hc$method)
+  type <- pmatch(toupper(method), c("RSL", "KNN", "MUTUAL KNN"))
+  est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type]
   writeLines(c(
     paste0("Cluster tree object of: ", nrow(attr(C_n, "X_n")), " objects."),
     paste0("Estimator used: ", est_type),
@@ -84,9 +109,10 @@ plot.clustertree <- function(C_n, type = c("both", "dendrogram", "span tree")){
     layout(matrix(c(1, 2), nrow = 1, ncol = 2))
     plot(C_n$hc, hang = -1)
     spanplot(X_n, C_n)
-  } else if (is(C_n$hc, "list") && length(C_n$hc) > 1){
-    layout(matrix(c(1, 1:length(C_n$hc) +1), nrow = 1, ncol = length(C_n$hc)+1),
-           widths = c(rep(0.5/length(C_n$hc), length(C_n$hc)), 0.5))
+  } else if (is(C_n$hc, "list") && length(C_n$hc) > 0){
+    n_hier <- length(C_n$hc)
+    layout(matrix(c(1, 1:n_hier +1), nrow = 1, ncol = n_hier+1),
+           widths = c(rep(0.5/n_hier,n_hier), 0.5))
     for (hcl in C_n$hc){ plot(hcl, hang = -1) }
     spanplot(X_n, C_n)
   }

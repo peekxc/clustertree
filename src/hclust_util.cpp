@@ -83,6 +83,33 @@ List splitConnected(const IntegerMatrix& mst_, const NumericVector& dist, const 
 }
 
 /* mstToHclust
+ * Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), traverse through
+ * it and
+ * Expects 0-based mst indices.
+ */
+// [[Rcpp::export]]
+IntegerVector mstToCC(const IntegerMatrix& mst, const NumericVector& dist){
+  // Set up disjoint set
+  const int n = mst.nrow() + 1;
+  UnionFind components = UnionFind(n);
+
+  // Lopp through and find what's connected
+  for (int i = 0; i < n - 1; ++i) {
+    IntegerVector crow = mst(i, _); // order doesn't matter since traversing the whole tree
+    int from = crow[0], to = crow[1];
+    double link_weight = dist[i];
+    if (from < n && to < n){
+      if (R_IsNA(link_weight) || link_weight == std::numeric_limits<double>::max()){
+        continue;// Don't link special values indicating minimum spanning forests
+      }
+      int from_comp = components.Find(from), to_comp = components.Find(to);
+      components.Union(from, to);
+    } else { stop("Please use a 0-based MST"); }
+  }
+  return(components.getCC());
+}
+
+/* mstToHclust
 * Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), create a valid hclust object
 * using a disjoint-set structure to track components
 * Expects 0-based mst indices.

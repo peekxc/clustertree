@@ -7,5 +7,6 @@
 mst(X_n, metric = "euclidean")
 }
 \description{
-Given a data set, calculate the euclidean minimum spanning tree.
+Given a data set, calculate the euclidean minimum spanning tree. Equivalent to single linkage, but
+avoids calculating the distance matrix.
 }

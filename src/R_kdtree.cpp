@@ -71,7 +71,7 @@ List kdtree(NumericMatrix x, const int bkt_size) {
   // delete [] dists;
   // delete [] nnIdx;
   // annDeallocPts(dataPts);
-  annClose();
+  // annClose();
 
   // prepare results
   Rcpp::XPtr<ANNkd_tree> p(kdTree, true);

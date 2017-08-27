@@ -10,20 +10,23 @@ load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
 X_n <- StockDividends[, 2:12]
 
 
+X_n <- iris[, 1:4]
 r_k <- apply(dbscan:::kNNdist(X_n, k = 5), 1, max)
 sum(clustertree:::primsRSL(dist(X_n), r_k = r_k, n = nrow(X_n), alpha = sqrt(2), type = 0)[, 3])
 
-what <- clustertree::clustertree(X_n, k = 5, alpha = sqrt(2), estimator = "RSL")
+what <- clustertree::clustertree(X_n, k = 5, alpha = sqrt(2), estimator = "mutual knn")
 
 ## Supply Variables/parameters
 { n <- nrow(X_n); dist_x <- dist(X_n, method = "euclidean") }
 
 
+sum(hclust(dist(as.matrix(iris[1:5, 1:4])), method = "single")$height)
+
+clustertree:::knn1(as.matrix(iris[, 1:4]))
+
 cppFunction('bool double_max() {
-  std::unordered_map<int*, bool> what = std::unordered_map<int*, bool>();
-  int* test = new int(1);
-  what[test] = true;
-  return what[test];
+  double x = NA_REAL; 
+  return(R_IsNA(x));
 }', plugin="cpp11")
 
 

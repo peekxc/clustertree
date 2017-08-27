@@ -9,7 +9,10 @@
 spanplot <- function(X_n, C_n, h = NULL){
   if (!any(c("clustertree") %in% class(C_n))) stop("spanplot expects a 'clustertree' object")
   hc <- C_n$hc
-  if (is.null(hc[["mst"]])) stop("Cannot plot spanning tree. MST not detected in cluster tree.")
+  if (is.null(C_n[["mst"]])) stop("Cannot plot spanning tree. MST not detected in cluster tree.")
+
+  # Save plot settings
+  old.par <- par()
 
   ## Scatter plot / nodes
   x_r2 <- list()
@@ -25,22 +28,25 @@ spanplot <- function(X_n, C_n, h = NULL){
   plot(x_r2, pch = 20)
 
   ## Edges
+  mst <- C_n[["mst"]]
   if (is.null(h)){
-    for (i in 1:nrow(hc$mst)){
-      x_coords <- c(x_r2[hc$mst[i, 1]+1, 1], x_r2[hc$mst[i, 2]+1, 1])
-      y_coords <- c(x_r2[hc$mst[i, 1]+1, 2], x_r2[hc$mst[i, 2]+1, 2])
+    for (i in 1:nrow(mst)){
+      x_coords <- c(x_r2[mst[i, 1]+1, 1], x_r2[mst[i, 2]+1, 1])
+      y_coords <- c(x_r2[mst[i, 1]+1, 2], x_r2[mst[i, 2]+1, 2])
       lines(x_coords, y_coords)
     }
     points(x_r2, pch = 20)
   } else {
     cl <- cutree(hc, h = h)
     cl_colors <- sample(rainbow(length(unique(cl))))
-    for (i in 1:nrow(hc$mst)){
+    for (i in 1:nrow(mst)){
       if (hc$height[i] >= h) { break }
-      x_coords <- c(x_r2[hc$mst[i, 1]+1, 1], x_r2[hc$mst[i, 2]+1, 1])
-      y_coords <- c(x_r2[hc$mst[i, 1]+1, 2], x_r2[hc$mst[i, 2]+1, 2])
+      x_coords <- c(x_r2[mst[i, 1]+1, 1], x_r2[mst[i, 2]+1, 1])
+      y_coords <- c(x_r2[mst[i, 1]+1, 2], x_r2[mst[i, 2]+1, 2])
       lines(x_coords, y_coords)
     }
     points(x_r2, pch = 20, col = cl_colors[cl])
   }
+
+  par(old.par) # restore
 }

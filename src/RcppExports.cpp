@@ -16,6 +16,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mstToCC
+IntegerVector mstToCC(const IntegerMatrix& mst, const NumericVector& dist);
+RcppExport SEXP _clustertree_mstToCC(SEXP mstSEXP, SEXP distSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type mst(mstSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type dist(distSEXP);
+    rcpp_result_gen = Rcpp::wrap(mstToCC(mst, dist));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mstToHclust
 List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist);
 RcppExport SEXP _clustertree_mstToHclust(SEXP mst_SEXP, SEXP distSEXP) {
@@ -95,35 +107,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dt_kNN_int
-List dt_kNN_int(const NumericMatrix& q_x, const int k, int bucketSize, int splitRule, SEXP metric_ptr, NumericMatrix r_x);
-RcppExport SEXP _clustertree_dt_kNN_int(SEXP q_xSEXP, SEXP kSEXP, SEXP bucketSizeSEXP, SEXP splitRuleSEXP, SEXP metric_ptrSEXP, SEXP r_xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type q_x(q_xSEXP);
-    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< int >::type bucketSize(bucketSizeSEXP);
-    Rcpp::traits::input_parameter< int >::type splitRule(splitRuleSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type metric_ptr(metric_ptrSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type r_x(r_xSEXP);
-    rcpp_result_gen = Rcpp::wrap(dt_kNN_int(q_x, k, bucketSize, splitRule, metric_ptr, r_x));
-    return rcpp_result_gen;
-END_RCPP
-}
 // kNN_int
-List kNN_int(NumericMatrix data, int k, int type, int bucketSize, int splitRule, double approx);
-RcppExport SEXP _clustertree_kNN_int(SEXP dataSEXP, SEXP kSEXP, SEXP typeSEXP, SEXP bucketSizeSEXP, SEXP splitRuleSEXP, SEXP approxSEXP) {
+List kNN_int(const NumericMatrix& x, int k, int type, int bucketSize, int splitRule, double approx, NumericMatrix& r_x);
+RcppExport SEXP _clustertree_kNN_int(SEXP xSEXP, SEXP kSEXP, SEXP typeSEXP, SEXP bucketSizeSEXP, SEXP splitRuleSEXP, SEXP approxSEXP, SEXP r_xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     Rcpp::traits::input_parameter< int >::type type(typeSEXP);
     Rcpp::traits::input_parameter< int >::type bucketSize(bucketSizeSEXP);
     Rcpp::traits::input_parameter< int >::type splitRule(splitRuleSEXP);
     Rcpp::traits::input_parameter< double >::type approx(approxSEXP);
-    rcpp_result_gen = Rcpp::wrap(kNN_int(data, k, type, bucketSize, splitRule, approx));
+    Rcpp::traits::input_parameter< NumericMatrix& >::type r_x(r_xSEXP);
+    rcpp_result_gen = Rcpp::wrap(kNN_int(x, k, type, bucketSize, splitRule, approx, r_x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -202,14 +199,14 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_normalizeIndices", (DL_FUNC) &_clustertree_normalizeIndices, 1},
+    {"_clustertree_mstToCC", (DL_FUNC) &_clustertree_mstToCC, 2},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
     {"_clustertree_chooseMetric_int", (DL_FUNC) &_clustertree_chooseMetric_int, 2},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_clusterTree_int", (DL_FUNC) &_clustertree_clusterTree_int, 4},
     {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
     {"_clustertree_kdtree", (DL_FUNC) &_clustertree_kdtree, 2},
-    {"_clustertree_dt_kNN_int", (DL_FUNC) &_clustertree_dt_kNN_int, 6},
-    {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 6},
+    {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 7},
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
     {"_clustertree_dtb_int", (DL_FUNC) &_clustertree_dtb_int, 3},
