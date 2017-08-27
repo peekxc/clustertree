@@ -46,7 +46,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   ## Make sure k is less than n
   if (k > nrow(x) ){
     if (warn) warning("Data set has either too few records or to high of a dimensionality to use recommended default parameters.")
-    k <- max(2, ceiling(log(nrow(X_n))))
+    k <- max(2, ceiling(log(nrow(x))))
   }
 
   ## Choose estimator
@@ -62,7 +62,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 
   ## Call the cluster tree augmented MST (using prioritized prims with delayed connections)
   ## Note: knn returns the k nearest, exclusively. Clustertree relies on k to be inclusive, so increase by 1.
-  r_k <- knn(x, k = k + 1, bucketSize = k * log(nrow(x)), splitRule = "SUGGEST")
+  r_k <- knn(x, k = k - 1, bucketSize = k * log(nrow(x)), splitRule = "SUGGEST")
   r_k <- apply(r_k$dist, 1, max)
   st <- primsRSL(x_dist, r_k = r_k, n = nrow(x), alpha = alpha, type = type)
 

@@ -113,3 +113,40 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
   }
   return(mst);
 }
+
+// [[Rcpp::export]]
+NumericMatrix naive_clustertree(const NumericVector& dist_x, const NumericVector& r_k, const int k, const double alpha, const int type = 0) {
+  std::string message = "naive_clustertree expects a 'dist' object.";
+  if (!dist_x.hasAttribute("class") || as<std::string>(dist_x.attr("class")) != "dist") { stop(message); }
+  if (!dist_x.hasAttribute("method")) { stop(message); }
+  if (!dist_x.hasAttribute("Size")){ stop(message); }
+
+  // Get sorted radii
+  const int n = as<int>(dist_x.attr("Size"));
+  NumericVector sorted_x = Rcpp::clone(dist_x).sort(false);
+  NumericMatrix mst = NumericMatrix(n - 1, 3);
+
+  // Get order of original; use R order function to get consistent ordering
+  Function order = Function("order");
+  IntegerVector r_order = as<IntegerVector>(order(dist_x)) - 1;
+
+  // Create disjoint-set data structure to track components
+  UnionFind components = UnionFind(n);
+  int i = 0, crow = 0;
+  double r = 0;
+  for (NumericVector::const_iterator dist_ij = sorted_x.begin(); dist_ij != sorted_x.end(); ++dist_ij, ++i) {
+    // Retrieve index of x_i and x_j
+    int x_i = INDEX_TO(i, n), x_j = INDEX_FROM(i, n, x_i);
+    r = *dist_ij / alpha;
+    Rcout << "Comparing: " << x_i << ", " << x_j << " (r = " << r << ")" << std::endl;
+    if (r_k[x_i] <= r && r_k[x_j] <= r){ // if admitted
+      Rcout << "Checking: " << x_i << "(r_k = " << r_k[x_i] << "), " << x_j << "(r_k = " << r_k[x_j] << ") against " << r << std::endl;
+      if (components.Find(x_i) != components.Find(x_j)){
+        Rcout << "Connecting: " << x_i << ", " << x_j << " @r = " << r << std::endl;
+        mst(crow++, _) = NumericVector::create(x_i, x_j, r); // Use r to index cluster tree
+      }
+      components.Union(x_i, x_j);
+    }
+  }
+  return mst;
+}

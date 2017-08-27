@@ -37,6 +37,9 @@ clustertree_ex <- function(x, k = 5L, alpha = sqrt(2), type = 0){
   to <- col(l2_dist)[lower.tri(l2_dist)]
   mo <- cbind(from, to)
   mo <- mo[order(dist_x),]
+
+  ## Calculate R based on type
+
   for (r in lambda){
 
     ## Wisharts scheme: Only connect points that have at least

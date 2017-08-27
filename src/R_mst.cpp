@@ -12,7 +12,6 @@ using namespace Rcpp;
 NumericMatrix kruskalsMST(const NumericVector dist_x){
   std::string message = "kruskalsMST expects a 'dist' object.";
   if (!dist_x.hasAttribute("class") || as<std::string>(dist_x.attr("class")) != "dist") { stop(message); }
-  if (!dist_x.hasAttribute("method")) { stop(message); }
   if (!dist_x.hasAttribute("Size")){ stop(message); }
 
   // Set up resulting MST
@@ -46,7 +45,6 @@ NumericMatrix kruskalsMST(const NumericVector dist_x){
 NumericMatrix primsMST(const NumericVector dist_x){
   std::string message = "primsMST expects a 'dist' object.";
   if (!dist_x.hasAttribute("class") || as<std::string>(dist_x.attr("class")) != "dist") { stop(message); }
-  if (!dist_x.hasAttribute("method")) { stop(message); }
   if (!dist_x.hasAttribute("Size")){ stop(message); }
 
   // Set up resulting MST

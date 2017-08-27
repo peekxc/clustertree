@@ -1,4 +1,4 @@
 library("testthat")
 
-library("dbscan")
-test_check("dbscan")
+library("clustertree")
+test_check("clustertree")

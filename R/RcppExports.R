@@ -21,6 +21,10 @@ primsRSL <- function(r, r_k, n, alpha, type) {
     .Call('_clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
 }
 
+naive_clustertree <- function(dist_x, r_k, k, alpha, type = 0L) {
+    .Call('_clustertree_naive_clustertree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
+}
+
 kd_knn <- function(query_x, tree_ptr, k, priority) {
     .Call('_clustertree_kd_knn', PACKAGE = 'clustertree', query_x, tree_ptr, k, priority)
 }

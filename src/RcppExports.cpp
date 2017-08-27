@@ -67,6 +67,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// naive_clustertree
+NumericMatrix naive_clustertree(const NumericVector& dist_x, const NumericVector& r_k, const int k, const double alpha, const int type);
+RcppExport SEXP _clustertree_naive_clustertree(SEXP dist_xSEXP, SEXP r_kSEXP, SEXP kSEXP, SEXP alphaSEXP, SEXP typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type dist_x(dist_xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type r_k(r_kSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const int >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(naive_clustertree(dist_x, r_k, k, alpha, type));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kd_knn
 List kd_knn(NumericMatrix query_x, SEXP tree_ptr, int k, bool priority);
 RcppExport SEXP _clustertree_kd_knn(SEXP query_xSEXP, SEXP tree_ptrSEXP, SEXP kSEXP, SEXP prioritySEXP) {
@@ -176,6 +191,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
     {"_clustertree_chooseMetric_int", (DL_FUNC) &_clustertree_chooseMetric_int, 2},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
+    {"_clustertree_naive_clustertree", (DL_FUNC) &_clustertree_naive_clustertree, 5},
     {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
     {"_clustertree_kdtree", (DL_FUNC) &_clustertree_kdtree, 2},
     {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 7},

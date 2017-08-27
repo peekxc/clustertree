@@ -12,73 +12,29 @@ X_n <- StockDividends[, 2:12]
 
 ## Automatically detecting k ~ dlogn sets k around 39, more neighbors than records!
 test_that("Parameter detection works", {
+  load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
+  X_n <- StockDividends[, 2:12]
   expect_warning(clustertree(X_n, warn = T))
   expect_warning(clustertree(X_n, k = 5L, warn = T))
 })
 
 ## Make sure setup code at least works
 test_that("Basic functionality works", {
+  load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
+
   expect_silent(clustertree(X_n, k = 5L))
 })
 
-## RSL clustertree solution using brute-force/naive version
-test_that("RSL naive solution matches MST", {
-  C_n_rsl <- clustertree::clustertree(X_n, k = 5L)
-  r_k <- apply(clustertree::knn(X_n, k = C_n_rsl$k - 1)$dist, 1, max)
-  rsl_naive <- clustertree:::clustertree_ex(dist_x, r_k, C_n_rsl$alpha, type = 0)
+## Logic check: does k = 2 w/ alpha = 1 yield the same results as single linkage
+test_that("RSL with k = 2 and alpha = 1 is the same as single linkage", {
+  load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
+  X_n <- StockDividends[, 2:12]
+  cl <- clustertree(X_n, k = 2L, alpha = 1, estimator = "RSL")
+  sl <- hclust(dist_x, method = "single")
 
-  ## Do the run time lengths of each symbol match?
-  expect_true(all(sapply(rsl_naive, function(cl) {
-    mst_rle <- rle(cutree(C_n_rsl$hc, h = cl$R))$lengths
-    bf_rle <- rle(cl$cluster)$lengths
-    all(mst_rle == bf_rle)
-  })))
+  ## The heights should be identical
+  expect_true(all(cl$hc$height == sl$height))
 
-  ## Do the individual symbols all map to the same value, and in the correct order?
-  expect_true(all(sapply(rsl_naive, function(cl) {
-    mst_vals <- rle(cutree(mst_rsl, h = cl$R))$values
-    bf_vals <- rle(cl$cluster)$values
-    all(match(mst_vals, unique(mst_vals)) == match(bf_vals, unique(bf_vals)))
-  })))
-})
-
-## Algorithm 2 Validation tests
-test_that("kNN naive solution matches MST", {
-  mst_knn <- clustertree::clustertree(X_n, k = 5L, estimator = "knn")
-  r_k <- apply(dbscan::kNNdist(X_n, k = mst_knn$k - 1), 1, max)
-  knn_naive <- clustertree:::naive_clustertree(dist_x, r_k, mst_knn$alpha, type = 1)
-
-  expect_true(all(sapply(knn_naive, function(cl) {
-    mst_rle <- rle(cutree(mst_knn, h = cl$R))$lengths
-    bf_rle <- rle(cl$cluster)$lengths
-    ifelse(length(mst_rle) == length(bf_rle), all(mst_rle == bf_rle), FALSE)
-  })))
-
-  ## Do the individual symbols all map to the same value, and in the correct order?
-  expect_true(all(sapply(knn_naive, function(cl) {
-    mst_vals <- rle(cutree(mst_knn, h = cl$R))$values
-    bf_vals <- rle(cl$cluster)$values
-    ifelse(length(mst_vals) == length(bf_vals),
-           all(match(mst_vals, unique(mst_vals)) == match(bf_vals, unique(bf_vals))), FALSE)
-  })))
-})
-
-test_that("mutual kNN naive solution matches MST", {
-  mst_mknn <- clustertree::clustertree(X_n, k = 5L, estimator = "knn")
-  r_k <- apply(dbscan::kNNdist(X_n, k = mst_mknn$k - 1), 1, max)
-  mknn_naive <- clustertree:::naive_clustertree(dist_x, r_k, mst_mknn$alpha, type = 1)
-
-  expect_true(all(sapply(mknn_naive, function(cl) {
-    mst_rle <- rle(cutree(mst_mknn, h = cl$R))$lengths
-    bf_rle <- rle(cl$cluster)$lengths
-    ifelse(length(mst_rle) == length(bf_rle), all(mst_rle == bf_rle), FALSE)
-  })))
-
-  ## Do the individual symbols all map to the same value, and in the correct order?
-  expect_true(all(sapply(mknn_naive, function(cl) {
-    mst_vals <- rle(cutree(mst_mknn, h = cl$R))$values
-    bf_vals <- rle(cl$cluster)$values
-    ifelse(length(mst_vals) == length(bf_vals),
-           all(match(mst_vals, unique(mst_vals)) == match(bf_vals, unique(bf_vals))), FALSE)
-  })))
+  ## As should the cuts
+  expect_true(all(cutree(cl$hc, k = 1:(n - 1)) ==  cutree(sl, k = 1:(n - 1))))
 })
