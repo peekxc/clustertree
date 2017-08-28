@@ -2,7 +2,7 @@
 using namespace Rcpp;
 
 #include "utilities.h" // Indexing macros
-#include "ANN/ANN_util.h" // matrixToANNpointArray
+#include "ANN_util.h" // matrixToANNpointArray
 #include "union_find.h" // disjoint set data structure
 #include "metrics.h"
 

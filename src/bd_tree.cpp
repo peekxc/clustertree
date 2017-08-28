@@ -27,9 +27,9 @@
 //----------------------------------------------------------------------
 
 #include "bd_tree.h"					// bd-tree declarations
-#include "../kd_tree/kd_util.h"					// kd-tree utilities
-#include "../kd_tree/kd_split.h"					// kd-tree splitting rules
-#include <ANN/perf/ANNperf.h>				// performance evaluation
+#include "kd_util.h"					// kd-tree utilities
+#include "kd_split.h"					// kd-tree splitting rules
+#include "ANNperf.h"				// performance evaluation
 
 //----------------------------------------------------------------------
 //	Printing a bd-tree

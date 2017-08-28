@@ -1,10 +1,10 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <unordered_map>
-#include <union_find.h> // disjoint set data structure
-#include <hclust_util.h> // mstToHclust, various hclust tools
-#include <utilities.h> // various helpful utilities for working with Rcpp
+#include "unordered_map"
+#include "union_find.h" // disjoint set data structure
+#include "hclust_util.h" // mstToHclust, various hclust tools
+#include "utilities.h" // various helpful utilities for working with Rcpp
 
 // Simple struct to hold simplified cluster info
 struct cl_info{

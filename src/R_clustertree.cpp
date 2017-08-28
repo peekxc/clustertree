@@ -1,9 +1,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <hclust_util.h> // Hclust extensions
-#include <ANN/ANN_util.h> // matrixToANNpointArray
-#include <metrics.h>
+#include "hclust_util.h" // Hclust extensions
+#include "ANN_util.h" // matrixToANNpointArray
+#include "metrics.h"
 
 // Computes the connection radius, i.e. the linkage criterion
 double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type) {

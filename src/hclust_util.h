@@ -4,8 +4,8 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <union_find.h>
-#include <utilities.h>
+#include "union_find.h"
+#include "utilities.h"
 
 // Recursively visit the merge matrix to extract an hclust sufficient ordering
 void visit(const IntegerMatrix& merge, IntegerVector& order, int i, int j, int& ind);

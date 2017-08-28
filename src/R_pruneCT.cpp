@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-#include <union_find.h>
+#include "union_find.h"
 
 // TODO: Finish this
 void pruneCT(List C_n, NumericVector prune_heights, IntegerVector valid_idx) {

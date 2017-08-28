@@ -40,7 +40,7 @@
 //using namespace std;					// make std:: available
 
 #include "kd_tree.h"					// kd-tree declarations
-#include <ANN/bd_tree/bd_tree.h>		// bd-tree declarations
+#include "bd_tree.h"		// bd-tree declarations
 
 
 //----------------------------------------------------------------------

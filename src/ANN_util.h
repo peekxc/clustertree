@@ -1,7 +1,7 @@
 #ifndef ANN_UTIL_H
 #define ANN_UTIL_H
 
-#include <ANN/ANN.h>
+#include "ANN.h"
 #include <Rcpp.h>
 using namespace Rcpp;
 

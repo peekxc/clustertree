@@ -26,8 +26,8 @@
 #ifndef PR_QUEUE_H
 #define PR_QUEUE_H
 
-#include <ANN/ANNx.h>					// all ANN includes
-#include <ANN/perf/ANNperf.h>			// performance evaluation
+#include "ANNx.h"					// all ANN includes
+#include "ANNperf.h"			// performance evaluation
 
 //----------------------------------------------------------------------
 //	Basic types.

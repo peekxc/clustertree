@@ -1,7 +1,7 @@
 #ifndef METRICS_H
 #define METRICS_H
 
-#include <ANN/ANN.h> // ANN typedefs
+#include "ANN.h" // ANN typedefs
 #include <algorithm>  // std::transform
 #include <Rcpp.h> // NumericVector
 using namespace Rcpp;

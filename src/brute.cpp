@@ -24,8 +24,8 @@
 //		Added fixed-radius kNN search
 //----------------------------------------------------------------------
 
-#include <ANN/ANNx.h>					// all ANN includes
-#include <ANN/structures/pr_queue_k.h>	// k element priority queue
+#include "ANNx.h"					// all ANN includes
+#include "pr_queue_k.h"	// k element priority queue
 
 //----------------------------------------------------------------------
 //		Brute-force search simply stores a pointer to the list of

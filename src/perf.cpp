@@ -26,8 +26,8 @@
 //			in Microsoft Windows version.
 //----------------------------------------------------------------------
 
-#include <ANN/ANN.h>					// basic ANN includes
-#include <ANN/perf/ANNperf.h>				// performance includes
+#include "ANN.h"					// basic ANN includes
+#include "ANNperf.h"				// performance includes
 
 // MJP 07/14/2017
 // Need to add Rcpp to enable performance output to R session

@@ -27,8 +27,8 @@
 
 #include "kd_tree.h"					// kd-tree declarations
 #include "kd_util.h"					// kd-tree utilities
-#include <ANN/structures/pr_queue_k.h>	// k-element priority queue
-#include <ANN/perf/ANNperf.h>			// performance evaluation
+#include "pr_queue_k.h"	// k-element priority queue
+#include "ANNperf.h"			// performance evaluation
 
 //----------------------------------------------------------------------
 //	Global variables
