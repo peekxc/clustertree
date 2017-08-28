@@ -1,0 +1,5 @@
+## ANN compilation
+ANN: $(ANN_OBJ)
+
+$(ANN_OBJ): %.o: %.cpp
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@

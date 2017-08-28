@@ -1,5 +1,5 @@
 CXX_STD = CXX11
-PKG_CPPFLAGS = -I../src
+PKG_CPPFLAGS = -I../src $CXX11FLAGS
 ## ^^ C++ compiler flags. Use c++11. Extra include allows the use of bracket #include notation
 ## For CRAN releases, use -pedantic and -Wall beforehand
 
@@ -24,15 +24,18 @@ OBJECTS = $(ANN_OBJ) $(INT_OBJ)
 all: $(SHLIB)
 $(SHLIB): INT
 
-## ANN compilation
-ANN: $(ANN_OBJ)
-$(ANN_OBJ): %.o: %.cpp
-	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
-
 ## R Interface compilation
-INT: $(INT_OBJ) ANN
+INT: $(INT_OBJ)
 $(INT_OBJ): %.o: %.cpp
 	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+
+
+# \
+
+
+sublibs: ANN
+  @(cd ANN && $(MAKE) \
+  CXX="$(CXX11) $(CXX11STD)" CXXFLAGS="$(CXX11FLAGS) $(CXX11PICFLAGS)")
 
 ## Clean rule
 shlib-clean: clean
