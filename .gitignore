@@ -1,3 +1,6 @@
+# Ignore the working directory
+ignore/**
+
 # History files
 .Rhistory
 .Rapp.history
