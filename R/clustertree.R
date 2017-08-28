@@ -149,6 +149,15 @@ plot.clustertree <- function(C_n, which = 1, h = NULL, f="scatter"){
   par(.pardefault)
 }
 
+# Generic way to apply an operation to every valid 'hclust' obejct in the clustertree.
+# applyCT <- function(C_n, expr, f){
+#   if (is(C_n$hc, "hclust")){
+#
+#   } else if (is(C_n$hc, "list") && length(C_n$hc) > 0){
+#
+#   }
+# }
+
 # TODO
 # identify.clustertree <- function(C_n, which = 1, h = NULL, f="scatter"){
 #

@@ -18,15 +18,15 @@
 runt_prune <- function(C_n, runt_size){
   if (!any(c("clustertree", "hclust") %in% class(C_n))) stop("'runt_prune' expects a 'clustertree' or 'hclust' object.")
   if (runt_size <= 0){ stop("runt size must be positive.") }
-  if (runt_size == 1){ return(C_n); }
+  if (runt_size == 1){ warning("Runt size must be >= 2."); return(invisible(C_n)); }
 
   # If it's a clustertree object, loop through the (potentially several) hierarchies and create a pruning hierarchy
   # for each one, and then return the augmented clustertree object. Otherwise, just return the pruned hclust object.
   if (is(C_n, "clustertree")){
     if (is(C_n$hc, "hclust")) { C_n$hc <- simplified_hclust(C_n$hc, runt_size) }
-    else { C_n$hc <- lapply(C_n$hc, FUN = function(hcl) simplified_hclust(hcl, runt_size)) }
+    else if (is(C_n$hc, "list") && length(C_n$hc) > 0) {
+      C_n$hc <- lapply(C_n$hc, FUN = function(hcl) simplified_hclust(hcl, runt_size))
+    }
     return(C_n)
-  } else {
-    return(simplified_hclust(C_n, runt_size))
   }
 }

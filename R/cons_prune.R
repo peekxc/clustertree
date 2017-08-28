@@ -15,7 +15,7 @@ cons_prune <- function(C_n, delta, eps = 1/sqrt(C_n$k)){
   C_o <- n * ((beta_n^2 + beta_n * sqrt(C_n$k/n))/(tmp + sqrt(C_n$k * tmp)))
   C_del <- 2 * C_o * log(2/delta)
 
-  # If the significance level is too high, then all attempts at pruning
+  # If the significance level is too high, then all attempts at pruning won't produce useful results.
   # C_del has to be <= k - sqrt(k * d * log(n))
   const <- (C_del/n) * sqrt(k * d * log(n))
   if ((k / n) - const < 0){
