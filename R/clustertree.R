@@ -28,25 +28,38 @@
 clustertree <- function(x, k = "suggest", alpha = "suggest",
                         estimator = c("RSL", "knn", "mutual knn"),
                         warn = FALSE){
-  if (is.null(dim(x))) stop("'clustertree' expects x to be a matrix-coercible object.")
-  x <- as.matrix(x) ## Coerce to matrix
+  if (is.null(dim(x)) && !is(x, "dist")) stop("'clustertree' expects x to be a matrix-coercible object.")
+  if (!is(x, "dist")) x <- as.matrix(x) ## Coerce to matrix
   if (!storage.mode(x) %in% c("double", "integer")) stop("'clustertree' expects x to be numeric or integer only.")
   x_dist <- NULL
+  n <- 0
   if (is(x, "dist")){
     d <- 1L
+    n <- attr(x, "Size")
     if (warn && x$method != "euclidean"){ warning("Current estimators have only been studied under the euclidean metric.") }
     x_dist <- x
   } else {
     d <- ncol(x)
+    n <- nrow(x)
     x_dist <- dist(x, method = "euclidean")
   }
-  k <- as.integer(ifelse(missing(k), d * log(nrow(x)), k)) # dim should work now
+  k <- as.integer(ifelse(missing(k), d * log(n), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
+  r_k <- NULL
+  if (is(x, "dist")){
+    tmp <- as.matrix(x_dist)
+    r_k <- apply(tmp, 1, sort)[k,]
+  } else {
+    r_k <- knn(x, k = k - 1, bucketSize = k * log(n), splitRule = "SUGGEST")
+    r_k <- apply(r_k$dist, 1, max)
+  }
+
+
   ## Make sure k is less than n
-  if (k > nrow(x) ){
+  if (k > n){
     if (warn) warning("Data set has either too few records or to high of a dimensionality to use recommended default parameters.")
-    k <- max(2, ceiling(log(nrow(x))))
+    k <- max(2, ceiling(log(n)))
   }
 
   ## Choose estimator
@@ -62,9 +75,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 
   ## Call the cluster tree augmented MST (using prioritized prims with delayed connections)
   ## Note: knn returns the k nearest, exclusively. Clustertree relies on k to be inclusive, so increase by 1.
-  r_k <- knn(x, k = k - 1, bucketSize = k * log(nrow(x)), splitRule = "SUGGEST")
-  r_k <- apply(r_k$dist, 1, max)
-  st <- primsRSL(x_dist, r_k = r_k, n = nrow(x), alpha = alpha, type = type)
+  st <- primsRSL(x_dist, r_k = r_k, n = n, alpha = alpha, type = type)
 
   ## If it's from estimators 1 or 2, it could be a minimum spanning forest
   hclust_info <- list()
@@ -96,21 +107,24 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   }
   mst <- st[order(st[, 3]),]
   mst <- st[!st[, 3] %in% c(.Machine$double.xmax, NA),]
-  res <- structure(list(hc = hclust_info, k = k, d = d, alpha = alpha, mst = mst), class = "clustertree", X_n = x)
+  res <- structure(list(hc = hclust_info, k = k, d = d, n = n, alpha = alpha, mst = mst), class = "clustertree", X_n = x)
   return(res)
 }
 
 #' print.clustertree
+#' @description Prints various parameters used to compute the cluster tree.
+#' @param x a 'clustertree' object.
+#' @param ... unused.
 #' @method print clustertree
 #' @export
-print.clustertree <- function(C_n){
-  method <- ifelse(is(C_n$hc, "list"), C_n$hc[[1]]$method, C_n$hc$method)
+print.clustertree <- function(x, ...){
+  method <- ifelse(is(x$hc, "list"), x$hc[[1]]$method, x$hc$method)
   type <- pmatch(toupper(method), c("RSL", "KNN", "MUTUAL KNN"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type]
   writeLines(c(
-    paste0("Cluster tree object of: ", nrow(attr(C_n, "X_n")), " objects."),
+    paste0("Cluster tree object of: ", x$n, " objects."),
     paste0("Estimator used: ", est_type),
-    sprintf("Parameters: k = %d, alpha = %.4f, dim = %d", C_n$k, C_n$alpha, C_n$d)
+    sprintf("Parameters: k = %d, alpha = %.4f, dim = %d", x$k, x$alpha, x$d)
   ))
 }
 
@@ -118,34 +132,69 @@ print.clustertree <- function(C_n){
 #' @name plot.clustertree
 #' @description More details coming soon...
 #' @param x a 'clustertree' object.
-#' @param which if there are several hierarchies from the original data set, which one to plot?
-#' @references See KC and SD.
-#' @importFrom methods is
-#' @useDynLib clustertree
+#' @param which which hierarchy to plot. If RSL was used or k was sufficiently small, this may be only 1 hierarchy.
+#' @param h height to cut the tree(s) at in the visualization. If null, all of the connected components are visualized.
+#' @param type whether to plot the clustertree where the height is computed using the radius at which clusters form (root at the top),
+#' or whether to use the corresponding empirical density (root at the bottom).
+#' @param ... arguments to pass to the plotting function. Otherwise unused.
+#' @description This plotting function plots the hierarchy specified by the \code{which} argument that makes up part of
+#' the cluster tree object on the left half of plotting device and the spanning tree of the points within that hierarchy on
+#' the right.
+#' @seealso \code{spanplot}
+#' @import graphics
 #' @export
-plot.clustertree <- function(C_n, which = 1, h = NULL, f="scatter"){
-  X_n <- attr(C_n, "X_n")
+plot.clustertree <- function(x, which = 1, h = NULL, type=c("radius", "density"), ...){
+  X_n <- attr(x, "X_n")
   # dev.interactive()
   .pardefault <- par(no.readonly = T)
-  if (is(C_n$hc, "hclust")){
-    layout(matrix(c(1, 2), nrow = 1, ncol = 2))
-    plot(C_n$hc, hang = -1)
-    spanplot(X_n, C_n)
-  } else if (is(C_n$hc, "list") && length(C_n$hc) > 0){
-    n_hier <- length(C_n$hc)
-    if (which > n_hier){
-      stop(sprintf("Cannot plot hierarchy (%d), there are only %d total hierarchies!", which, n_hier))
-    }
-    layout(matrix(c(1, 2), nrow = 1, ncol = 2))
-    # layout(matrix(c(1, 1:n_hier +1), nrow = 1, ncol = n_hier+1),
-    #        widths = c(rep(0.5/n_hier,n_hier), 0.5))
-    plot(C_n$hc[[which]], hang = -1)
-    if (f == "scatter" || missing(f)){
-      spanplot(X_n, C_n)
-    } else {
-      f(X_n, C_n)
-    }
+
+  hc <- NULL
+  if (is(x$hc, "hclust")){ hc <- x$hc }
+  else { hc <- x$hc[[which]] }
+  if (!is(hc, "hclust")) stop("No valid cluster tree hierarchy found.")
+
+  est_type <- pmatch(toupper(hc$method), c("RSL", "KNN", "MUTUAL KNN"))
+  estimator <- "Cluster tree"
+  if (!is.na(est_type)){
+    estimator <- c("Robust Single Linkage", "KNN Graph", "Mutual KNN Graph")[est_type]
   }
+
+  ## Plot the dendrogram with the appropriate title
+  if (missing(type) || type == "radius"){
+    plot(hc, ylab = expression(italic(r)), main = estimator, ...)
+  } else if (type == "density"){
+    r <- hc$height
+    v_d <- vol_nSphere(x$d)
+    lambda <- x$k / (x$n * v_d * r^x$d)
+    x$hc$height <- lambda ## Replace height with lambda
+    plot(as.dendrogram(x$hc), ylab = expression(lambda), main = estimator,
+         ylim = rev(range(lambda)), ...)
+  } else {
+    stop("Unknown type supplied.")
+  }
+
+
+  # if (is(x$hc, "hclust")){
+  #   layout(matrix(c(1, 2), nrow = 1, ncol = 2))
+  #   plot(x$hc, hang = -1)
+  #   if (is.null(h)){
+  #     spanplot(X_n, x)
+  #   } else {
+  #     spanplot(X_n, x, h = h)
+  #   }
+  # } else if (is(x$hc, "list") && length(x$hc) > 0){
+  #   n_hier <- length(x$hc)
+  #   if (which > n_hier){
+  #     stop(sprintf("Cannot plot hierarchy (%d), there are only %d total hierarchies!", which, n_hier))
+  #   }
+  #   layout(matrix(c(1, 2), nrow = 1, ncol = 2))
+  #   plot(x$hc[[which]], hang = -1)
+  #   if (missing(f) || is.null(f)){
+  #     spanplot(X_n, x)
+  #   } else {
+  #     f(X_n, x, ...)
+  #   }
+  # }
   par(.pardefault)
 }
 

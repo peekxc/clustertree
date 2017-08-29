@@ -4,14 +4,26 @@
 \alias{spanplot}
 \title{Plot a spanning tree}
 \usage{
-spanplot(X_n, C_n, h = NULL)
+spanplot(x, which = 1, h = NULL, f = NULL, ...)
 }
 \arguments{
-\item{X_n}{a matrix to plot as a scatter plot.}
+\item{x}{a matrix to plot as a scatter plot.}
 
-\item{C_n}{a 'clustertree' object}
+\item{which}{which hierarchy to plot. If RSL was used or k was sufficiently small, this may be only 1 hierarchy.}
 
 \item{h}{an optional height to cut the tree at. Colors the corresponding connected components.}
+
+\item{f}{optional function to plot a 2-dimensional representation of the connected components. See details.}
+
+\item{...}{arguments to pass to f. Otherwise unused.
+If \code{f} is unspecified, then a simple two dimensional scatter plot is used to plot the nodes of the
+spanning tree based on the following rules:
+1) if the original data is 1-dimensional, it's reflected symmetrically across the x and y axis (plotting on both dimensions)
+2) if the original data is 2-dimensional, it's plotted as a simple scatter plot (first column is X dimension).
+3) if the original data is n-dimensional, where n > 2, then the original data is mapped to the first two principle components.
+If \code{f} is specified, it must take as its first argument a set of indices corresponding to the points in the
+original data set, and it must return a set of two-dimensional points for those indices. These coordinates need not
+be in the original data space. See the examples section for a demonstration of this.}
 }
 \description{
 Allows for visualizing a clustertree object as a spanning tree.

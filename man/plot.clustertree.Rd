@@ -4,16 +4,28 @@
 \alias{plot.clustertree}
 \title{Plot a given cluster tree}
 \usage{
-\method{plot}{clustertree}(C_n, which = 1, h = NULL, f = "scatter")
+\method{plot}{clustertree}(x, which = 1, h = NULL, type = c("radius",
+  "density"), ...)
 }
 \arguments{
-\item{which}{if there are several hierarchies from the original data set, which one to plot?}
-
 \item{x}{a 'clustertree' object.}
+
+\item{which}{which hierarchy to plot. If RSL was used or k was sufficiently small, this may be only 1 hierarchy.}
+
+\item{h}{height to cut the tree(s) at in the visualization. If null, all of the connected components are visualized.}
+
+\item{type}{whether to plot the clustertree where the height is computed using the radius at which clusters form (root at the top),
+or whether to use the corresponding empirical density (root at the bottom).}
+
+\item{...}{arguments to pass to f. Otherwise unused.}
 }
 \description{
 More details coming soon...
+
+This plotting function plots the hierarchy specified by the \code{which} argument that makes up part of
+the cluster tree object on the left half of plotting device and the spanning tree of the points within that hierarchy on
+the right.
 }
-\references{
-See KC and SD.
+\seealso{
+\code{spanplot}
 }

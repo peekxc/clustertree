@@ -125,6 +125,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mergeHeight
+NumericVector mergeHeight(List hcl);
+RcppExport SEXP _clustertree_mergeHeight(SEXP hclSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type hcl(hclSEXP);
+    rcpp_result_gen = Rcpp::wrap(mergeHeight(hcl));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kruskalsMST
 NumericMatrix kruskalsMST(const NumericVector dist_x);
 RcppExport SEXP _clustertree_kruskalsMST(SEXP dist_xSEXP) {
@@ -195,6 +206,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
     {"_clustertree_kdtree", (DL_FUNC) &_clustertree_kdtree, 2},
     {"_clustertree_kNN_int", (DL_FUNC) &_clustertree_kNN_int, 7},
+    {"_clustertree_mergeHeight", (DL_FUNC) &_clustertree_mergeHeight, 1},
     {"_clustertree_kruskalsMST", (DL_FUNC) &_clustertree_kruskalsMST, 1},
     {"_clustertree_primsMST", (DL_FUNC) &_clustertree_primsMST, 1},
     {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},

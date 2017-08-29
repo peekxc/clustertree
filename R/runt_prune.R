@@ -23,10 +23,15 @@ runt_prune <- function(C_n, runt_size){
   # If it's a clustertree object, loop through the (potentially several) hierarchies and create a pruning hierarchy
   # for each one, and then return the augmented clustertree object. Otherwise, just return the pruned hclust object.
   if (is(C_n, "clustertree")){
-    if (is(C_n$hc, "hclust")) { C_n$hc <- simplified_hclust(C_n$hc, runt_size) }
-    else if (is(C_n$hc, "list") && length(C_n$hc) > 0) {
-      C_n$hc <- lapply(C_n$hc, FUN = function(hcl) simplified_hclust(hcl, runt_size))
+    new_hc <- list()
+    if (is(C_n$hc, "hclust")) {
+      new_hc <- simplified_hclust(C_n$hc, runt_size)
+      # C_n$hc <- new_hc
     }
-    return(C_n)
+    else if (is(C_n$hc, "list") && length(C_n$hc) > 0) {
+      new_hc <- lapply(C_n$hc, FUN = function(hcl) simplified_hclust(hcl, runt_size))
+      # C_n$hc <- new_hc
+    }
+    return(new_hc)
   }
 }

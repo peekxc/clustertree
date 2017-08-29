@@ -6,6 +6,7 @@
 #' @param r_x the reference data set, if any. See details.
 #' @param bucketSize maximum size of the kd-tree leaves.
 #' @param splitRule rule to split the kd-tree. One of "STD", "MIDPT", "FAIR", "SL_MIDPT", "SL_FAIR" or "SUGGEST" (SL stands for sliding).
+#' @param approx whether to allow an arbitrary small amount of error in the result for better speed.
 #' @param ... unused.
 #' @description "SUGGEST" uses the ANN authors preferred 'best' rule. If no reference data set (\code{rx}) is specified,
 #' then the k-nearest neighbors in \code{x} are found. If a reference data set is specified, a kd tree is built using the

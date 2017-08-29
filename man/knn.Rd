@@ -18,6 +18,8 @@ knn(x, k, r_x = NULL, bucketSize = 15L, splitRule = "suggest",
 
 \item{splitRule}{rule to split the kd-tree. One of "STD", "MIDPT", "FAIR", "SL_MIDPT", "SL_FAIR" or "SUGGEST" (SL stands for sliding).}
 
+\item{approx}{whether to allow an arbitrary small amount of error in the result for better speed.}
+
 \item{...}{unused.}
 }
 \description{

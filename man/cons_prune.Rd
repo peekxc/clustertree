@@ -7,11 +7,15 @@
 cons_prune(C_n, delta, eps = 1/sqrt(C_n$k))
 }
 \arguments{
-\item{delta}{The (1-δ) probability threshold associated with the pruning constant. See below for details.}
+\item{C_n}{A clustertree object.}
+
+\item{delta}{The (1-\deqn{\delta}) probability threshold associated with the pruning constant. See below for details.}
 
 \item{eps}{A tuning parameter (> 0) representing how aggressively to prune.}
 }
 \description{
+DO NOT USE. Current unfinished.
+
 Implementation of Chaudhuri et. al's consistent pruning procedure for the cluster tree. By "pruning" the tree,
 spurious clusters are removed while salient clusters are recovered.
 }

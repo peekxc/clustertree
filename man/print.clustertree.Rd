@@ -4,8 +4,13 @@
 \alias{print.clustertree}
 \title{print.clustertree}
 \usage{
-\method{print}{clustertree}(C_n)
+\method{print}{clustertree}(x, ...)
+}
+\arguments{
+\item{x}{a 'clustertree' object.}
+
+\item{...}{unused.}
 }
 \description{
-print.clustertree
+Prints various parameters used to compute the cluster tree.
 }

@@ -12,23 +12,16 @@ X_n <- StockDividends[, 2:12]
 
 ## Automatically detecting k ~ dlogn sets k around 39, more neighbors than records!
 test_that("Parameter detection works", {
-  load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
-  X_n <- StockDividends[, 2:12]
-  expect_warning(clustertree(X_n, warn = T))
   expect_warning(clustertree(X_n, k = 5L, warn = T))
 })
 
 ## Make sure setup code at least works
 test_that("Basic functionality works", {
-  load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
-
   expect_silent(clustertree(X_n, k = 5L))
 })
 
 ## Logic check: does k = 2 w/ alpha = 1 yield the same results as single linkage
 test_that("RSL with k = 2 and alpha = 1 is the same as single linkage", {
-  load(system.file("test_data/StockDividends.rdata", package = "clustertree"))
-  X_n <- StockDividends[, 2:12]
   cl <- clustertree(X_n, k = 2L, alpha = 1, estimator = "RSL")
   sl <- hclust(dist_x, method = "single")
 

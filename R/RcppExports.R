@@ -37,6 +37,10 @@ kNN_int <- function(x, k, type, bucketSize, splitRule, approx, r_x) {
     .Call('_clustertree_kNN_int', PACKAGE = 'clustertree', x, k, type, bucketSize, splitRule, approx, r_x)
 }
 
+mergeHeight <- function(hcl) {
+    .Call('_clustertree_mergeHeight', PACKAGE = 'clustertree', hcl)
+}
+
 kruskalsMST <- function(dist_x) {
     .Call('_clustertree_kruskalsMST', PACKAGE = 'clustertree', dist_x)
 }

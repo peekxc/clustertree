@@ -33,11 +33,32 @@ The package currently only exists on github. The installation options are as fol
 ) 
 #### Development note 
 
-The package is in very early stage of development, and should be regarded as such. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017. Also note that much of the preliminary code is being developed within **separate branches**,
-which are very unstable and highly experimental. 
+The package is actively developing. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017.  
 
 ## Usage 
-Usage section to be continued.... 
+
+```R
+library("clustertree")
+
+data("iris")
+x <- as.matrix(iris[, 1:4])
+```
+
+Run __Robust Single Linkage__
+```R
+ct <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "RSL")
+ct
+```
+
+```R
+Cluster tree object of: 150 objects.
+Estimator used: Robust Single Linkage
+Parameters: k = 15, alpha = 1.4142, dim = 4
+```
+Plots 
+```R
+plot(ct)
+```
 
 ## Additional References
 The cluster tree theory itself has a long history. For a brief overview of the definition, see section  **11.13** of: 
