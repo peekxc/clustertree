@@ -26,7 +26,7 @@ test_that("RSL with k = 2 and alpha = 1 is the same as single linkage", {
   sl <- hclust(dist_x, method = "single")
 
   ## The heights should be identical
-  expect_true(all(cl$hc$height == sl$height))
+  expect_true(all.equal(cl$hc$height, sl$height, tolerance = sqrt(.Machine$double.eps)))
 
   ## As should the cuts
   expect_true(all(cutree(cl$hc, k = 1:(n - 1)) ==  cutree(sl, k = 1:(n - 1))))
