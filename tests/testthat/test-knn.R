@@ -20,7 +20,7 @@ knn_truth <- list(
 
 ## Run the k-nearest neighbor + validate with dist
 knn_res <- knn(X_n, k = 10L)
-expect_true(all(knn_res$id == knn_truth$id))
-expect_true(all(knn_res$dist == knn_truth$dist))
+expect_equivalent(knn_res$id, knn_truth$id)
+expect_true(all.equal(knn_res$dist, knn_truth$dist, tolerance = sqrt(.Machine$double.eps), check.attributes = FALSE))
 
 
