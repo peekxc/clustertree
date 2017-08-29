@@ -55,10 +55,57 @@ Cluster tree object of: 150 objects.
 Estimator used: Robust Single Linkage
 Parameters: k = 15, alpha = 1.4142, dim = 4
 ```
-Plots 
+Plot the cluster tree. Like other hierarchical clustering algorithms, the main tree is stored internally as an 'hclust' object
 ```R
 plot(ct)
+is(ct$hc, "hclust") 
 ```
+`TRUE`
+
+You can also use either of the two linkage criteria studied From Algorithm 2 in [2] listed above: 
+```
+ct2 <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "KNN")
+ct3 <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "mutual KNN")
+```
+
+Unlike other hierarchical algorithms, it's possible that these do not form complete hierarchies. This can happen when 
+there is a sufficiently low density areas separating high density clusters. For example, it's well known the _Iris setosa_ 
+species is clearly separable from the other two species. This is reflected in the __Mutual KNN__ graph, the sparser of 
+the two estimators. These disjoint connected components are also stored as trees, i.e.
+
+__Iris Setosa__ tree
+```R
+length(ct3$hc) ## == 2
+ct3$hc[[1]]
+```
+
+```
+...
+Cluster method   : mutual knn 
+Number of objects: 50 
+```
+
+```R
+ct3$hc[[2]]
+```
+
+```
+...
+Cluster method   : mutual knn 
+Number of objects: 100 
+```
+
+Typical hierarchical clustering structures represent every singleton as a possible cluster, but obviously, not every singleton will be in a disjoint high density cluster. One approach to making these modes more apparent is to specify a threshold to to use as a means of 'runt pruning'. This can significantly simplify the tree: 
+
+```R
+  ct_simplified <- runt_prune(ct, 2)
+  plot(ct_simplified[[1]]) ## Three detected modes of density
+```
+
+Runt prunign from:
+
+> Stuetzle, Werner. "Estimating the cluster tree of a density by analyzing the minimal spanning tree of a sample." Journal of classification 20.1 (2003): 025-047.
+
 
 ## Additional References
 The cluster tree theory itself has a long history. For a brief overview of the definition, see section  **11.13** of: 
