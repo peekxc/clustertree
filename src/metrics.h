@@ -48,10 +48,10 @@ struct Metric {
 
 // L_2 norm (squared)
 struct L_2 : Metric {
-  unsigned int d; // dimension of the space
+  int d; // dimension of the space
   L_2(){ }
   ~L_2(){ d = 0; }
-  void init(List config){ d = (unsigned int) config["d"]; }
+  void init(List config){ d = (int) config["d"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist += (x_j[i] - x_i[i]) * (x_j[i] - x_i[i]); }
@@ -71,10 +71,10 @@ struct L_2 : Metric {
 
 // L_1 norm
 struct L_1 : Metric {
-  unsigned int d; // dimension of the space
+  int d; // dimension of the space
   L_1(){ }
   ~L_1(){ d = 0; }
-  void init(List config){ d = (unsigned int) config["d"]; }
+  void init(List config){ d = (int) config["d"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist += std::abs(x_j[i] - x_i[i]); }
@@ -91,10 +91,10 @@ struct L_1 : Metric {
 
 // L_inf norm
 struct L_inf : Metric {
-  unsigned int d; // dimension of the space
+  int d; // dimension of the space
   L_inf(){ }
   ~L_inf(){ d = 0; }
-  void init(List config){ d = (unsigned int) config["d"]; }
+  void init(List config){ d = (int) config["d"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist = std::max(dist, std::abs(x_j[i]- x_i[i])); }
@@ -112,11 +112,11 @@ struct L_inf : Metric {
 
 // Lp norm
 struct L_p : Metric {
-  unsigned int d; // dimension of the space
-  unsigned int p; // p norm
+  int d; // dimension of the space
+  int p; // p norm
   L_p(){ };
   ~L_p(){ d = p = 0; };
-  void init(List config){ d = (unsigned int) config["d"]; p = (unsigned int) config["p"]; }
+  void init(List config){ d = (int) config["d"]; p = (int) config["p"]; }
   inline ANNdist operator()(ANNpoint x_i, ANNpoint x_j){
     ANNdist dist = 0;
     for (int i = 0; i < d; ++i) { dist += std::pow(x_j[i] - x_i[i], p); }

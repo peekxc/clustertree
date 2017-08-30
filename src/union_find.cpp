@@ -9,7 +9,7 @@
 
 #include "union_find.h"
 
-UnionFind::UnionFind(const int size) : parent(size), rank(size), size(size)
+UnionFind::UnionFind(const unsigned int size) : parent(size), rank(size), size(size)
 {
   for (int i = 0; i < size; ++i)
   { parent[i] = i, rank[i] = 0; }

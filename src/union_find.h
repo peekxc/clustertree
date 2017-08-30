@@ -14,7 +14,7 @@
 using namespace Rcpp;
 
 /* Rcpp UnionFind - implementation of the Disjoint Set data structure
- * Optimized for amortized constant-time using path compression and union by rank
+ * Optimized for amortized constant-time 'Find' using path compression and union by rank
  */
 class UnionFind
 {
@@ -23,7 +23,7 @@ private:
 
 public:
   const unsigned int size;
-  UnionFind(const int size);
+  UnionFind(const unsigned int size);
   ~UnionFind();
   void Union(const int x, const int y);
   const int Find(const int x);

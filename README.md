@@ -55,28 +55,35 @@ Cluster tree object of: 150 objects.
 Estimator used: Robust Single Linkage
 Parameters: k = 15, alpha = 1.4142, dim = 4
 ```
-Plot the cluster tree. Like other hierarchical clustering algorithms, the main tree is stored internally as an 'hclust' object
+To plot the cluster tree, simply use the plot method. The main tree is stored internally as an 'hclust' object, which can be accessed directly via the 'hc' member
 ```R
 plot(ct)
-is(ct$hc, "hclust") 
+is(ct$hc, "hclust") ## TRUE
 ```
-`TRUE`
+The 'hc' is a valid hclust object, and can be treated like any other hclust object. For example it can be converted to 
+a dendrogram, the more visually-oriented representation of a hierarchy: 
+```
+as.dendrogram(ct$hc)
+```
+```
+'dendrogram' with 2 branches and 150 members total, at height 1.571623 
+```
 
 You can also use either of the two linkage criteria studied From Algorithm 2 in [2] listed above: 
 ```
-ct2 <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "KNN")
-ct3 <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "mutual KNN")
+ct_knn <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "KNN")
+ct_mknn <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "mutual KNN")
 ```
-
 Unlike other hierarchical algorithms, it's possible that these do not form complete hierarchies. This can happen when 
-there is a sufficiently low density areas separating high density clusters. For example, it's well known the _Iris setosa_ 
-species is clearly separable from the other two species. This is reflected in the __Mutual KNN__ graph, the sparser of 
-the two estimators. These disjoint connected components are also stored as trees, i.e.
+there is a sufficiently low density areas separating high density clusters. These disjoint connected components are also stored as trees, i.e. 
+```R
+length(ct_mknn$hc) ## == 2
+```
+In the __Iris__ data set, it's well known the _Setosa_ species is clearly separable from the other two species; this is reflected in the __Mutual KNN__ graph, the sparser of the two estimators. 
 
 __Iris Setosa__ tree
 ```R
-length(ct3$hc) ## == 2
-ct3$hc[[1]]
+ct_mknn$hc[[1]] ## hierarchy of the setosa species 
 ```
 
 ```
@@ -84,9 +91,9 @@ ct3$hc[[1]]
 Cluster method   : mutual knn 
 Number of objects: 50 
 ```
-
+The other two species non-linearly separable species form a hierarchy in the second member.
 ```R
-ct3$hc[[2]]
+ct_mknn$hc[[2]]
 ```
 
 ```
@@ -103,7 +110,7 @@ This can significantly simplify the tree:
 
 ```R
   ct_simplified <- runt_prune(ct, 2)
-  plot(ct_simplified[[1]]) ## Three detected modes of density
+  plot(ct_simplified) ## Three detected modes of density
 ```
 
 ## Additional References
