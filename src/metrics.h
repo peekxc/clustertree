@@ -64,7 +64,8 @@ struct L_2 : Metric {
 
   // Finalize by taking the square root
   inline void finalize(Rcpp::NumericVector& dist_x){
-    std::transform(dist_x.begin(), dist_x.end(), dist_x.begin(), ::sqrt);
+    // The cast should take care of selecting the appropriate overload
+    std::transform(dist_x.begin(), dist_x.end(), dist_x.begin(), static_cast<double (*)(double)>(std::sqrt));
   }
 };
 
