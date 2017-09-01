@@ -115,7 +115,7 @@ This can significantly simplify the tree:
 
 ## Additional References
 The cluster tree theory itself has a long history. For a brief overview of the definition, see section  **11.13** of: 
-> Hartigan, John A., and J. A. Hartigan. Clustering algorithms. Vol. 209. New York: Wiley, 1975.
+> Hartigan, John A. Clustering algorithms. Vol. 209. New York: Wiley, 1975.
 for an overview of what Hartigan refers to as the *density-contour tree,* and brief overview of the background and associated concepts of formal high-density clustering. 
 
 Established notions of consistency of the above class of estimators can be found in: 
