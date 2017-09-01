@@ -144,7 +144,7 @@ List simplified_hclust(List hcl, const int min_sz) {
   cl.reserve(n);
 
   // First pass: Hclust object are intrinsically agglomerative structures. Splitting the hierarchy
-  // divisively requires knwoledge of the sizes of each branch. So agglomerate up the hierarchy, recording member sizes.
+  // divisively requires knowledge of the sizes of each branch. So agglomerate up the hierarchy, recording member sizes.
   // This enables a dynamic programming strategy to improve performance below.
   for (k = 0; k < n-1; ++k){
     int lm = merge(k, 0), rm = merge(k, 1);

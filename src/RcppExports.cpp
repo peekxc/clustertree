@@ -5,18 +5,6 @@
 
 using namespace Rcpp;
 
-// fosc
-NumericVector fosc(const List& st, std::list<int>& sc);
-RcppExport SEXP _clustertree_fosc(SEXP stSEXP, SEXP scSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const List& >::type st(stSEXP);
-    Rcpp::traits::input_parameter< std::list<int>& >::type sc(scSEXP);
-    rcpp_result_gen = Rcpp::wrap(fosc(st, sc));
-    return rcpp_result_gen;
-END_RCPP
-}
 // normalizeIndices
 IntegerMatrix normalizeIndices(const IntegerMatrix& mst);
 RcppExport SEXP _clustertree_normalizeIndices(SEXP mstSEXP) {
@@ -208,8 +196,9 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP _rcpp_module_boot_mod_simplehclust();
+
 static const R_CallMethodDef CallEntries[] = {
-    {"_clustertree_fosc", (DL_FUNC) &_clustertree_fosc, 2},
     {"_clustertree_normalizeIndices", (DL_FUNC) &_clustertree_normalizeIndices, 1},
     {"_clustertree_mstToCC", (DL_FUNC) &_clustertree_mstToCC, 2},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
@@ -225,6 +214,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_cut_simplified_hclust", (DL_FUNC) &_clustertree_cut_simplified_hclust, 3},
     {"_clustertree_simplified_hclust", (DL_FUNC) &_clustertree_simplified_hclust, 2},
     {"_clustertree_vol_nSphere", (DL_FUNC) &_clustertree_vol_nSphere, 2},
+    {"_rcpp_module_boot_mod_simplehclust", (DL_FUNC) &_rcpp_module_boot_mod_simplehclust, 0},
     {NULL, NULL, 0}
 };
 

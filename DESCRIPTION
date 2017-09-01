@@ -16,3 +16,4 @@ RoxygenNote: 6.0.1
 Copyright: ANN library is copyright by University of Maryland, Sunil Arya and David Mount. All other code is copyright by Matthew Piekenbrock.
 SystemRequirements: C++11
 SystemRequirements: GNU make
+RcppModules: SimpleHclust
