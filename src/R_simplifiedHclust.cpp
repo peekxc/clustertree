@@ -229,7 +229,7 @@ List simplified_hclust(List hcl, const int min_sz) {
   // Create a map from original cluster ids to normalized ones
   IntegerVector leaf_from = as<IntegerVector>(from[from < 0]), leaf_to = as<IntegerVector>(to[to < 0]);
   IntegerVector all_ids = unique(combine(leaf_from, leaf_to)); // original leaf ids
-  std::transform(all_ids.begin(), all_ids.end(), all_ids.begin(), static_cast<double (*)(double)> std::abs);
+  std::transform(all_ids.begin(), all_ids.end(), all_ids.begin(), static_cast<int(*)(int)>(std::abs));
   std::unordered_map<int, int> singleton_map = std::unordered_map<int, int>();
   int i = 1;
   for (IntegerVector::iterator it = all_ids.begin(); it != all_ids.end(); ++it, ++i){
