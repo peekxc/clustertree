@@ -5,7 +5,7 @@
 
 `clustertree` is a fast and extensible [R package](https://www.r-project.org/package) for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 <div style = "text-align:center" align="center"> <img src="http://peekxc.github.io/img/clustertree.svg" width = "278"/> </div>
-From a high-level perspective, the cluster tree provides a highly interpretable, multi-resolution, and statistically sound summary of the underlying density of a [finite] sample. The package includes both tools and complete implementations of the following (growing) list of estimators: 
+From a high-level perspective, the cluster tree provides a highly interpretable, multi-resolution, hierarchical summary of the underlying density of a [finite] sample. The package includes both tools and complete implementations of the following list of estimators: 
 
 ---
 1. The **Robust Single Linkage (RSL)** algorithm from: 
@@ -16,7 +16,18 @@ From a high-level perspective, the cluster tree provides a highly interpretable,
 	
 ---
 
-For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.
+Additional tools for working with the tree(s) are also provided. Namely, 
+
+---
+3. Stuetzle's **Runt pruning** technique is provided, from:
+> Stuetzle, Werner. "Estimating the cluster tree of a density by analyzing the minimal spanning tree of a sample." Journal of classification 20.1 (2003): 025-047.
+
+4. Eldridge et. al's **Merge Distortion** metric is also provided, from:
+> Eldridge, Justin, Mikhail Belkin, and Yusu Wang. "Beyond hartigan consistency: Merge distortion metric for hierarchical clustering." Conference on Learning Theory. 2015.
+
+---
+
+The tree(s) returned are by default standard `hclust` objects. Support for densities estimated via [KDE](https://en.wikipedia.org/wiki/Kernel_density_estimation) techniques are planned for the future. For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.
 
 <!--The applications are many—density-based clustering is one such application. The benefits of density-based clustering are numerous, including the ability to capture clusters of arbitrary or non-convex shapes, they do not require *a priori* knowledge concerning number of clusters to find, and they are more often than not robust to varying amounts noise. Akin to some density-based clustering approaches, the cluster tree shares another benefit relatively absent in other clustering approaches: the definition of what constitutes a cluster and its overall object of inference, the hierarchical tree of high-density clusters, is clearly and formally stated. -->
 
@@ -33,7 +44,7 @@ The package currently only exists on github. The installation options are as fol
 ) 
 #### Development note 
 
-The package is actively developing. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017.  
+The package is actively developing. A release candidate for [CRAN](https://cran.r-project.org/) will be created eventually. 
 
 ## Usage 
 
@@ -55,35 +66,28 @@ Cluster tree object of: 150 objects.
 Estimator used: Robust Single Linkage
 Parameters: k = 15, alpha = 1.4142, dim = 4
 ```
-To plot the cluster tree, simply use the plot method. The main tree is stored internally as an 'hclust' object, which can be accessed directly via the 'hc' member
+Plot the cluster tree. Like other hierarchical clustering algorithms, the main tree is stored internally as an 'hclust' object
 ```R
 plot(ct)
-is(ct$hc, "hclust") ## TRUE
+is(ct$hc, "hclust") 
 ```
-The 'hc' is a valid hclust object, and can be treated like any other hclust object. For example it can be converted to 
-a dendrogram, the more visually-oriented representation of a hierarchy: 
-```
-as.dendrogram(ct$hc)
-```
-```
-'dendrogram' with 2 branches and 150 members total, at height 1.571623 
-```
+`TRUE`
 
 You can also use either of the two linkage criteria studied From Algorithm 2 in [2] listed above: 
 ```
-ct_knn <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "KNN")
-ct_mknn <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "mutual KNN")
+ct2 <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "KNN")
+ct3 <- clustertree(x, k = 15L, alpha = sqrt(2), estimator = "mutual KNN")
 ```
+
 Unlike other hierarchical algorithms, it's possible that these do not form complete hierarchies. This can happen when 
-there is a sufficiently low density areas separating high density clusters. These disjoint connected components are also stored as trees, i.e. 
-```R
-length(ct_mknn$hc) ## == 2
-```
-In the __Iris__ data set, it's well known the _Setosa_ species is clearly separable from the other two species; this is reflected in the __Mutual KNN__ graph, the sparser of the two estimators. 
+there is a sufficiently low density areas separating high density clusters. For example, it's well known the _Iris setosa_ 
+species is clearly separable from the other two species. This is reflected in the __Mutual KNN__ graph, the sparser of 
+the two estimators. These disjoint connected components are also stored as trees, i.e.
 
 __Iris Setosa__ tree
 ```R
-ct_mknn$hc[[1]] ## hierarchy of the setosa species 
+length(ct3$hc) ## == 2
+ct3$hc[[1]]
 ```
 
 ```
@@ -91,9 +95,9 @@ ct_mknn$hc[[1]] ## hierarchy of the setosa species
 Cluster method   : mutual knn 
 Number of objects: 50 
 ```
-The other two species non-linearly separable species form a hierarchy in the second member.
+
 ```R
-ct_mknn$hc[[2]]
+ct3$hc[[2]]
 ```
 
 ```
@@ -102,20 +106,18 @@ Cluster method   : mutual knn
 Number of objects: 100 
 ```
 
-Typical hierarchical clustering structures represent every singleton as a possible cluster, but obviously, not every singleton will be in a disjoint high density cluster. One approach to making these modes more apparent is to specify a threshold to to use as a means of 'runt pruning' from:
-
-> Stuetzle, Werner. "Estimating the cluster tree of a density by analyzing the minimal spanning tree of a sample." Journal of classification 20.1 (2003): 025-047.
+Typical hierarchical clustering structures represent every singleton as a possible cluster, but obviously, not every singleton will be in a disjoint high density cluster. One approach to making these modes more apparent is to specify a threshold to to use as a means of 'runt pruning' from [3] above.
 
 This can significantly simplify the tree: 
 
 ```R
   ct_simplified <- runt_prune(ct, 2)
-  plot(ct_simplified) ## Three detected modes of density
+  plot(ct_simplified[[1]]) ## Three detected modes of density
 ```
 
 ## Additional References
 The cluster tree theory itself has a long history. For a brief overview of the definition, see section  **11.13** of: 
-> Hartigan, John A. Clustering algorithms. Vol. 209. New York: Wiley, 1975.
+> Hartigan, John A., and J. A. Hartigan. Clustering algorithms. Vol. 209. New York: Wiley, 1975.
 for an overview of what Hartigan refers to as the *density-contour tree,* and brief overview of the background and associated concepts of formal high-density clustering. 
 
 Established notions of consistency of the above class of estimators can be found in: 
