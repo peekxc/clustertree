@@ -5,7 +5,7 @@
 
 `clustertree` is a fast and extensible [R package](https://www.r-project.org/package) for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 <div style = "text-align:center" align="center"> <img src="http://peekxc.github.io/img/clustertree.svg" width = "278"/> </div>
-From a high-level perspective, the cluster tree provides a highly interpretable, multi-resolution, and statistically sound summary of the underlying density of a [finite] sample. The package includes both tools and complete implementations of the following (growing) list of estimators: 
+From a high-level perspective, the cluster tree provides a highly interpretable, multi-resolution, hierarchical summary of the underlying density of a [finite] sample. The package includes both tools and complete implementations of the following list of estimators: 
 
 ---
 1. The **Robust Single Linkage (RSL)** algorithm from: 
@@ -16,7 +16,18 @@ From a high-level perspective, the cluster tree provides a highly interpretable,
 	
 ---
 
-For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.
+Additional tools for working with the tree(s) are also provided. Namely, 
+
+---
+3. Stuetzle's **Runt pruning** technique is provided, from:
+> Stuetzle, Werner. "Estimating the cluster tree of a density by analyzing the minimal spanning tree of a sample." Journal of classification 20.1 (2003): 025-047.
+
+4. Eldridge et. al's **Merge Distortion** metric is also provided, from:
+> Eldridge, Justin, Mikhail Belkin, and Yusu Wang. "Beyond hartigan consistency: Merge distortion metric for hierarchical clustering." Conference on Learning Theory. 2015.
+
+---
+
+The tree(s) returned are by default standard `hclust` objects. Support for densities estimated via KDE techniques are planned for the future. For more information regarding the utility of this package and of the cluster tree itself, see the **Usage** and **Additional References** sections, respectively.
 
 <!--The applications are many—density-based clustering is one such application. The benefits of density-based clustering are numerous, including the ability to capture clusters of arbitrary or non-convex shapes, they do not require *a priori* knowledge concerning number of clusters to find, and they are more often than not robust to varying amounts noise. Akin to some density-based clustering approaches, the cluster tree shares another benefit relatively absent in other clustering approaches: the definition of what constitutes a cluster and its overall object of inference, the hierarchical tree of high-density clusters, is clearly and formally stated. -->
 
@@ -33,7 +44,7 @@ The package currently only exists on github. The installation options are as fol
 ) 
 #### Development note 
 
-The package is actively developing. A release candidate for [CRAN](https://cran.r-project.org/) is planned for approximately sometime around 09-5-2017.  
+The package is actively developing. A release candidate for [CRAN](https://cran.r-project.org/) will be created eventually. 
 
 ## Usage 
 
@@ -95,9 +106,7 @@ Cluster method   : mutual knn
 Number of objects: 100 
 ```
 
-Typical hierarchical clustering structures represent every singleton as a possible cluster, but obviously, not every singleton will be in a disjoint high density cluster. One approach to making these modes more apparent is to specify a threshold to to use as a means of 'runt pruning' from:
-
-> Stuetzle, Werner. "Estimating the cluster tree of a density by analyzing the minimal spanning tree of a sample." Journal of classification 20.1 (2003): 025-047.
+Typical hierarchical clustering structures represent every singleton as a possible cluster, but obviously, not every singleton will be in a disjoint high density cluster. One approach to making these modes more apparent is to specify a threshold to to use as a means of 'runt pruning' from [3] above.
 
 This can significantly simplify the tree: 
 

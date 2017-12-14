@@ -15,5 +15,16 @@ VignetteBuilder: knitr
 RoxygenNote: 6.0.1
 Copyright: ANN library is copyright by University of Maryland, Sunil Arya and David Mount. All other code is copyright by Matthew Piekenbrock.
 SystemRequirements: C++11
-SystemRequirements: GNU make
 RcppModules: SimpleHclust
+Collate: 
+    'RcppExports.R'
+    'chooseMetric.R'
+    'clusterTreeR.R'
+    'clustertree.R'
+    'cons_prune.R'
+    'distortion.R'
+    'knn.R'
+    'mst.R'
+    'runt_prune.R'
+    'simplified_hclust.R'
+    'spanplot.R'

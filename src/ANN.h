@@ -714,7 +714,7 @@ class ANNkd_node;				// generic node in a kd-tree
 typedef ANNkd_node*	ANNkd_ptr;	// pointer to a kd-tree node
 
 class DLL_API ANNkd_tree: public ANNpointSet {
-  //friend class Rcpp::DualTree; // Let the dual tree class access internals
+
 public: // C++ will not respect the friend class declaration at the global namespace, so make everything pulic!
 	int				dim;				// dimension of space
 	int				n_pts;				// number of points in tree
@@ -772,11 +772,14 @@ public: // C++ will not respect the friend class declaration at the global names
 		ANNdistArray	dd = NULL,		// dist to near neighbors (modified)
 		double			eps=0.0);		// error bound
 
+	void annkSearchDT();
+
 	//MFH 7/15/2015
 	std::pair< std::vector<int>, std::vector<double> > annkFRSearch2(					// approx fixed-radius kNN search
 		ANNpoint		q,				// the query point
 		ANNdist			sqRad,			// squared radius of query ball
 		double			eps=0.0);		// error bound
+
 
 	int theDim()						// return dimension of space
 	{ return dim; }

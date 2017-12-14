@@ -59,6 +59,10 @@ double getConnectionRadius(double dist_ij, double radius_i, double radius_j, dou
 //   return mst;
 // }
 
+NumericMatrix boruvkaRSL(){
+
+}
+
 /*
  * Compute MST using variant of Prim's, constrained by the radius of the Balls around each x_i.
  * Requires several array-type or indicator variables, namely:

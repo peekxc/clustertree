@@ -135,7 +135,7 @@ List simplified_hclust(List hcl, const int min_sz) {
   IntegerVector pt_order = hcl["order"];
   int n = merge.nrow() + 1, k;
 
-  //  Auxilary information not saved
+  // Auxillary information not saved
   std::vector<int> cl_tracker = std::vector<int>(n-1 , 0); // cluster component each step
   std::vector<int> member_sizes = std::vector<int>(n-1, 0); // Size each step
 
@@ -143,7 +143,7 @@ List simplified_hclust(List hcl, const int min_sz) {
   std::unordered_map<int, cl_info> cl = std::unordered_map<int, cl_info>();
   cl.reserve(n);
 
-  // First pass: Hclust object are intrinsically agglomerative structures. Splitting the hierarchy
+  // First pass: Hclust objects are intrinsically agglomerative structures. Splitting the hierarchy
   // divisively requires knowledge of the sizes of each branch. So agglomerate up the hierarchy, recording member sizes.
   // This enables a dynamic programming strategy to improve performance below.
   for (k = 0; k < n-1; ++k){
@@ -290,3 +290,53 @@ List simplified_hclust(List hcl, const int min_sz) {
   simple_hclust.attr("class") = wrap(class_names);
   return(simple_hclust);
 }
+
+// List createMerge(const IntegerVector& m1, const IntegerVector& m2){
+//
+// }
+
+// [[Rcpp::export]]
+List reconnectComponents(const IntegerMatrix& merge, const NumericVector& height, const NumericVector& h2){
+  const int n = merge.nrow() + 1;
+  UnionFind comp = UnionFind(n);
+  std::vector<IntegerVector> res = std::vector<IntegerVector>();
+
+  IntegerVector comp_idx = IntegerVector(n);
+  int c_i = 0;
+  for (int i = 0; i < n - 1; ++i){
+    IntegerVector agg = merge(i, _);
+    const int l = agg[0], r = agg[1];
+    const double c_height = height[i];
+    if (l < 0 && r < 0){
+      comp.Union(abs(l) - 1, abs(r) - 1);
+      comp_idx[i] = comp.Find(abs(l) - 1);
+    }
+    else if (l < 0 && r > 0){ comp.Union(abs(l) - 1, comp_idx[r - 1]); }
+    else if (l > 0 && r < 0){ comp.Union(comp_idx[l - 1], abs(r) - 1); }
+    else { comp.Union(comp_idx[l - 1], comp_idx[r - 1]); }
+
+    if (c_height >= h2[c_i]){
+
+      // Create the leaves
+      if (c_i == 0){
+        const IntegerVector CCs = comp.getCC();
+        const IntegerVector ccs = Rcpp::unique(CCs);
+        for (int cc_idx = 0; cc_idx < ccs.length(); ++cc_idx){
+
+        }
+      }
+
+      c_i++;
+      res.push_back(comp.getCC());
+      if (c_i > h2.length()){ break; }
+    }
+  }
+  return wrap(res);
+}
+
+
+/*** R
+C_n$hc$merge
+clustertree:::reconnectComponents(C_n$hc$merge, height = C_n$hc$height, h2 = r_)
+*/
+

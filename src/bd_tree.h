@@ -95,6 +95,9 @@ public:
 	virtual void ann_search(ANNdist);			// standard search
 	virtual void ann_pri_search(ANNdist);		// priority search
 	virtual void ann_FR_search(ANNdist); 		// fixed-radius search
+	virtual void ann_search_dt(ANNdist, ANNkd_node&, NodeDispatcher& dispatcher); // dual-tree search
+	virtual void ann_search_dt(ANNdist, ANNkd_split&, NodeDispatcher& dispatcher); // dual-tree search
+	virtual void ann_search_dt(ANNdist, ANNkd_leaf&, NodeDispatcher& dispatcher); // dual-tree search
 };
 
 #endif
