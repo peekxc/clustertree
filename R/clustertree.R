@@ -48,8 +48,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 
   r_k <- NULL
   if (is(x, "dist")){
-    tmp <- as.matrix(x_dist)
-    r_k <- apply(tmp, 1, sort)[k,]
+    r_k <- knn_dist(x, k)
   } else {
     r_k <- knn(x, k = k - 1, bucketSize = k * log(n), splitRule = "SUGGEST")
     r_k <- apply(r_k$dist, 1, max)

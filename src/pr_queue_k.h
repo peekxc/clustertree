@@ -97,24 +97,23 @@ public:
 		{ return (i < n ? mk[i].info : PQ_NULL_INFO); }
 
   // MJP 07/20/2017
-	inline bool insert(					// insert item (inlined for speed)
+	inline void insert(					// insert item (inlined for speed)
 		PQKkey kv,						// key value
 		PQKinfo inf)					// item info
 		{
 			int i;
-										// slide larger values up
 			for (i = n; i > 0; i--) {
 				if (mk[i-1].key > kv)
-					mk[i] = mk[i-1];
+					mk[i] = mk[i-1]; // slide larger values up
 				else
 					break;
 			}
 			mk[i].key = kv;				// store element here
 			mk[i].info = inf;
-			bool filled_queue = n == k - 1;
+			//bool filled_queue = n == k - 1;
 			if (n < k) n++;				// increment number of items
 			ANN_FLOP(k-i+1)				// increment floating ops
-			return filled_queue; // return whether this insertion created k non-inf items
+			// return filled_queue; // return whether this insertion created k non-inf items
 		}
 };
 

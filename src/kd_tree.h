@@ -72,7 +72,7 @@ public:
 // Forward Declare the types of nodes
 class ANNkd_split;
 class ANNkd_leaf;
-class DualTreeSearch;
+//class DualTreeSearch;
 
 // Node abstract dispatcher
 class NodeDispatcher {	 // Declares the interface for the dispatcher

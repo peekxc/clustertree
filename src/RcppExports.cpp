@@ -5,6 +5,18 @@
 
 using namespace Rcpp;
 
+// knn_dist
+NumericVector knn_dist(NumericVector dist_x, const int k);
+RcppExport SEXP _clustertree_knn_dist(SEXP dist_xSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type dist_x(dist_xSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(knn_dist(dist_x, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getMergeIndices
 IntegerVector getMergeIndices(const IntegerMatrix& merge, const int m_i);
 RcppExport SEXP _clustertree_getMergeIndices(SEXP mergeSEXP, SEXP m_iSEXP) {
@@ -65,14 +77,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// kNN_dt_int
-List kNN_dt_int(const NumericMatrix& x);
-RcppExport SEXP _clustertree_kNN_dt_int(SEXP xSEXP) {
+// testTrees
+void testTrees(const NumericMatrix& x, const int k, const int bucketSize);
+RcppExport SEXP _clustertree_testTrees(SEXP xSEXP, SEXP kSEXP, SEXP bucketSizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< const int >::type bucketSize(bucketSizeSEXP);
+    testTrees(x, k, bucketSize);
+    return R_NilValue;
+END_RCPP
+}
+// testDTS
+List testDTS(const NumericMatrix& x, const int k, const int bucketSize);
+RcppExport SEXP _clustertree_testDTS(SEXP xSEXP, SEXP kSEXP, SEXP bucketSizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(kNN_dt_int(x));
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< const int >::type bucketSize(bucketSizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(testDTS(x, k, bucketSize));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -85,17 +111,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type metric_name(metric_nameSEXP);
     Rcpp::traits::input_parameter< List >::type config(configSEXP);
     rcpp_result_gen = Rcpp::wrap(chooseMetric_int(metric_name, config));
-    return rcpp_result_gen;
-END_RCPP
-}
-// boruvkas
-List boruvkas(const NumericMatrix& x);
-RcppExport SEXP _clustertree_boruvkas(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(boruvkas(x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -257,14 +272,15 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_clustertree_knn_dist", (DL_FUNC) &_clustertree_knn_dist, 2},
     {"_clustertree_getMergeIndices", (DL_FUNC) &_clustertree_getMergeIndices, 2},
     {"_clustertree_FOSC_int", (DL_FUNC) &_clustertree_FOSC_int, 3},
     {"_clustertree_normalizeIndices", (DL_FUNC) &_clustertree_normalizeIndices, 1},
     {"_clustertree_mstToCC", (DL_FUNC) &_clustertree_mstToCC, 2},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
-    {"_clustertree_kNN_dt_int", (DL_FUNC) &_clustertree_kNN_dt_int, 1},
+    {"_clustertree_testTrees", (DL_FUNC) &_clustertree_testTrees, 3},
+    {"_clustertree_testDTS", (DL_FUNC) &_clustertree_testDTS, 3},
     {"_clustertree_chooseMetric_int", (DL_FUNC) &_clustertree_chooseMetric_int, 2},
-    {"_clustertree_boruvkas", (DL_FUNC) &_clustertree_boruvkas, 1},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_naive_clustertree", (DL_FUNC) &_clustertree_naive_clustertree, 5},
     {"_clustertree_kd_knn", (DL_FUNC) &_clustertree_kd_knn, 4},
