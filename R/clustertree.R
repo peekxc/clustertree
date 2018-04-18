@@ -41,15 +41,16 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   } else {
     d <- ncol(x)
     n <- nrow(x)
-    x_dist <- dist(x, method = "euclidean")
+    if (("parallelDist" %in% rownames(installed.packages())) == FALSE){
+      x_dist <- parallelDist::parallelDist(x, method = "euclidean") ## prefer parallel version of dist if possible
+    } else { x_dist <- dist(x, method = "euclidean") }
   }
   k <- as.integer(ifelse(missing(k), d * log(n), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   r_k <- NULL
   if (is(x, "dist")){
-    tmp <- as.matrix(x_dist)
-    r_k <- apply(tmp, 1, sort)[k,]
+    r_k <- knn_dist2(x_dist, k - 1)
   } else {
     r_k <- knn(x, k = k - 1, bucketSize = k * log(n), splitRule = "SUGGEST")
     r_k <- apply(r_k$dist, 1, max)

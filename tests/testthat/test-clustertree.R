@@ -31,3 +31,16 @@ test_that("RSL with k = 2 and alpha = 1 is the same as single linkage", {
   ## As should the cuts
   expect_equivalent(cutree(cl$hc, k = 1:(n - 1)), cutree(sl, k = 1:(n - 1)))
 })
+
+## Check euclidean distance objects produce the same results
+test_that("'clustertree' gives the same results for a 'dist' objects", {
+  cl <- clustertree(X_n, k = 5L, alpha = sqrt(2), estimator = "RSL")
+  cl2 <- clustertree(dist(X_n, method = "euclidean"), k = 5L, alpha = sqrt(2), estimator = "RSL")
+
+  ## The heights should be identical
+  expect_equal(cl$hc$height, cl2$hc$height, tolerance = sqrt(.Machine$double.eps))
+
+  ## As should the cuts
+  expect_equivalent(cutree(cl$hc, k = 1:(n - 1)), cutree(cl2$hc, k = 1:(n - 1)))
+})
+

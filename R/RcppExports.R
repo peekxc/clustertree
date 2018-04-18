@@ -17,6 +17,14 @@ hclustMergeOrder <- function(mst, o) {
     .Call('_clustertree_hclustMergeOrder', PACKAGE = 'clustertree', mst, o)
 }
 
+knn_dist <- function(dist_x, k) {
+    .Call('_clustertree_knn_dist', PACKAGE = 'clustertree', dist_x, k)
+}
+
+knn_dist2 <- function(dist_x, k) {
+    .Call('_clustertree_knn_dist2', PACKAGE = 'clustertree', dist_x, k)
+}
+
 chooseMetric_int <- function(metric_name, config) {
     .Call('_clustertree_chooseMetric_int', PACKAGE = 'clustertree', metric_name, config)
 }

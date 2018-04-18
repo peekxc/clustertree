@@ -52,6 +52,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// knn_dist
+NumericVector knn_dist(const NumericVector& dist_x, const int k);
+RcppExport SEXP _clustertree_knn_dist(SEXP dist_xSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type dist_x(dist_xSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(knn_dist(dist_x, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// knn_dist2
+NumericVector knn_dist2(const NumericVector& dist_x, const int k);
+RcppExport SEXP _clustertree_knn_dist2(SEXP dist_xSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type dist_x(dist_xSEXP);
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(knn_dist2(dist_x, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // chooseMetric_int
 SEXP chooseMetric_int(std::string metric_name, List config);
 RcppExport SEXP _clustertree_chooseMetric_int(SEXP metric_nameSEXP, SEXP configSEXP) {
@@ -213,6 +237,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_clustertree_mstToCC", (DL_FUNC) &_clustertree_mstToCC, 2},
     {"_clustertree_mstToHclust", (DL_FUNC) &_clustertree_mstToHclust, 2},
     {"_clustertree_hclustMergeOrder", (DL_FUNC) &_clustertree_hclustMergeOrder, 2},
+    {"_clustertree_knn_dist", (DL_FUNC) &_clustertree_knn_dist, 2},
+    {"_clustertree_knn_dist2", (DL_FUNC) &_clustertree_knn_dist2, 2},
     {"_clustertree_chooseMetric_int", (DL_FUNC) &_clustertree_chooseMetric_int, 2},
     {"_clustertree_primsRSL", (DL_FUNC) &_clustertree_primsRSL, 5},
     {"_clustertree_naive_clustertree", (DL_FUNC) &_clustertree_naive_clustertree, 5},
