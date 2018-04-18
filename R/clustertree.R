@@ -41,7 +41,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   } else {
     d <- ncol(x)
     n <- nrow(x)
-    if (("parallelDist" %in% rownames(installed.packages())) == FALSE){
+    if (requireNamespace("parallelDist", quietly = TRUE)){
       x_dist <- parallelDist::parallelDist(x, method = "euclidean") ## prefer parallel version of dist if possible
     } else { x_dist <- dist(x, method = "euclidean") }
   }

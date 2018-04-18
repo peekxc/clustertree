@@ -17,7 +17,7 @@
 \item{type}{whether to plot the clustertree where the height is computed using the radius at which clusters form (root at the top),
 or whether to use the corresponding empirical density (root at the bottom).}
 
-\item{...}{arguments to pass to f. Otherwise unused.}
+\item{...}{arguments to pass to the plotting function. Otherwise unused.}
 }
 \description{
 More details coming soon...
