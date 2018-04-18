@@ -13,6 +13,10 @@ mstToHclust <- function(mst_, dist) {
     .Call('_clustertree_mstToHclust', PACKAGE = 'clustertree', mst_, dist)
 }
 
+hclustMergeOrder <- function(mst, o) {
+    .Call('_clustertree_hclustMergeOrder', PACKAGE = 'clustertree', mst, o)
+}
+
 chooseMetric_int <- function(metric_name, config) {
     .Call('_clustertree_chooseMetric_int', PACKAGE = 'clustertree', metric_name, config)
 }

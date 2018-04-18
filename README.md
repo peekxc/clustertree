@@ -1,7 +1,9 @@
 # clustertree
 [![CRAN](http://www.r-pkg.org/badges/version/clustertree)](#)
+[![LifeCycle Status](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://deploy-preview-81--tidyverse-org.netlify.com/lifecycle/#maturing)
 [![Travis-CI Build Status](https://travis-ci.org/peekxc/clustertree.svg?branch=master)](https://travis-ci.org/peekxc/clustertree)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/peekxc/clustertree?branch=master&svg=true)](https://ci.appveyor.com/project/peekxc/clustertree)
+
 
 `clustertree` is a fast and extensible [R package](https://www.r-project.org/package) for estimating the empirical cluster tree, a hierarchical representation of *high-density clusters*, defined (recursively) as the connected subsets of: 
 <div style = "text-align:center" align="center"> <img src="http://peekxc.github.io/img/clustertree.svg" width = "278"/> </div>

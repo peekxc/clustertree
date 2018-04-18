@@ -11,6 +11,6 @@ using namespace Rcpp;
 void visit(const IntegerMatrix& merge, IntegerVector& order, int i, int j, int& ind);
 IntegerVector extractOrder(IntegerMatrix merge);
 List mstToHclust(const IntegerMatrix& merge, const NumericVector& dist);
-
+List hclustMergeOrder(const NumericMatrix& mst, const IntegerVector& o);
 
 #endif

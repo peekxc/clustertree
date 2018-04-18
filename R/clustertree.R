@@ -55,7 +55,6 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
     r_k <- apply(r_k$dist, 1, max)
   }
 
-
   ## Make sure k is less than n
   if (k > n){
     if (warn) warning("Data set has either too few records or to high of a dimensionality to use recommended default parameters.")
@@ -100,8 +99,9 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
       # Else do nothing - need at least two points to make a cluster
     }
   } else {
-  ## RSL creates a fully connected hierarchy, convert to an hclust object
-    hclust_info <- mstToHclust(st[, 1:2], st[, 3])
+    ## RSL creates a fully connected hierarchy, convert to an hclust object
+    # hclust_info <- mstToHclust(st[, 1:2], st[, 3])
+    hclust_info <- hclustMergeOrder(st, order(st[, 3]))
     hclust_info$call <- match.call()
     hclust_info$method <- possible_estimators[type+1]
   }

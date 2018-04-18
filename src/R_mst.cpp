@@ -4,7 +4,8 @@ using namespace Rcpp;
 #include "utilities.h" // Indexing macros
 #include "ANN_util.h" // matrixToANNpointArray
 #include "union_find.h" // disjoint set data structure
-#include "metrics.h"
+#include "metrics.h" // metrics
+#include "simple_structs.h" // edge
 
 /* kruskalsMST
  * Compute MST using Kruskals algorithm w/ disjoint set */
@@ -71,20 +72,20 @@ NumericMatrix primsMST(const NumericVector dist_x){
 
         // Updates edges on the fringe with lower weights if detected
         cedge_weight = dist_x[d_i];
-        if (cedge_weight < fringe[t_i].weight) {
+        if (cedge_weight < fringe[t_i].weight) { // Rprintf("Updating edge: F[%d].from = %d\n", t_i, c_i);
           fringe[t_i].weight = cedge_weight;
-          fringe[t_i].to = c_i; // t_i indexes the 'from' node
+          fringe[t_i].from = c_i; // t_i indexes the 'to' node
         }
 
         // If edge 'on the fringe' is less than any of the current (head) nodes weight,
         // change the head-facing node to the edge of the fringe
-        if (fringe[t_i].weight < min) {
+        if (fringe[t_i].weight < min) { // Rprintf("Min edge: F[%d].from = %d\n", t_i, c_i);
           min = fringe[t_i].weight, min_id = t_i;
         }
       }
     }
 
-    mst(n_edges, _) = NumericVector::create(min_id, c_i, min);
+    mst(n_edges, _) = NumericVector::create(fringe[min_id].from+1, min_id+1, min);
     v_selected[c_i] = 1;
     c_i = min_id;
   }

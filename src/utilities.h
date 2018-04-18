@@ -182,25 +182,4 @@ inline IntegerMatrix subset_rows(const IntegerMatrix& ref, IntegerVector idx){
 
 
 
-// Structures to do priority queue
-struct edge
-{
-  unsigned int to;
-  double weight;
-  edge(int to_id, double cost) : to(to_id), weight(cost) { }
-};
-struct compare_edge
-{
-  bool operator()(const edge& e1, const edge& e2) const
-  { return e1.weight > e2.weight; }
-};
-
-struct double_edge
-{
-  unsigned int from, to;
-  double weight;
-  double_edge(){}; // don't initialize anything with default constructor
-  double_edge(int from_id, int to_id, double cost) : from(from_id), to(to_id), weight(cost) { }
-};
-
 #endif

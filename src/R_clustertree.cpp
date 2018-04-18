@@ -3,6 +3,7 @@ using namespace Rcpp;
 
 #include "hclust_util.h" // Hclust extensions
 #include "ANN_util.h" // matrixToANNpointArray
+#include "simple_structs.h" // edge structs
 #include "metrics.h"
 
 // Computes the connection radius, i.e. the linkage criterion
@@ -97,7 +98,7 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
           // Rcout << "Updating fringe " << t_i << "w/ radii (" << r_k[c_i] << ", " << r_k[t_i] << ")" << std::endl;
           // Rcout << "current: " << c_i << ", to: " << t_i << std::endl;
           fringe[t_i].weight = priority;
-          fringe[t_i].to = c_i; // t_i indexes the 'from' node
+          fringe[t_i].from = c_i; // t_i indexes the 'from' node
         }
 
         // An edge 'on the fringe' might be less than any of the current nodes weights
@@ -107,7 +108,7 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
       }
     }
     // Rcout << "Adding edge: (" << min_id << ", " << c_i << ") [" << min << "]" << std::endl;
-    mst(n_edges, _) = NumericVector::create(min_id, c_i, min);
+    mst(n_edges, _) = NumericVector::create(fringe[min_id].from+1, min_id+1, min);
     v_selected[c_i] = 1;
     c_i = min_id;
   }
