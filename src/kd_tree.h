@@ -50,6 +50,7 @@ class NodeDispatcher;	// Forward declare NodeDispatcher
 //----------------------------------------------------------------------
 class ANNkd_node{						// generic kd-tree node (empty shell)
 public:
+  int id; // MJP
 	virtual ~ANNkd_node() {}					// virtual distroyer
 
 	virtual void ann_search(ANNdist) = 0;		// tree search
@@ -63,9 +64,9 @@ public:
 												// print node
 	virtual void print(int level, ostream &out) = 0;
 	virtual void dump(ostream &out) = 0;		// dump node
-	virtual void ann_search_dt(ANNdist, ANNkd_node&, NodeDispatcher& dispatcher) = 0; // dual tree search
-	virtual void ann_search_dt(ANNdist, ANNkd_leaf&, NodeDispatcher& dispatcher) = 0; // dual tree search
-	virtual void ann_search_dt(ANNdist, ANNkd_split&, NodeDispatcher& dispatcher) = 0; // dual tree search
+	virtual void ann_search_dt(ANNkd_node&, NodeDispatcher&) = 0; // dual tree search
+	virtual void ann_search_dt(ANNkd_leaf&, NodeDispatcher&) = 0; // dual tree search
+	virtual void ann_search_dt(ANNkd_split&, NodeDispatcher&) = 0; // dual tree search
 	friend class ANNkd_tree;					// allow kd-tree to access us
 };
 
@@ -78,10 +79,10 @@ class ANNkd_leaf;
 class NodeDispatcher {	 // Declares the interface for the dispatcher
 public:
   // Declare overloads for each kind of a node to dispatch
-  virtual void DFS(ANNkd_split& node1, ANNkd_split& node2) = 0;
-  virtual void DFS(ANNkd_split& node1, ANNkd_leaf& node2) = 0;
-  virtual void DFS(ANNkd_leaf& node1, ANNkd_split& node2) = 0;
-  virtual void DFS(ANNkd_leaf& node1, ANNkd_leaf& node2) = 0;
+  virtual void DFS(ANNkd_split&, ANNkd_split&) = 0;
+  virtual void DFS(ANNkd_split&, ANNkd_leaf&) = 0;
+  virtual void DFS(ANNkd_leaf&, ANNkd_split&) = 0;
+  virtual void DFS(ANNkd_leaf&, ANNkd_leaf&) = 0;
 };
 
 //----------------------------------------------------------------------
@@ -136,9 +137,9 @@ public:
 	virtual void ann_search(ANNdist);			// standard search
 	virtual void ann_pri_search(ANNdist);		// priority search
 	virtual void ann_FR_search(ANNdist);		// fixed-radius search
-	virtual void ann_search_dt(ANNdist, ANNkd_node&, NodeDispatcher& dispatcher); // dual-tree search
-  virtual void ann_search_dt(ANNdist, ANNkd_split&, NodeDispatcher& dispatcher); // dual-tree search
-	virtual void ann_search_dt(ANNdist, ANNkd_leaf&, NodeDispatcher& dispatcher); // dual-tree search
+	virtual void ann_search_dt(ANNkd_node&, NodeDispatcher&); // dual-tree search
+  virtual void ann_search_dt(ANNkd_split&, NodeDispatcher&); // dual-tree search
+	virtual void ann_search_dt(ANNkd_leaf&, NodeDispatcher&); // dual-tree search
 };
 
 //----------------------------------------------------------------------
@@ -206,9 +207,9 @@ public:
 	virtual void ann_search(ANNdist);			// standard search
 	virtual void ann_pri_search(ANNdist);		// priority search
 	virtual void ann_FR_search(ANNdist);		// fixed-radius search
-	virtual void ann_search_dt(ANNdist, ANNkd_node&, NodeDispatcher& dispatcher); // dual-tree search
-	virtual void ann_search_dt(ANNdist, ANNkd_split&, NodeDispatcher& dispatcher); // dual-tree search
-	virtual void ann_search_dt(ANNdist, ANNkd_leaf&, NodeDispatcher& dispatcher); // dual-tree search
+	virtual void ann_search_dt(ANNkd_node&, NodeDispatcher& dispatcher); // dual-tree search
+	virtual void ann_search_dt(ANNkd_split&, NodeDispatcher& dispatcher); // dual-tree search
+	virtual void ann_search_dt(ANNkd_leaf&, NodeDispatcher& dispatcher); // dual-tree search
 };
 
 //----------------------------------------------------------------------

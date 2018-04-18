@@ -180,3 +180,40 @@ List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist){
   res.attr("class") = "hclust";
   return(res);
 }
+
+// [[Rcpp::export]]
+List hclustMergeOrder(const NumericMatrix& mst, const IntegerVector& o){
+  int npoints = mst.nrow() + 1;
+  const NumericVector& dist = mst(_, 2);
+
+  // Extract order, reorder indices
+  const NumericVector& left = mst(_, 0), right = mst(_, 1);
+  IntegerVector left_int = as<IntegerVector>(left[o-1]), right_int = as<IntegerVector>(right[o-1]);
+
+  // Labels and resulting merge matrix
+  IntegerVector labs = -seq_len(npoints);
+  IntegerMatrix merge = IntegerMatrix(npoints - 1, 2);
+
+  // Replace singletons as negative and record merge of non-singletons as positive
+  for (int i = 0; i < npoints - 1; ++i) {
+    int lab_left = labs.at(left_int.at(i)-1), lab_right = labs.at(right_int.at(i)-1);
+    merge(i, _) = IntegerVector::create(lab_left, lab_right);
+    for (int c = 0; c < npoints; ++c){
+      if (labs.at(c) == lab_left || labs.at(c) == lab_right){
+        labs.at(c) = i+1;
+      }
+    }
+  }
+  //IntegerVector int_labels = seq_len(npoints);
+  List res = List::create(
+    _["merge"] = merge,
+    _["height"] = dist[o-1],
+    _["order"] = extractOrder(merge),
+    _["labels"] = R_NilValue, //as<StringVector>(int_labels)
+    _["method"] = "robust single linkage"
+  );
+  res.attr("class") = "hclust";
+  return res;
+}
+
+

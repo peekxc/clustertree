@@ -4,14 +4,16 @@
 #define COND_0 (1 << 0)
 #define COND_1 (1 << 1)
 #define COND_2 (1 << 2)
-#define COND_3 (1 << 2)
+#define COND_3 (1 << 3)
+
+// enum NEXT_PATH { XX = 0, LL = 1, LR = 2, RR = 3, RL = 4, XL = 5, XR = 6, LX = 7, RX = 8 };
 
 // Trivial struct to use in the sorting network. Allows quick prioritization of recursive
 // branches to follow.
 struct NodeScore{
   ANNkd_node* lhs, *rhs;
   ANNdist score;
-  NodeScore(ANNkd_node* l, ANNkd_node* r, ANNdist lr_score) : lhs(l), rhs(r) { score = lr_score; }
+  NodeScore(ANNkd_node* l, ANNkd_node* r, ANNdist lr_score) : lhs(l), rhs(r), score(lr_score){ }
 };
 
 // Simple 4-part sorting network

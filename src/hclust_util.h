@@ -1,9 +1,7 @@
 #ifndef HCLUST_UTIL_H
 #define HCLUST_UTIL_H
 
-#include <Rcpp.h>
-using namespace Rcpp;
-
+#include "RcppHeader.h"
 #include "union_find.h"
 #include "utilities.h"
 

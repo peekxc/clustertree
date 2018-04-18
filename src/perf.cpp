@@ -31,8 +31,7 @@
 
 // MJP 07/14/2017
 // Need to add Rcpp to enable performance output to R session
-#include <Rcpp.h>
-using namespace Rcpp;
+#include "RcppHeader.h"
 
 using namespace std;					// make std:: available
 

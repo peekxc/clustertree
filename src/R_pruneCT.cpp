@@ -1,6 +1,4 @@
-#include <Rcpp.h>
-using namespace Rcpp;
-
+#include "RcppHeader.h"
 #include "union_find.h"
 
 // TODO: Finish this

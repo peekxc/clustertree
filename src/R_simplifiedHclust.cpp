@@ -1,6 +1,4 @@
-#include <Rcpp.h>
-using namespace Rcpp;
-
+#include "RcppHeader.h"
 #include <unordered_map>
 #include "union_find.h" // disjoint set data structure
 #include "hclust_util.h" // mstToHclust, various hclust tools

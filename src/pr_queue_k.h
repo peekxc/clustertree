@@ -64,6 +64,7 @@ const PQKinfo	PQ_NULL_INFO =  ANN_NULL_IDX;	// nonexistent info value
 //----------------------------------------------------------------------
 
 class ANNmin_k {
+public:
 	struct mk_node {					// node in min_k structure
 		PQKkey			key;			// key value
 		PQKinfo			info;			// info field (user defined)
@@ -73,7 +74,7 @@ class ANNmin_k {
 	int			n;						// number of keys currently active
 	mk_node		*mk;					// the list itself
 
-public:
+
 	ANNmin_k(int max)					// constructor (given max size)
 		{
 			n = 0;						// initially no items

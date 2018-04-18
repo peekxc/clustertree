@@ -1,5 +1,4 @@
-#include <Rcpp.h>
-using namespace Rcpp;
+#include "RcppHeader.h"
 
 // Expects 1-based valid hclust object
 // [[Rcpp::export]]

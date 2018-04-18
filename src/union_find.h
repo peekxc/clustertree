@@ -10,8 +10,7 @@
 #ifndef UNION_FIND_H
 #define UNION_FIND_H
 
-#include <Rcpp.h>
-using namespace Rcpp;
+#include "RcppHeader.h"
 
 /* Rcpp UnionFind - implementation of the Disjoint Set data structure
  * Optimized for amortized constant-time using path compression and union by rank

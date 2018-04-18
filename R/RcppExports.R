@@ -5,6 +5,10 @@ knn_dist <- function(dist_x, k) {
     .Call('_clustertree_knn_dist', PACKAGE = 'clustertree', dist_x, k)
 }
 
+knn_dist2 <- function(dist_x, k) {
+    .Call('_clustertree_knn_dist2', PACKAGE = 'clustertree', dist_x, k)
+}
+
 getMergeIndices <- function(merge, m_i) {
     .Call('_clustertree_getMergeIndices', PACKAGE = 'clustertree', merge, m_i)
 }
@@ -25,16 +29,12 @@ mstToHclust <- function(mst_, dist) {
     .Call('_clustertree_mstToHclust', PACKAGE = 'clustertree', mst_, dist)
 }
 
-testTrees <- function(x, k, bucketSize = 15L) {
-    invisible(.Call('_clustertree_testTrees', PACKAGE = 'clustertree', x, k, bucketSize))
+hclustMergeOrder <- function(mst, o) {
+    .Call('_clustertree_hclustMergeOrder', PACKAGE = 'clustertree', mst, o)
 }
 
-testDTS <- function(x, k, bucketSize = 15L) {
-    .Call('_clustertree_testDTS', PACKAGE = 'clustertree', x, k, bucketSize)
-}
-
-chooseMetric_int <- function(metric_name, config) {
-    .Call('_clustertree_chooseMetric_int', PACKAGE = 'clustertree', metric_name, config)
+ClusterTree_int <- function(x, k, alpha = 1.0, bucketSize = 15L, splitRule = 5L) {
+    .Call('_clustertree_ClusterTree_int', PACKAGE = 'clustertree', x, k, alpha, bucketSize, splitRule)
 }
 
 primsRSL <- function(r, r_k, n, alpha, type) {
@@ -43,6 +43,26 @@ primsRSL <- function(r, r_k, n, alpha, type) {
 
 naive_clustertree <- function(dist_x, r_k, k, alpha, type = 0L) {
     .Call('_clustertree_naive_clustertree', PACKAGE = 'clustertree', dist_x, r_k, k, alpha, type)
+}
+
+testTrees <- function(x, k, bucketSize = 15L) {
+    invisible(.Call('_clustertree_testTrees', PACKAGE = 'clustertree', x, k, bucketSize))
+}
+
+testClusterTree <- function(x, k, bucketSize = 15L, alpha = 1.0) {
+    .Call('_clustertree_testClusterTree', PACKAGE = 'clustertree', x, k, bucketSize, alpha)
+}
+
+testKNN <- function(x, k, bucketSize = 15L, metric_choice = 0L) {
+    .Call('_clustertree_testKNN', PACKAGE = 'clustertree', x, k, bucketSize, metric_choice)
+}
+
+testKNN_ref <- function(qx, rx, k, bucketSize = 15L, metric_choice = 0L) {
+    .Call('_clustertree_testKNN_ref', PACKAGE = 'clustertree', qx, rx, k, bucketSize, metric_choice)
+}
+
+testMST <- function(x, bucketSize = 15L) {
+    .Call('_clustertree_testMST', PACKAGE = 'clustertree', x, bucketSize)
 }
 
 kd_knn <- function(query_x, tree_ptr, k, priority) {
@@ -79,6 +99,18 @@ simplified_hclust <- function(hcl, min_sz) {
 
 reconnectComponents <- function(merge, height, h2) {
     .Call('_clustertree_reconnectComponents', PACKAGE = 'clustertree', merge, height, h2)
+}
+
+timesTwo <- function(x) {
+    .Call('_clustertree_timesTwo', PACKAGE = 'clustertree', x)
+}
+
+test1 <- function(x) {
+    .Call('_clustertree_test1', PACKAGE = 'clustertree', x)
+}
+
+test2 <- function(x) {
+    .Call('_clustertree_test2', PACKAGE = 'clustertree', x)
 }
 
 vol_nSphere <- function(n, R = 1) {

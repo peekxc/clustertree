@@ -713,8 +713,11 @@ class ANNkdStats;				// stats on kd-tree
 class ANNkd_node;				// generic node in a kd-tree
 typedef ANNkd_node*	ANNkd_ptr;	// pointer to a kd-tree node
 
-#include <Rcpp.h> // MJP
-class node_bnb;
+#include <RcppArmadillo.h> // MJP
+#include "FastPtrHash.h"
+struct node_bnb;
+// typedef std::unordered_map<ANNkd_node*, node_bnb, FashPtrHash<ANNkd_node> > NODE_INFO;
+typedef std::vector<node_bnb> NODE_INFO;
 
 class DLL_API ANNkd_tree: public ANNpointSet {
 
@@ -755,7 +758,7 @@ public: // C++ will not respect the friend class declaration at the global names
 	  int					dd,				// dimension
 	  int					bs,				// bucket size
 	  ANNsplitRule split, // splitting method
-	  std::unordered_map<ANNkd_node*, node_bnb>& node_info // Map to store various things per-node at tree construction time
+	  NODE_INFO& node_info // Map to store various things per-node at tree construction time
 	);
 
 	ANNkd_tree(							// build from dump file

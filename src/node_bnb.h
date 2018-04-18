@@ -8,7 +8,8 @@ struct node_bnb {
   int id;
   ANNcoord max_radius, bound;
   ANNpoint centroid;
-  // ANNpoint lo, hi;
+  ANNpoint lo, hi; // For debugging
+  ANNkd_node* parent;
   node_bnb(void);
 };
 

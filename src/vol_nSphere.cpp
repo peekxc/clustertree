@@ -1,5 +1,4 @@
-#include <Rcpp.h>
-using namespace Rcpp;
+#include "RcppHeader.h"
 
 // Volume of n-dimensional sphere with radius R
 // [[Rcpp::export]]

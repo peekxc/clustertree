@@ -13,16 +13,16 @@
 //----------------------------------------------------------------------
 // Copyright (c) 1997-1998 University of Maryland and Sunil Arya and David
 // Mount.  All Rights Reserved.
-// 
-// This software and related documentation is part of the 
+//
+// This software and related documentation is part of the
 // Approximate Nearest Neighbor Library (ANN).
-// 
-// Permission to use, copy, and distribute this software and its 
-// documentation is hereby granted free of charge, provided that 
-// (1) it is not a component of a commercial product, and 
+//
+// Permission to use, copy, and distribute this software and its
+// documentation is hereby granted free of charge, provided that
+// (1) it is not a component of a commercial product, and
 // (2) this notice appears in all copies of the software and
-//   related documentation. 
-// 
+//   related documentation.
+//
 // The University of Maryland (U.M.) and the authors make no representations
 // about the suitability or fitness of this software for any purpose.  It is
 // provided "as is" without express or implied warranty.
@@ -43,8 +43,8 @@
 //----------------------------------------------------------------------
 //	Global constants and types
 //----------------------------------------------------------------------
-enum	{ANN_LO=0, ANN_HI=1};	// splitting indices
-enum	{ANN_IN=0, ANN_OUT=1};	// shrinking indices
+enum	ANN_SPLIT_IDX {ANN_LO=0, ANN_HI=1};	// splitting indices
+enum	ANN_SHRINK_IDX {ANN_IN=0, ANN_OUT=1};	// shrinking indices
 								// what to do in case of error
 enum ANNerr {ANNwarn = 0, ANNabort = 1};
 

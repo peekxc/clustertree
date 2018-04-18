@@ -1,9 +1,7 @@
 // R_kNN.cpp
 // R-facing code to perform k-nearest neighbor.
 // Single tree kNN function copied and slightly editted with permission from Michael Hahsler's code in the 'dbscan' package (GPLv3).
-#include <Rcpp.h>
-using namespace Rcpp;
-
+#include "RcppHeader.h"
 #include "utilities.h" // R_INFO, profiling mode, etc. must include first
 #include "ANN_util.h" // matrixToANNpointArray
 #include "R_kNN.h" // main header

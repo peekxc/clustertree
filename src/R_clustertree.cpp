@@ -1,9 +1,9 @@
-#include <Rcpp.h>
-using namespace Rcpp;
-
+#include "RcppHeader.h"
 #include "hclust_util.h" // Hclust extensions
 #include "ANN_util.h" // matrixToANNpointArray
 #include "metrics.h"
+#include "DualTreeKNN.h"
+#include "DualTreeBoruvka.h"
 
 // Computes the connection radius, i.e. the linkage criterion
 double getConnectionRadius(double dist_ij, double radius_i, double radius_j, double alpha, const int type) {
@@ -32,6 +32,54 @@ double getConnectionRadius(double dist_ij, double radius_i, double radius_j, dou
   }
   return std::numeric_limits<double>::max();
 }
+
+
+// [[Rcpp::export]]
+List ClusterTree_int(const NumericMatrix& x, const int k, const double alpha = 1.0,  const int bucketSize = 15, const int splitRule = 5){ //1.41421356237
+  // Copy data over to ANN point array
+  ANNpointArray queryPts = matrixToANNpointArray(x);
+  const int n = x.nrow();
+
+  // Create the kd tree
+  NODE_INFO node_info; // container to store various properties related to tree construction
+  ANNkd_tree* kdTreeR = new ANNkd_tree(queryPts, x.nrow(), x.ncol(), bucketSize, (ANNsplitRule) splitRule, node_info);
+
+  // Get the KNN neighbors
+  L_2* l2_norm = new L_2(queryPts, queryPts, x.ncol());
+  DualTreeKNN<L_2> dts = DualTreeKNN<L_2>(kdTreeR, kdTreeR, node_info, node_info, *l2_norm, k); // -1 to be inclusive of point itself
+  dts.DFS(); // Depth-First Traversal solves the KNN
+
+  // Get the KNN distance of the ball containing k neighbors
+  std::vector<ANNdist> rk_dist = std::vector<ANNdist>();
+  rk_dist.reserve(n);
+  for (int i = 0; i < n; ++i){ rk_dist.push_back(dts.knn_pq[i]->max_key()); }
+
+  // Create the robust single linkage metric space
+  RSL* rsl_metric = new RSL(queryPts, queryPts, x.ncol(), alpha, rk_dist);
+
+  // Create the dual tree boruvka object
+  DualTreeBoruvka<RSL> dtb = DualTreeBoruvka<RSL>(kdTreeR, kdTreeR, node_info, node_info, *rsl_metric);
+
+  // The MST of the RSl metric space creates the cluster tree hierarchy
+  NumericMatrix mst = dtb.MST();
+
+  // Convert the MST to a hclust object
+  IntegerMatrix mst_int = Rcpp::no_init_matrix(mst.nrow(), 2);
+  mst_int(_, 0) = mst.column(0);
+  mst_int(_, 1) = mst.column(1);
+  NumericVector mst_dist = mst.column(2);
+  List cltree_hclust = mstToHclust(mst_int, mst_dist);
+
+  // Make the return result
+  List res = List::create(_["hc"] = cltree_hclust, _["mst"] = mst);
+
+  // Cleanup + return
+  delete kdTreeR;
+  delete l2_norm;
+  delete rsl_metric;
+  return(res);
+}
+
 
 // // Use the dual tree boruvka approach to compute the cluster tree
 // List dtbRSL(const NumericMatrix& x, const NumericVector& r_k, const double alpha, const int type, SEXP metric_ptr){
@@ -71,7 +119,7 @@ NumericMatrix boruvkaRSL(){
  * t_i := index of node to test against (relative to r_k)
  * d_i := index of distance from current node to test node (relative to r)
  */
-// [[Rcpp::export]]
+ // [[Rcpp::export]]
 NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int n, const double alpha, const int type){
   // Set up resulting MST
   NumericMatrix mst = NumericMatrix(n - 1, 3);
@@ -88,30 +136,28 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
 
     // Compare all the new edge weights w/ the "current best" edge weights
     for (int t_i = 0; t_i < n; ++t_i) {
-      // Graph subset step: ensure both c_i and t_i have neighborhood radii at least as big as the current radius
       if (t_i == c_i) continue;
       int d_i = t_i > c_i ? INDEX_TF(n, c_i, t_i) : INDEX_TF(n, t_i, c_i); // bigger index always on the right
 
       // MST step, make sure node isn't already in the spanning tree
       if (v_selected[t_i] < 0) {
 
-        // Generic RSL step
-        priority = getConnectionRadius(r[d_i], r_k[c_i], r_k[t_i], alpha, type);
-        if (priority < fringe[t_i].weight) { // using max above implicitly ensures c_i and t_i are connected
-          // Rcout << "Updating fringe " << t_i << "w/ radii (" << r_k[c_i] << ", " << r_k[t_i] << ")" << std::endl;
-          // Rcout << "current: " << c_i << ", to: " << t_i << std::endl;
-          fringe[t_i].weight = priority;
-          fringe[t_i].to = c_i; // t_i indexes the 'from' node
+        // Updates edges on the fringe with lower weights if detected
+        double cedge_weight = getConnectionRadius(r[d_i], r_k[c_i], r_k[t_i], alpha, type);
+        if (cedge_weight < fringe[t_i].weight) { // Rprintf("Updating edge: F[%d].from = %d\n", t_i, c_i);
+          fringe[t_i].weight = cedge_weight;
+          fringe[t_i].from = c_i; // t_i indexes the 'to' node
         }
 
-        // An edge 'on the fringe' might be less than any of the current nodes weights
-        if (fringe[t_i].weight < min) {
+        // If edge 'on the fringe' is less than any of the current (head) nodes weight,
+        // change the head-facing node to the edge of the fringe
+        if (fringe[t_i].weight < min) { // Rprintf("Min edge: F[%d].from = %d\n", t_i, c_i);
           min = fringe[t_i].weight, min_id = t_i;
         }
       }
     }
-    // Rcout << "Adding edge: (" << min_id << ", " << c_i << ") [" << min << "]" << std::endl;
-    mst(n_edges, _) = NumericVector::create(min_id, c_i, min);
+
+    mst(n_edges, _) = NumericVector::create(fringe[min_id].from+1, min_id+1, min);
     v_selected[c_i] = 1;
     c_i = min_id;
   }

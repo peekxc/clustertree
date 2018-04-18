@@ -1,6 +1,4 @@
-#include <Rcpp.h>
-using namespace Rcpp;
-
+#include "RcppHeader.h"
 #include "ANN.h" // ANN definitions
 #include "kd_pr_search.h" // ANN kd tree priority search
 

@@ -2,9 +2,10 @@
 #define ANN_UTIL_H
 
 #include "ANN.h"
-#include <Rcpp.h>
-using namespace Rcpp;
+#include "RcppHeader.h"
 
+NumericVector ptToVec(ANNpoint pt, int dim);
+IntegerVector idxArrayToVec(ANNidxArray idx_array, const int npts);
 ANNpointArray matrixToANNpointArray(const NumericMatrix& x);
 
 #endif

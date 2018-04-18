@@ -7,10 +7,10 @@ Author: Matt Piekenbrock
 Maintainer: Matt Piekenbrock <matt.piekenbrock@gmail.com>
 Description: Contains a set of functions and extensions for estimating and visualizing the empirical cluster tree.
 License: MIT + file LICENSE 
-Depends: R (>= 3.1.0)
-Imports: Rcpp, methods, stats, graphics
+Depends: R (>= 3.1.0), RcppArmadillo
+Imports: Rcpp, methods, stats, graphics, RcppArmadillo
 Suggests: testthat, knitr
-LinkingTo: Rcpp
+LinkingTo: Rcpp, RcppArmadillo
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1
 Copyright: ANN library is copyright by University of Maryland, Sunil Arya and David Mount. All other code is copyright by Matthew Piekenbrock.

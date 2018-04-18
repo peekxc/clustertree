@@ -21,6 +21,7 @@
 #' 1. Chaudhuri, Kamalika, and Sanjoy Dasgupta. "Rates of convergence for the cluster tree." Advances in Neural Information Processing Systems. 2010.
 #' 2. Chaudhuri, Kamalika, et al. "Consistent procedures for cluster tree estimation and pruning." IEEE Transactions on Information Theory 60.12 (2014): 7900-7912.
 #' @seealso hclust
+#' @import RcppArmadillo
 #' @importFrom methods is
 #' @importFrom Rcpp evalCpp
 #' @useDynLib clustertree
@@ -29,10 +30,10 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
                         estimator = c("RSL", "knn", "mutual knn"),
                         warn = FALSE){
   if (is.null(dim(x)) && !is(x, "dist")) stop("'clustertree' expects x to be a matrix-coercible object.")
-  if (!is(x, "dist")) x <- as.matrix(x) ## Coerce to matrix
+  if (!is(x, "dist")) x <- as.matrix(x) ## Coerce to matrix if not a dist object
   if (!storage.mode(x) %in% c("double", "integer")) stop("'clustertree' expects x to be numeric or integer only.")
   x_dist <- NULL
-  n <- 0
+  { n <- 0L; d <- 0L }
   if (is(x, "dist")){
     d <- 1L
     n <- attr(x, "Size")
@@ -41,19 +42,20 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
   } else {
     d <- ncol(x)
     n <- nrow(x)
-    x_dist <- dist(x, method = "euclidean")
+    if (("parallelDist" %in% rownames(installed.packages())) == FALSE){
+      x_dist <- parallelDist::parallelDist(x, method = "euclidean") ## prefer parallel version of dist if possible
+    } else { x_dist <- dist(x, method = "euclidean") }
   }
   k <- as.integer(ifelse(missing(k), d * log(n), k)) # dim should work now
   alpha <- ifelse(missing(alpha), sqrt(2), alpha)
 
   r_k <- NULL
   if (is(x, "dist")){
-    r_k <- knn_dist(x, k)
+    r_k <- knn_dist2(x, k)
   } else {
     r_k <- knn(x, k = k - 1, bucketSize = k * log(n), splitRule = "SUGGEST")
-    r_k <- apply(r_k$dist, 1, max)
+    r_k <- r_k$dist[, k - 1]
   }
-
 
   ## Make sure k is less than n
   if (k > n){
@@ -100,7 +102,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
     }
   } else {
   ## RSL creates a fully connected hierarchy, convert to an hclust object
-    hclust_info <- mstToHclust(st[, 1:2], st[, 3])
+    hclust_info <- hclustMergeOrder(st, order(st[, 3]))
     hclust_info$call <- match.call()
     hclust_info$method <- possible_estimators[type+1]
   }

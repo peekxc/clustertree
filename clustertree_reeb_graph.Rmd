@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+set.seed(1234)
+landmark_pts <- c(0, runif(15))
+```
+
+
+```{r}
+pdf <- density(landmark_pts, kernel = "gaussian", bw = 0.061)
+plot(pdf)
+```
+```{r}
+sample_kde <- function(n){
+  landmark_idx <- sample(1:length(landmark_pts), size = n, replace = TRUE)
+  rnorm(n, mean = landmark_pts[landmark_idx], sd = pdf$bw)
+}
+```
+
+
+```{r}
+plot(density(x, bw = pdf$bw))
+```
+
+```{r}
+
+clustertree::clustertree(x)
+```
+
+
+```{r}
+x <- matrix(sample_kde(1000))
+cltree <- clustertree::clustertree(x)
+s_hier <- clustertree:::simplified_hclust(cltree$hc, min_sz = cltree$k)
+plot(s_hier)
+```
+
+
+```{r}
+sample(1:length(landmark_pts), size = )
+# sapply(pdf$x, function(x_i){
+#   dnorm(x_i, mean = landmark_pts, sd = pdf$bw)
+# })
+
+
+```
+
+
+
+```{r}
+f1 <- function(x_i){ dnorm(x_i, mean = 0, sd = 0.2) }
+f2 <- function(x_i){ dnorm(x_i, mean = 0.22, sd = 0.1) }
+f3 <- function(x_i){ dnorm(x_i, mean = 0.55, sd = 0.18) }
+f4 <- function(x_i){ dnorm(x_i, mean = 0.82, sd = 0.2) }
+f <- function(x){
+  sapply(x, function(x_i){ 1/length(x) * sum((1/0.12^2)*c(f1(x_i), f2(x_i), f3(x_i), f4(x_i))) })
+}
+plot(f, from = -2, to = 2)
+```
+
+
+```{r}
+g_density <- function(x_i, mu, sigma) { 1/(sqrt(2*pi)) * exp(-((x_i - mu)^2)/2*sigma^2) } 
+landmark_pts <- runif(5)
+f <- function(x){
+  sapply(x, function(x_i){
+    sum(sapply(landmark_pts, function(mu){ dnorm(x_i, mean = mu, sd = 0.05) }))
+  })
+}
+plot(f, from = -1, to = 1)
+```
+
+```{r}
+normalize <- function(x){ (x - min(x))/(max(x) - min(x)) }
+m <- TDAmapper::mapper_new(x, filter_values = cbind(density(x, bw = pdf$bw)$y, density(x, bw = pdf$bw)$y),
+                           num_intervals = 35, 
+                           percent_overlap = 40, 
+                           num_bins_when_clustering = 10,
+                           return_reference = TRUE)
+m$plotNetwork()
+```
+
+
+```{r}
+clustertree::clustertree(as.matrix(iris[, 1:4]))
+```
