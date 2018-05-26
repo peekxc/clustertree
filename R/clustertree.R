@@ -135,7 +135,7 @@ print.clustertree <- function(x, ...){
   type <- pmatch(toupper(method), c("RSL", "KNN", "MUTUAL KNN"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type]
   writeLines(c(
-    sprintf("Cluster tree object: %d objects formed %d connected components", x$n, ifelse(is(ct2$hc, "hclust"), 1L, length(x$hc))),
+    sprintf("Cluster tree object: %d objects formed %d connected components", x$n, ifelse(is(x$hc, "hclust"), 1L, length(x$hc))),
     paste0("Estimator used: ", est_type),
     sprintf("Parameters: k = %d, alpha = %.4f, dim = %d", x$k, x$alpha, x$d)
   ))
