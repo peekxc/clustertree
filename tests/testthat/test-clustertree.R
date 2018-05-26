@@ -44,3 +44,27 @@ test_that("'clustertree' gives the same results for a 'dist' objects", {
   expect_equivalent(cutree(cl$hc, k = 1:(n - 1)), cutree(cl2$hc, k = 1:(n - 1)))
 })
 
+
+## Check that KNN estimator works fine
+test_that("'clustertree' works with 'KNN' estimator", {
+  expect_silent(clustertree(X_n, k = 5L, alpha = sqrt(2), estimator = "KNN"))
+})
+
+## Check that mutual KNN estimator works fine
+test_that("'clustertree' works with 'mutual KNN' estimator", {
+  expect_silent(clustertree(X_n, k = 5L, alpha = sqrt(2), estimator = "mutual KNN"))
+})
+
+## Check that estimators which produce multiple CCs work
+test_that("'clustertree' works with multiple components", {
+  expect_silent(clustertree(X_n, k = 2L, alpha = sqrt(2), estimator = "mutual KNN"))
+  cl <- clustertree(X_n, k = 2L, alpha = sqrt(2), estimator = "mutual KNN")
+  expect_true(is.list(cl$hc)) ## expect list of hierarchies
+  expect_equal(length(cl$hc), 6L)
+  expect_true(all(sapply(cl$hc, function(hc) is(hc, "hclust")))) ## expect all are hierarchies
+  expect_output(print(cl)) ## expect printing works
+})
+
+
+
+

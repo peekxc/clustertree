@@ -60,6 +60,9 @@ double getConnectionRadius(double dist_ij, double radius_i, double radius_j, dou
 //   return mst;
 // }
 
+
+
+
 /*
  * Compute MST using variant of Prim's, constrained by the radius of the Balls around each x_i.
  * Requires several array-type or indicator variables, namely:
@@ -68,8 +71,10 @@ double getConnectionRadius(double dist_ij, double radius_i, double radius_j, dou
  * t_i := index of node to test against (relative to r_k)
  * d_i := index of distance from current node to test node (relative to r)
  */
+inline double maxToNA(double x) { return x == std::numeric_limits<double>::max() ? NA_REAL : x; }
+
 // [[Rcpp::export]]
-NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int n, const double alpha, const int type){
+NumericMatrix primsCtree(const NumericVector r, const NumericVector r_k, const int n, const double alpha, const int type){
   // Set up resulting MST
   NumericMatrix mst = NumericMatrix(n - 1, 3);
 
@@ -112,6 +117,7 @@ NumericMatrix primsRSL(const NumericVector r, const NumericVector r_k, const int
     v_selected[c_i] = 1;
     c_i = min_id;
   }
+  std::transform(mst.column(2).begin(),  mst.column(2).end(), mst.column(2).begin(), maxToNA);
   return(mst);
 }
 

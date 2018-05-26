@@ -75,29 +75,42 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
 
   ## Call the cluster tree augmented MST (using prioritized prims with delayed connections)
   ## Note: knn returns the k nearest, exclusively. Clustertree relies on k to be inclusive, so increase by 1.
-  st <- primsRSL(x_dist, r_k = r_k, n = n, alpha = alpha, type = type)
+  st <- primsCtree(x_dist, r_k = r_k, n = n, alpha = alpha, type = type)
+  st <- st[order(st[, 3]),] ## sort by merge distance
 
   ## If it's from estimators 1 or 2, it could be a minimum spanning forest
   hclust_info <- list()
   if (type > 0){
-    CCs <- mstToCC(st[, 1:2], st[, 3])
-    hclust_info <- vector(mode = "list", length = sum(table(CCs) >= 2))
-    i <- 1
-    for(cc in unique(CCs)){
-      ids <- which(CCs == cc) - 1 # Point ids in this connected component (0-based)
-      if (length(ids) >= 2){
-        mst_idx <- union(which(st[, 1] %in% ids), which(st[, 2] %in% ids)) # MST indices that make this CC
-        sub_st <- st[mst_idx, ] # spanning component subset
-        sub_st <- sub_st[order(sub_st[, 3]),] # ordered by height
-        sub_st <- sub_st[!sub_st[, 3] %in% c(.Machine$double.xmax, NA),] # discard special forest linkage flags
-        hc <- mstToHclust(sub_st[, 1:2], sub_st[, 3])
-        hc$call <- match.call()
-        hc$method <- possible_estimators[type+1]
-        hc$idx <- ids + 1 # original point indices from x used to create this hierarchy
-        hclust_info[[i]] <- structure(hc, class="hclust") # Enforce class
-        i <- i + 1
+    min_idx <- min(c(st[, 1], st[, 2]))
+    st_0based <- cbind(st[, 1:2] - min_idx, st[, 3])
+    CCs <- mstToCC(st_0based, st[, 3])
+    n_CCs <- length(unique(CCs))
+    if (n_CCs == 1){
+      ## If there was one connected component, form the hierarchy as normal
+      hclust_info <- hclustMergeOrder(st, order(st[, 3]))
+      hclust_info$call <- match.call()
+      hclust_info$method <- possible_estimators[type+1]
+    } else {
+      ## If there is more than one connected component, the spanning tree is a spanning forest; isolate and collect CCs,
+      ## and convert them to hclust objects
+      hclust_info <- vector(mode = "list", length = sum(table(CCs) >= 2))
+      i <- 1
+      for(cc in unique(CCs)){
+        ids <- which(CCs == cc) - 1 # Point ids in this connected component (0-based)
+        if (length(ids) >= 2){
+          mst_idx <- union(which(st_0based[, 1] %in% ids),
+                           which(st_0based[, 2] %in% ids)) # MST indices that make up this CC
+          sub_st <- matrix(st[mst_idx, ], ncol = 3) # spanning component subset
+          sub_st <- matrix(sub_st[order(sub_st[, 3]),], ncol = 3) # ordered by height
+          sub_st <- matrix(sub_st[!sub_st[, 3] %in% c(.Machine$double.xmax, NA),], ncol = 3) # discard special forest linkage flags
+          hc <- mstToHclust(matrix(sub_st[, 1:2], ncol = 2), as.numeric(sub_st[, 3]))
+          hc$call <- match.call()
+          hc$method <- possible_estimators[type+1]
+          hc$idx <- ids + 1 # original point indices from x used to create this hierarchy
+          hclust_info[[i]] <- structure(hc, class="hclust") # Enforce class
+          i <- i + 1
+        }
       }
-      # Else do nothing - need at least two points to make a cluster
     }
   } else {
     ## RSL creates a fully connected hierarchy, convert to an hclust object
@@ -106,8 +119,7 @@ clustertree <- function(x, k = "suggest", alpha = "suggest",
     hclust_info$call <- match.call()
     hclust_info$method <- possible_estimators[type+1]
   }
-  mst <- st[order(st[, 3]),]
-  mst <- st[!st[, 3] %in% c(.Machine$double.xmax, NA),]
+  # mst <- st[!st[, 3] %in% c(.Machine$double.xmax, NA),]
   res <- structure(list(hc = hclust_info, k = k, d = d, n = n, alpha = alpha, mst = mst), class = "clustertree", X_n = x)
   return(res)
 }
@@ -123,7 +135,7 @@ print.clustertree <- function(x, ...){
   type <- pmatch(toupper(method), c("RSL", "KNN", "MUTUAL KNN"))
   est_type <- c("Robust Single Linkage", "KNN graph", "Mutual KNN graph")[type]
   writeLines(c(
-    paste0("Cluster tree object of: ", x$n, " objects."),
+    sprintf("Cluster tree object: %d objects formed %d connected components", x$n, ifelse(is(ct2$hc, "hclust"), 1L, length(x$hc))),
     paste0("Estimator used: ", est_type),
     sprintf("Parameters: k = %d, alpha = %.4f, dim = %d", x$k, x$alpha, x$d)
   ))

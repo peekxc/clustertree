@@ -29,8 +29,8 @@ chooseMetric_int <- function(metric_name, config) {
     .Call('_clustertree_chooseMetric_int', PACKAGE = 'clustertree', metric_name, config)
 }
 
-primsRSL <- function(r, r_k, n, alpha, type) {
-    .Call('_clustertree_primsRSL', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
+primsCtree <- function(r, r_k, n, alpha, type) {
+    .Call('_clustertree_primsCtree', PACKAGE = 'clustertree', r, r_k, n, alpha, type)
 }
 
 naive_clustertree <- function(dist_x, r_k, k, alpha, type = 0L) {

@@ -100,7 +100,7 @@ IntegerVector mstToCC(const IntegerMatrix& mst, const NumericVector& dist){
     double link_weight = dist[i];
     if (from < n && to < n){
       if (R_IsNA(link_weight) || link_weight == std::numeric_limits<double>::max()){
-        continue;// Don't link special values indicating minimum spanning forests
+        continue; // Don't link special values indicating minimum spanning forests
       }
       components.Union(from, to);
     } else { stop("Please use a 0-based MST"); }
@@ -110,8 +110,8 @@ IntegerVector mstToCC(const IntegerMatrix& mst, const NumericVector& dist){
 
 /* mstToHclust
 * Given a minimum spanning tree of the columnar form (<from>, <to>, <height>), create a valid hclust object
-* using a disjoint-set structure to track components
-* Expects 0-based mst indices.
+* using a disjoint-set structure to track components. If the point indices are not 0-based, or if the max id
+* does not match the number of points in the spanning tree, then the indices are normalized.
 */
 // [[Rcpp::export]]
 List mstToHclust(const IntegerMatrix& mst_, const NumericVector& dist){
